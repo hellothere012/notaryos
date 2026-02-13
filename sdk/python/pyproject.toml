@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notaryos"
+version = "1.0.0"
+description = "NotaryOS SDK - Cryptographic receipts for AI agent actions. Issue, verify, and audit with Ed25519 signatures."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Agent Town Square", email = "hello@agenttownsquare.com"},
+]
+keywords = [
+    "notary", "cryptographic", "receipt", "verification",
+    "ai", "agent", "ed25519", "audit", "accountability", "a2a",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+# Zero external dependencies - uses only stdlib urllib + hashlib
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "mypy"]
+
+[project.urls]
+Homepage = "https://agenttownsquare.com/notary"
+Documentation = "https://agenttownsquare.com/notary/docs"
+Repository = "https://github.com/agenttownsquare/notaryos-sdk-python"
+Issues = "https://github.com/agenttownsquare/notaryos-sdk-python/issues"
+
+[project.scripts]
+notaryos = "notary_sdk:main"
+
+[tool.setuptools]
+py-modules = ["notary_sdk"]
+packages = ["notaryos"]

@@ -1,0 +1,60 @@
+{
+  "name": "notaryos",
+  "version": "1.0.0",
+  "description": "NotaryOS SDK - Cryptographic receipts for AI agent actions. Issue, verify, and audit agent behavior with Ed25519 signatures.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test dist/test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "notary",
+    "cryptographic",
+    "receipt",
+    "verification",
+    "ai",
+    "agent",
+    "ed25519",
+    "audit",
+    "accountability",
+    "a2a",
+    "agent-to-agent"
+  ],
+  "author": {
+    "name": "Agent Town Square",
+    "email": "hello@agenttownsquare.com",
+    "url": "https://agenttownsquare.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agenttownsquare/notaryos-sdk-typescript"
+  },
+  "homepage": "https://agenttownsquare.com/notary",
+  "bugs": {
+    "url": "https://github.com/agenttownsquare/notaryos-sdk-typescript/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  }
+}

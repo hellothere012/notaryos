@@ -1,0 +1,13 @@
+{
+  "receipt_id": "ntry_20260212_001_example",
+  "timestamp": "2026-02-12T10:30:00Z",
+  "agent_id": "demo_agent",
+  "action_type": "data_processing",
+  "payload_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "signature": "TUVBR0lDX1NJR05BVFVSRV9CQVNFNF9FRDEyNTM5",
+  "signature_type": "ed25519",
+  "key_id": "ed25519-key-v1",
+  "schema_version": "1.0",
+  "chain_sequence": 1,
+  "previous_receipt_hash": "GENESIS"
+}
