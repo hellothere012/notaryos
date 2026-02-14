@@ -206,17 +206,20 @@ export const VerifyPanel: React.FC = () => {
       const original = response.data;
       setOriginalReceipt(JSON.stringify(original, null, 2));
 
-      // Tamper the timestamp to break the signature
-      const tampered = { ...original };
-      const origTimestamp = tampered.timestamp;
-      tampered.timestamp = '2025-01-01T00:00:00.000Z';
+      // Deep copy to avoid mutating the original
+      const tampered = JSON.parse(JSON.stringify(original));
+
+      // Tamper the timestamp — could be nested inside receipt or at top level
+      const target = tampered.receipt || tampered;
+      const origTimestamp = target.timestamp;
+      target.timestamp = '2025-01-01T00:00:00.000Z';
 
       setReceipt(JSON.stringify(tampered, null, 2));
       setDemoType('tampered');
       setTamperInfo({
         field: 'timestamp',
         originalValue: origTimestamp,
-        tamperedValue: tampered.timestamp,
+        tamperedValue: target.timestamp,
       });
       setError(null);
       setResult(null);
@@ -302,7 +305,7 @@ export const VerifyPanel: React.FC = () => {
         {/* Main Verification Panel */}
         <div className="lg:col-span-2 space-y-4">
           {/* Input Card */}
-          <div className="card">
+          <div className="card relative z-10">
             {/* Drop Zone */}
             <div
               className={`relative border-2 border-dashed rounded-lg transition-all duration-200 ${
