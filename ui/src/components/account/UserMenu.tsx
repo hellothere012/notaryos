@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -13,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +48,7 @@ export const UserMenu: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsOpen(false);
-    navigate('/login');
+    router.push('/login');
   };
 
   // Get user initials for avatar
@@ -177,7 +180,7 @@ export const UserMenu: React.FC = () => {
               {menuItems.map((item, index) => (
                 <Link
                   key={item.href}
-                  to={item.href}
+                  href={item.href}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
                 >

@@ -28,8 +28,11 @@
  * Date: 2026-02-11
  */
 
+'use client';
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck,
@@ -517,14 +520,14 @@ const NotFoundState: React.FC<{ hash: string }> = ({ hash }) => (
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         <Link
-          to="/verify"
+          href="/verify"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 text-white rounded-lg text-sm font-medium hover:bg-white/15 transition-colors border border-white/10"
         >
           <ShieldCheck className="w-4 h-4" />
           Manual Verifier
         </Link>
         <Link
-          to="/"
+          href="/"
           className="inline-flex items-center gap-2 px-5 py-2.5 text-gray-400 rounded-lg text-sm hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -689,7 +692,7 @@ const PublicVerifyPage: React.FC = () => {
 
       {/* Top navigation bar */}
       <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center transition-transform group-hover:scale-105">
             <Shield className="w-5 h-5 text-white" />
           </div>
@@ -698,7 +701,7 @@ const PublicVerifyPage: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/verify"
+            href="/verify"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -1019,7 +1022,7 @@ const PublicVerifyPage: React.FC = () => {
                           View Raw JSON
                         </button>
                         <Link
-                          to="/verify"
+                          href="/verify"
                           className="inline-flex items-center gap-2 px-4 py-2 text-xs text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -1099,7 +1102,7 @@ const PublicVerifyPage: React.FC = () => {
       <footer className="relative z-10 text-center py-6 border-t border-white/5">
         <p className="text-xs text-gray-600">
           Verified by{' '}
-          <Link to="/" className="text-gray-400 hover:text-white transition-colors">
+          <Link href="/" className="text-gray-400 hover:text-white transition-colors">
             Notary
           </Link>{' '}
           &mdash; Cryptographic receipts for AI agent systems

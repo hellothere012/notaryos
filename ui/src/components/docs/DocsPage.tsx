@@ -14,8 +14,10 @@
  * Documentation page for NotaryOS
  */
 
+'use client';
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
@@ -477,7 +479,7 @@ console.log(result.chainPosition);  // 42`,
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-2.5 group">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
               </div>
@@ -489,13 +491,13 @@ console.log(result.chainPosition);  // 42`,
 
             {/* Top-level nav links */}
             <div className="hidden md:flex items-center gap-5">
-              <Link to="/" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Home
               </Link>
-              <Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
                 About
               </Link>
-              <Link to="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Pricing
               </Link>
               <span className="text-white text-sm font-medium">Docs</span>
@@ -513,7 +515,7 @@ console.log(result.chainPosition);  // 42`,
                 GitHub
               </a>
               <Link
-                to="/verify"
+                href="/verify"
                 className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2"
               >
                 Try Demo
@@ -611,7 +613,7 @@ console.log(result.chainPosition);  // 42`,
                   <ExternalLink className="w-3 h-3 ml-auto" />
                 </a>
                 <Link
-                  to="/pricing"
+                  href="/pricing"
                   className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
                 >
                   <Zap className="w-3.5 h-3.5" />
@@ -669,7 +671,7 @@ console.log(result.chainPosition);  // 42`,
                   </div>
                   <p className="text-sm text-gray-400 mb-3 ml-10">
                     Get your API key from the{' '}
-                    <Link to="/api-keys" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
+                    <Link href="/api-keys" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
                       API Keys dashboard
                     </Link>
                     . Starter tier includes 100 receipts/month.
@@ -917,7 +919,7 @@ console.log(result.chainPosition);  // 42`,
                         Authorization: Bearer notary_live_sk_...
                       </code>
                       . Generate keys from the{' '}
-                      <Link to="/api-keys" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
+                      <Link href="/api-keys" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
                         API Keys page
                       </Link>.
                     </p>
@@ -1545,7 +1547,7 @@ curl http://localhost:8000/v1/notary/status
                     </p>
                   </div>
                   <Link
-                    to="/signup"
+                    href="/signup"
                     className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap"
                   >
                     Get Started Free
@@ -1574,14 +1576,14 @@ curl http://localhost:8000/v1/notary/status
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
-                  to="/signup"
+                  href="/signup"
                   className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
                 >
                   Create Free Account
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  to="/verify"
+                  href="/verify"
                   className="flex items-center gap-2 px-6 py-2.5 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg text-sm font-medium transition-all"
                 >
                   Try the Demo
@@ -1590,9 +1592,9 @@ curl http://localhost:8000/v1/notary/status
 
               {/* Footer links */}
               <div className="flex flex-wrap justify-center gap-6 mt-8 text-xs text-gray-600">
-                <Link to="/" className="hover:text-gray-400 transition-colors">Home</Link>
-                <Link to="/about" className="hover:text-gray-400 transition-colors">About</Link>
-                <Link to="/pricing" className="hover:text-gray-400 transition-colors">Pricing</Link>
+                <Link href="/" className="hover:text-gray-400 transition-colors">Home</Link>
+                <Link href="/about" className="hover:text-gray-400 transition-colors">About</Link>
+                <Link href="/pricing" className="hover:text-gray-400 transition-colors">Pricing</Link>
                 <a
                   href="https://github.com/notaryos/notaryos"
                   target="_blank"

@@ -1,11 +1,14 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, UserPlus, AlertCircle, Shield, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const SignupPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { signup, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -60,7 +63,7 @@ export const SignupPage: React.FC = () => {
       await signup({ email, password, username: username || undefined });
       setSuccess(true);
       // Navigate after a brief delay to show success message
-      setTimeout(() => navigate('/verify'), 1500);
+      setTimeout(() => router.push('/verify'), 1500);
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     }
@@ -264,7 +267,7 @@ export const SignupPage: React.FC = () => {
           {/* Login Link */}
           <p className="text-center text-gray-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium">
               Sign in
             </Link>
           </p>

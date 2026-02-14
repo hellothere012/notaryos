@@ -5,8 +5,10 @@
  * Follows the existing LandingPage animation patterns.
  */
 
+'use client';
+
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Check,
@@ -149,13 +151,13 @@ const tiers: PricingTier[] = [
 ];
 
 const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleCta = useCallback(async () => {
     // Free tier → signup page
     if (tier.name === 'Starter') {
-      navigate('/signup');
+      router.push('/signup');
       return;
     }
 
@@ -167,7 +169,7 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
 
     // Paid tiers → require login, then create Stripe Checkout session
     if (!hasAuthToken()) {
-      navigate(`/signup?plan=${tier.name.toLowerCase()}`);
+      router.push(`/signup?plan=${tier.name.toLowerCase()}`);
       return;
     }
 
@@ -183,11 +185,11 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
     } catch (err: any) {
       console.error('Checkout error:', err?.response?.data || err);
       // Fallback: direct to signup if checkout fails
-      navigate(`/signup?plan=${tier.name.toLowerCase()}`);
+      router.push(`/signup?plan=${tier.name.toLowerCase()}`);
     } finally {
       setLoading(false);
     }
-  }, [tier.name, navigate]);
+  }, [tier.name, router]);
 
   return (
     <motion.div

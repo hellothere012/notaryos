@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload,
@@ -86,7 +88,9 @@ const COUNTERFACTUAL_RESULT: VerificationResult = {
 };
 
 export const VerifyPanel: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [receipt, setReceipt] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -114,14 +118,14 @@ export const VerifyPanel: React.FC = () => {
         .then(response => {
           const formatted = JSON.stringify(response.data, null, 2);
           setReceipt(formatted);
-          setSearchParams({}, { replace: true });
+          router.replace(pathname);
         })
         .catch(() => {
           setError('Failed to load sample receipt');
-          setSearchParams({}, { replace: true });
+          router.replace(pathname);
         });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, router, pathname]);
 
   // Keyboard shortcut: Cmd/Ctrl+Enter to verify
   useEffect(() => {

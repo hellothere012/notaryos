@@ -13,8 +13,11 @@
  * About page for NotaryOS
  */
 
+'use client';
+
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   Shield,
@@ -231,7 +234,7 @@ const ValueCard: React.FC<ValueCardProps> = ({ icon, title, description, highlig
 // =============================================================================
 
 export const AboutPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { scrollYProgress } = useScroll();
   const headerOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0.95]);
 
@@ -243,7 +246,7 @@ export const AboutPage: React.FC = () => {
       <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
@@ -251,23 +254,23 @@ export const AboutPage: React.FC = () => {
             </Link>
 
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Home
               </Link>
-              <Link to="/about" className="text-white text-sm font-medium">
+              <Link href="/about" className="text-white text-sm font-medium">
                 About
               </Link>
-              <Link to="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Pricing
               </Link>
-              <Link to="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Docs
               </Link>
             </div>
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
                 Try the Demo
@@ -316,14 +319,14 @@ export const AboutPage: React.FC = () => {
 
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4 mb-12">
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
               >
                 Verify a Receipt
                 <ArrowRight className="w-5 h-5" />
               </button>
               <Link
-                to="/pricing"
+                href="/pricing"
                 className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
               >
                 View Pricing
@@ -958,14 +961,14 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
 
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4 mb-8">
               <button
-                onClick={() => navigate('/signup')}
+                onClick={() => router.push('/signup')}
                 className="btn-primary flex items-center gap-2 px-8 py-3 text-base"
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5" />
               </button>
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="flex items-center gap-2 px-8 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
               >
                 Try the Demo
@@ -973,7 +976,7 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
-              <Link to="/pricing" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
+              <Link href="/pricing" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
                 View pricing <ChevronRight className="w-3 h-3" />
               </Link>
               <a
@@ -1002,17 +1005,17 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/verify" className="text-gray-400 hover:text-white">Verifier</Link></li>
-                <li><Link to="/about" className="text-gray-400 hover:text-white">About</Link></li>
-                <li><Link to="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
-                <li><Link to="/history" className="text-gray-400 hover:text-white">History</Link></li>
+                <li><Link href="/verify" className="text-gray-400 hover:text-white">Verifier</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white">About</Link></li>
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
+                <li><Link href="/history" className="text-gray-400 hover:text-white">History</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-medium mb-4">Developers</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
-                <li><Link to="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
+                <li><Link href="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
+                <li><Link href="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
                 <li><a href="https://github.com/hellothere012/notaryos" className="text-gray-400 hover:text-white">GitHub</a></li>
               </ul>
             </div>
@@ -1027,7 +1030,7 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/about" className="text-gray-400 hover:text-white">About</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white">About</Link></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Terms</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Status</a></li>
               </ul>

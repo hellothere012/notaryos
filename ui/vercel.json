@@ -1,11 +1,20 @@
 {
-  "buildCommand": "CI=false npm run build",
-  "outputDirectory": "build",
-  "framework": "create-react-app",
-  "rewrites": [
-    { "source": "/((?!static|asset-manifest|favicon|manifest|robots).*)", "destination": "/index.html" }
-  ],
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/r/[hash]/page.tsx": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
   "env": {
-    "REACT_APP_API_URL": "https://api.agenttownsquare.com"
-  }
+    "NEXT_PUBLIC_API_URL": "https://api.agenttownsquare.com"
+  },
+  "redirects": [
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
 }

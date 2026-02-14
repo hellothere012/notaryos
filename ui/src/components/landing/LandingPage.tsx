@@ -5,8 +5,11 @@
  * Key message: "Verify AI agent receipts—cryptographically."
  */
 
+'use client';
+
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -170,7 +173,7 @@ const sampleReceipt = `{
 }`;
 
 export const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [copied, setCopied] = React.useState(false);
 
   const handleCopyReceipt = () => {
@@ -186,7 +189,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
@@ -195,7 +198,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Nav Links */}
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
                 About
               </Link>
               <a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">
@@ -204,10 +207,10 @@ export const LandingPage: React.FC = () => {
               <a href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">
                 How it works
               </a>
-              <Link to="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Pricing
               </Link>
-              <Link to="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
+              <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
                 Docs
               </Link>
             </div>
@@ -224,7 +227,7 @@ export const LandingPage: React.FC = () => {
                 View on GitHub
               </a>
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
                 Try the Demo
@@ -269,7 +272,7 @@ export const LandingPage: React.FC = () => {
 
               <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-4 mb-8">
                 <button
-                  onClick={() => navigate('/verify')}
+                  onClick={() => router.push('/verify')}
                   className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
                 >
                   Try the Demo
@@ -360,14 +363,14 @@ export const LandingPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="btn-primary flex items-center gap-2"
               >
                 Open Verifier
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigate('/verify?sample=true')}
+                onClick={() => router.push('/verify?sample=true')}
                 className="btn-ghost flex items-center gap-2"
               >
                 Load Sample Receipt
@@ -594,13 +597,13 @@ export const LandingPage: React.FC = () => {
             className="flex justify-center gap-4 mt-12"
           >
             <button
-              onClick={() => navigate('/verify?sample=true')}
+              onClick={() => router.push('/verify?sample=true')}
               className="btn-primary flex items-center gap-2"
             >
               Try a Sample Receipt
             </button>
             <Link
-              to="/docs"
+              href="/docs"
               className="btn-ghost flex items-center gap-2"
             >
               Read the Receipt Spec
@@ -700,14 +703,14 @@ export const LandingPage: React.FC = () => {
 
                   <div className="flex flex-wrap gap-3">
                     <Link
-                      to="/docs"
+                      href="/docs"
                       className="btn-primary flex items-center gap-2 text-sm"
                     >
                       See Integration Guide
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                     <button
-                      onClick={() => navigate('/verify?sample=true')}
+                      onClick={() => router.push('/verify?sample=true')}
                       className="btn-ghost flex items-center gap-2 text-sm"
                     >
                       Try a Sample Receipt
@@ -858,7 +861,7 @@ print(receipt.valid)  # True`}</code>
                 View on GitHub
               </a>
               <Link
-                to="/docs"
+                href="/docs"
                 className="btn-secondary flex items-center gap-2"
               >
                 Run Locally (Docker)
@@ -927,7 +930,7 @@ print(receipt.valid)  # True`}</code>
 
             <motion.div variants={fadeInUp} className="flex justify-center gap-4 mb-8">
               <button
-                onClick={() => navigate('/verify')}
+                onClick={() => router.push('/verify')}
                 className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
               >
                 Try the Demo
@@ -946,7 +949,7 @@ print(receipt.valid)  # True`}</code>
 
             <motion.p variants={fadeInUp} className="text-sm text-gray-500">
               Want API access?{' '}
-              <Link to="/signup" className="text-purple-400 hover:text-purple-300">
+              <Link href="/signup" className="text-purple-400 hover:text-purple-300">
                 Create an account
               </Link>{' '}
               to generate keys with scoped permissions.
@@ -963,11 +966,11 @@ print(receipt.valid)  # True`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/verify" className="text-gray-400 hover:text-white">Verifier</Link></li>
-                <li><Link to="/about" className="text-gray-400 hover:text-white">About</Link></li>
-                <li><Link to="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
-                <li><Link to="/history" className="text-gray-400 hover:text-white">History</Link></li>
-                <li><Link to="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
+                <li><Link href="/verify" className="text-gray-400 hover:text-white">Verifier</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white">About</Link></li>
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
+                <li><Link href="/history" className="text-gray-400 hover:text-white">History</Link></li>
+                <li><Link href="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
               </ul>
             </div>
 
@@ -975,7 +978,7 @@ print(receipt.valid)  # True`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
+                <li><Link href="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Receipt Spec</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Changelog</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Status</a></li>

@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck,
@@ -61,7 +64,7 @@ const navItems: NavItem[] = [
 
 export const Sidebar: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
-  const location = useLocation();
+  const pathname = usePathname();
 
   const filteredNavItems = navItems.filter(item => {
     if (item.requiresAuth && !isAuthenticated) return false;
@@ -86,40 +89,37 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1">
-        {filteredNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+        {filteredNavItems.map((item) => {
+          const isActive = pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                 isActive
                   ? 'text-white bg-purple-500/20'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.div
-                    layoutId="sidebar-indicator"
-                    className="absolute left-0 w-1 h-8 bg-purple-500 rounded-r-full"
-                    initial={false}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 30,
-                    }}
-                  />
-                )}
-                <span className={isActive ? 'text-purple-400' : ''}>
-                  {item.icon}
-                </span>
-                <span className="font-medium">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-indicator"
+                  className="absolute left-0 w-1 h-8 bg-purple-500 rounded-r-full"
+                  initial={false}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 500,
+                    damping: 30,
+                  }}
+                />
+              )}
+              <span className={isActive ? 'text-purple-400' : ''}>
+                {item.icon}
+              </span>
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Footer */}

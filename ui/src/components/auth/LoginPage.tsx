@@ -1,12 +1,15 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Mail, Lock, LogIn, AlertCircle, Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -28,7 +31,7 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login({ email, password, rememberMe });
-      navigate(redirectPath);
+      router.push(redirectPath);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     }
@@ -120,7 +123,7 @@ export const LoginPage: React.FC = () => {
                 <span className="text-sm text-gray-400">Remember me</span>
               </label>
               <Link
-                to="/forgot-password"
+                href="/forgot-password"
                 className="text-sm text-purple-400 hover:text-purple-300"
               >
                 Forgot password?
@@ -154,7 +157,7 @@ export const LoginPage: React.FC = () => {
           {/* Sign Up Link */}
           <p className="text-center text-gray-400">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link href="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
               Sign up
             </Link>
           </p>
@@ -163,7 +166,7 @@ export const LoginPage: React.FC = () => {
         {/* Public Verification Notice */}
         <p className="mt-6 text-center text-sm text-gray-500">
           You can verify receipts without an account.{' '}
-          <Link to="/verify" className="text-purple-400 hover:text-purple-300">
+          <Link href="/verify" className="text-purple-400 hover:text-purple-300">
             Go to verification
           </Link>
         </p>

@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, LogIn, UserPlus, Menu, X, ChevronDown, BookOpen, Zap, FileCode, Github } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,8 +10,8 @@ import { UserMenu } from '../account/UserMenu';
 
 export const AppHeader: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [resourcesOpen, setResourcesOpen] = React.useState(false);
   const resourcesRef = React.useRef<HTMLDivElement>(null);
@@ -24,14 +27,14 @@ export const AppHeader: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => pathname === path;
 
   return (
     <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-md border-b border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group">
             <motion.div
               className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center"
               whileHover={{ scale: 1.05 }}
@@ -52,7 +55,7 @@ export const AppHeader: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link
-              to="/verify"
+              href="/verify"
               className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                 isActive('/verify') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
               }`}
@@ -60,7 +63,7 @@ export const AppHeader: React.FC = () => {
               Verify
             </Link>
             <Link
-              to="/docs"
+              href="/docs"
               className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                 isActive('/docs') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
               }`}
@@ -68,7 +71,7 @@ export const AppHeader: React.FC = () => {
               Docs
             </Link>
             <Link
-              to="/pricing"
+              href="/pricing"
               className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                 isActive('/pricing') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
               }`}
@@ -76,7 +79,7 @@ export const AppHeader: React.FC = () => {
               Pricing
             </Link>
             <Link
-              to="/about"
+              href="/about"
               className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                 isActive('/about') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
               }`}
@@ -88,7 +91,7 @@ export const AppHeader: React.FC = () => {
               <>
                 <div className="w-px h-6 bg-gray-700 mx-1" />
                 <Link
-                  to="/history"
+                  href="/history"
                   className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                     isActive('/history') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
                   }`}
@@ -96,7 +99,7 @@ export const AppHeader: React.FC = () => {
                   History
                 </Link>
                 <Link
-                  to="/api-keys"
+                  href="/api-keys"
                   className={`px-3 py-2 rounded-lg transition-colors font-medium ${
                     isActive('/api-keys') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
                   }`}
@@ -127,13 +130,13 @@ export const AppHeader: React.FC = () => {
             ) : (
               <div className="hidden sm:flex items-center gap-2">
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => router.push('/login')}
                   className="px-4 py-2 text-gray-300 hover:text-white transition-colors font-medium rounded-lg hover:bg-gray-800/50"
                 >
                   Login
                 </button>
                 <button
-                  onClick={() => navigate('/docs#quickstart')}
+                  onClick={() => router.push('/docs#quickstart')}
                   className="px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Issue Your First Receipt
@@ -162,7 +165,7 @@ export const AppHeader: React.FC = () => {
             >
               <nav className="flex flex-col gap-1">
                 <Link
-                  to="/verify"
+                  href="/verify"
                   className={`px-4 py-2.5 rounded-lg font-medium ${
                     isActive('/verify') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
@@ -171,7 +174,7 @@ export const AppHeader: React.FC = () => {
                   Verify Receipt
                 </Link>
                 <Link
-                  to="/docs"
+                  href="/docs"
                   className={`px-4 py-2.5 rounded-lg font-medium ${
                     isActive('/docs') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
@@ -180,7 +183,7 @@ export const AppHeader: React.FC = () => {
                   Documentation
                 </Link>
                 <Link
-                  to="/pricing"
+                  href="/pricing"
                   className={`px-4 py-2.5 rounded-lg font-medium ${
                     isActive('/pricing') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
@@ -189,7 +192,7 @@ export const AppHeader: React.FC = () => {
                   Pricing
                 </Link>
                 <Link
-                  to="/about"
+                  href="/about"
                   className={`px-4 py-2.5 rounded-lg font-medium ${
                     isActive('/about') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
@@ -202,14 +205,14 @@ export const AppHeader: React.FC = () => {
                   <>
                     <div className="h-px bg-gray-800 my-2" />
                     <Link
-                      to="/history"
+                      href="/history"
                       className="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       History
                     </Link>
                     <Link
-                      to="/api-keys"
+                      href="/api-keys"
                       className="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -222,14 +225,14 @@ export const AppHeader: React.FC = () => {
                   <>
                     <div className="h-px bg-gray-800 my-2" />
                     <Link
-                      to="/login"
+                      href="/login"
                       className="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
-                      to="/docs#quickstart"
+                      href="/docs#quickstart"
                       className="px-4 py-2.5 text-white bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg font-semibold text-center"
                       onClick={() => setMobileMenuOpen(false)}
                     >
