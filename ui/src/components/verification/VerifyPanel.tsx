@@ -11,6 +11,8 @@ import {
   Sparkles,
   Keyboard,
   AlertCircle,
+  ChevronDown,
+  ShieldOff,
 } from 'lucide-react';
 import { publicClient, API_ENDPOINTS } from '../../config/api';
 import { VerificationResult } from '../../types';
@@ -46,6 +48,43 @@ function mapApiResponse(raw: any): VerificationResult {
   };
 }
 
+// Hardcoded counterfactual receipt for demo
+const COUNTERFACTUAL_SAMPLE: Record<string, any> = {
+  receipt_id: 'cf_demo_r8k2m4n6p0',
+  receipt_type: 'counterfactual',
+  timestamp: '2026-02-14T05:30:00.000Z',
+  agent_id: 'compliance-monitor-01',
+  action_type: 'counterfactual',
+  action_not_taken: 'transfer_funds',
+  decision_reason:
+    'Recipient account failed KYC verification. Transfer blocked per compliance policy AML-2024-07.',
+  capability_proof:
+    'Agent holds transfer.execute permission with limit $50,000',
+  opportunity_context:
+    'User requested $12,500 wire transfer to unverified account ending in 4829',
+  payload_hash: 'cf_7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
+  signature: 'COUNTERFACTUAL_DEMO_ed25519_7f8e9d0c1b2a3948576a5b4c3d2e1f',
+  signature_type: 'Ed25519',
+  key_id: 'notary-prod-key-2026',
+  schema_version: '2.0',
+};
+
+// Mock verification result for counterfactual demo
+const COUNTERFACTUAL_RESULT: VerificationResult = {
+  valid: true,
+  message: 'Counterfactual receipt verified. Proof of non-action is authentic.',
+  signature_valid: true,
+  chain_valid: true,
+  timestamp_valid: true,
+  details: {
+    receipt_hash: 'cf_7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
+    algorithm: 'Ed25519',
+    signed_at: '2026-02-14T05:30:00.000Z',
+    signer_id: 'notary-prod-key-2026',
+    chain_position: 1,
+  },
+};
+
 export const VerifyPanel: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [receipt, setReceipt] = useState<string>('');
@@ -56,6 +95,15 @@ export const VerifyPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sampleLoadedRef = useRef(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [demoType, setDemoType] = useState<'valid' | 'tampered' | 'counterfactual' | null>(null);
+  const [, setOriginalReceipt] = useState<string>('');
+  const [tamperInfo, setTamperInfo] = useState<{
+    field: string;
+    originalValue: string;
+    tamperedValue: string;
+  } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle ?sample=true query param from landing page
   useEffect(() => {
@@ -87,6 +135,17 @@ export const VerifyPanel: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [receipt]);
 
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleVerify = async () => {
     if (!receipt.trim()) {
       setError('Paste a receipt JSON or upload a .json file to continue.');
@@ -101,8 +160,14 @@ export const VerifyPanel: React.FC = () => {
       // Parse to validate JSON
       const parsed = JSON.parse(receipt.trim());
 
-      const response = await publicClient.post(API_ENDPOINTS.verify, parsed);
-      setResult(mapApiResponse(response.data));
+      // Counterfactual demo uses a mock result (not a real server-signed receipt)
+      if (demoType === 'counterfactual') {
+        await new Promise((r) => setTimeout(r, 800));
+        setResult(COUNTERFACTUAL_RESULT);
+      } else {
+        const response = await publicClient.post(API_ENDPOINTS.verify, parsed);
+        setResult(mapApiResponse(response.data));
+      }
     } catch (err: any) {
       if (err instanceof SyntaxError) {
         setError('Invalid JSON. Check for missing commas or quotes.');
@@ -123,11 +188,53 @@ export const VerifyPanel: React.FC = () => {
       const response = await publicClient.get(API_ENDPOINTS.sampleReceipt);
       const formatted = JSON.stringify(response.data, null, 2);
       setReceipt(formatted);
+      setDemoType('valid');
+      setTamperInfo(null);
+      setOriginalReceipt('');
       setError(null);
       setResult(null);
+      setDropdownOpen(false);
     } catch (err: any) {
       setError('Failed to load sample receipt');
+      setDropdownOpen(false);
     }
+  };
+
+  const handleLoadTampered = async () => {
+    try {
+      const response = await publicClient.get(API_ENDPOINTS.sampleReceipt);
+      const original = response.data;
+      setOriginalReceipt(JSON.stringify(original, null, 2));
+
+      // Tamper the timestamp to break the signature
+      const tampered = { ...original };
+      const origTimestamp = tampered.timestamp;
+      tampered.timestamp = '2025-01-01T00:00:00.000Z';
+
+      setReceipt(JSON.stringify(tampered, null, 2));
+      setDemoType('tampered');
+      setTamperInfo({
+        field: 'timestamp',
+        originalValue: origTimestamp,
+        tamperedValue: tampered.timestamp,
+      });
+      setError(null);
+      setResult(null);
+      setDropdownOpen(false);
+    } catch {
+      setError('Failed to load sample receipt');
+      setDropdownOpen(false);
+    }
+  };
+
+  const handleLoadCounterfactual = () => {
+    setReceipt(JSON.stringify(COUNTERFACTUAL_SAMPLE, null, 2));
+    setDemoType('counterfactual');
+    setTamperInfo(null);
+    setOriginalReceipt('');
+    setError(null);
+    setResult(null);
+    setDropdownOpen(false);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -173,6 +280,9 @@ export const VerifyPanel: React.FC = () => {
     setReceipt('');
     setResult(null);
     setError(null);
+    setDemoType(null);
+    setTamperInfo(null);
+    setOriginalReceipt('');
     textareaRef.current?.focus();
   };
 
@@ -243,13 +353,57 @@ export const VerifyPanel: React.FC = () => {
                     className="hidden"
                   />
                 </label>
-                <button
-                  onClick={handleLoadSample}
-                  className="btn-ghost flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Load Sample
-                </button>
+                <div className="relative" ref={dropdownRef}>
+                  <div className="flex items-center">
+                    <button
+                      onClick={handleLoadSample}
+                      className="btn-ghost flex items-center gap-2 rounded-r-none pr-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Load Sample
+                    </button>
+                    <button
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="btn-ghost px-1.5 rounded-l-none border-l border-gray-600"
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                  {dropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1">
+                      <button
+                        onClick={handleLoadSample}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-700/50 flex items-center gap-3 text-sm"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-green-400" />
+                        <div>
+                          <div className="text-white font-medium">Valid Receipt</div>
+                          <div className="text-gray-500 text-xs">A real, properly signed receipt</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={handleLoadTampered}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-700/50 flex items-center gap-3 text-sm"
+                      >
+                        <AlertCircle className="w-4 h-4 text-red-400" />
+                        <div>
+                          <div className="text-white font-medium">Tampered Receipt</div>
+                          <div className="text-gray-500 text-xs">See what happens when data is modified</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={handleLoadCounterfactual}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-700/50 flex items-center gap-3 text-sm"
+                      >
+                        <ShieldOff className="w-4 h-4 text-indigo-400" />
+                        <div>
+                          <div className="text-white font-medium">Counterfactual Receipt</div>
+                          <div className="text-gray-500 text-xs">Proof an agent chose NOT to act</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {receipt && (
                   <>
                     <button
@@ -274,6 +428,38 @@ export const VerifyPanel: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Demo Type Banner */}
+          <AnimatePresence>
+            {demoType && demoType !== 'valid' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className={`p-3 rounded-lg flex items-center gap-3 text-sm ${
+                  demoType === 'tampered'
+                    ? 'bg-red-500/10 border border-red-500/30'
+                    : 'bg-indigo-500/10 border border-indigo-500/30'
+                }`}
+              >
+                {demoType === 'tampered' ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                    <span className="text-red-300">
+                      <strong>Demo:</strong> This receipt has been tampered with. The timestamp was modified after signing — click Verify to see it fail.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldOff className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                    <span className="text-indigo-300">
+                      <strong>Demo:</strong> Counterfactual receipt — cryptographic proof that an agent chose <em>not</em> to act.
+                    </span>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Error Message */}
           <AnimatePresence>
@@ -318,7 +504,12 @@ export const VerifyPanel: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <ResultPanel result={result} />
+                <ResultPanel
+                  result={result}
+                  demoType={demoType}
+                  tamperInfo={tamperInfo}
+                  counterfactualReceipt={demoType === 'counterfactual' ? COUNTERFACTUAL_SAMPLE : undefined}
+                />
               </motion.div>
             ) : !receipt.trim() && !error && (
               <motion.div
@@ -342,13 +533,29 @@ export const VerifyPanel: React.FC = () => {
                 <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto">
                   Verification checks signature validity, chain integrity, timestamp bounds, and receipt structure.
                 </p>
-                <button
-                  onClick={handleLoadSample}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/25"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Load Sample Receipt
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <button
+                    onClick={handleLoadSample}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-purple-500/25"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    Valid Receipt
+                  </button>
+                  <button
+                    onClick={handleLoadTampered}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500/20 text-red-400 border border-red-500/30 font-medium rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    Tampered Demo
+                  </button>
+                  <button
+                    onClick={handleLoadCounterfactual}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-medium rounded-lg hover:bg-indigo-500/30 transition-colors text-sm"
+                  >
+                    <ShieldOff className="w-4 h-4" />
+                    Counterfactual Demo
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

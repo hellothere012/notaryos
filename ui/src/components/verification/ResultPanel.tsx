@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck,
   ShieldX,
+  ShieldOff,
   CheckCircle2,
   XCircle,
   ChevronDown,
@@ -20,6 +21,9 @@ import { VerificationResult } from '../../types';
 
 interface ResultPanelProps {
   result: VerificationResult;
+  demoType?: 'valid' | 'tampered' | 'counterfactual' | null;
+  tamperInfo?: { field: string; originalValue: string; tamperedValue: string } | null;
+  counterfactualReceipt?: Record<string, any>;
 }
 
 type TabId = 'overview' | 'raw' | 'crypto';
@@ -36,12 +40,19 @@ const tabs: TabConfig[] = [
   { id: 'crypto', label: 'Crypto Details', icon: <Lock className="w-4 h-4" /> },
 ];
 
-export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
+export const ResultPanel: React.FC<ResultPanelProps> = ({
+  result,
+  demoType,
+  tamperInfo,
+  counterfactualReceipt,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [copied, setCopied] = useState(false);
 
   const isValid = result.valid;
+  const isCounterfactual = demoType === 'counterfactual';
+  const isTampered = demoType === 'tampered';
 
   // Copy raw JSON to clipboard
   const handleCopyJson = () => {
@@ -69,12 +80,16 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
   };
 
   return (
-    <div
+    <motion.div
       className={`card overflow-hidden transition-all duration-300 ${
-        isValid
-          ? 'border-green-500/50 glow-green'
-          : 'border-red-500/50 glow-red'
+        isCounterfactual
+          ? 'border-indigo-500/50'
+          : isValid
+            ? 'border-green-500/50 glow-green'
+            : 'border-red-500/50 glow-red'
       }`}
+      animate={isTampered && !isValid ? { x: [0, -8, 8, -8, 8, 0] } : {}}
+      transition={{ duration: 0.4 }}
     >
       {/* Main Result Header */}
       <div className="flex items-center justify-between">
@@ -85,12 +100,16 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-              isValid
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-red-500/20 text-red-400'
+              isCounterfactual
+                ? 'bg-indigo-500/20 text-indigo-400'
+                : isValid
+                  ? 'bg-green-500/20 text-green-400'
+                  : 'bg-red-500/20 text-red-400'
             }`}
           >
-            {isValid ? (
+            {isCounterfactual ? (
+              <ShieldOff className="w-8 h-8" />
+            ) : isValid ? (
               <ShieldCheck className="w-8 h-8" />
             ) : (
               <ShieldX className="w-8 h-8" />
@@ -103,15 +122,21 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className={`text-xl font-bold ${
-                isValid ? 'text-green-400' : 'text-red-400'
+                isCounterfactual
+                  ? 'text-indigo-400'
+                  : isValid ? 'text-green-400' : 'text-red-400'
               }`}
             >
-              {isValid ? 'Receipt Verified' : 'Verification Failed'}
+              {isCounterfactual
+                ? 'Counterfactual Verified'
+                : isValid ? 'Receipt Verified' : 'Verification Failed'}
             </motion.h3>
             <p className="text-gray-400 text-sm mt-0.5">
-              {isValid
-                ? 'Signature and chain checks passed.'
-                : 'One or more checks did not pass. Review the details below.'}
+              {isCounterfactual
+                ? 'Proof of non-action is cryptographically authentic.'
+                : isValid
+                  ? 'Signature and chain checks passed.'
+                  : 'One or more checks did not pass. Review the details below.'}
             </p>
           </div>
         </div>
@@ -167,6 +192,66 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
           </ul>
           <p className="text-xs text-gray-500 mt-3">
             Fix the issue at the source, then re-verify the updated receipt.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Counterfactual Details */}
+      {isCounterfactual && counterfactualReceipt && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-4 p-4 bg-indigo-500/10 border border-dashed border-indigo-500/30 rounded-lg"
+        >
+          <h4 className="text-indigo-400 font-medium text-sm mb-3 flex items-center gap-2">
+            <ShieldOff className="w-4 h-4" />
+            Proof of Non-Action
+          </h4>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Action Not Taken</p>
+              <p className="text-white font-medium">{counterfactualReceipt.action_not_taken}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Decision Reason</p>
+              <p className="text-gray-300 text-sm">{counterfactualReceipt.decision_reason}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Capability Proof</p>
+              <p className="text-gray-300 text-sm">{counterfactualReceipt.capability_proof}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Opportunity Context</p>
+              <p className="text-gray-300 text-sm">{counterfactualReceipt.opportunity_context}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Tamper Diff View */}
+      {isTampered && !isValid && tamperInfo && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+        >
+          <h4 className="text-red-400 font-medium text-sm mb-3">What was tampered</h4>
+          <div className="bg-gray-900/50 rounded-lg p-3 font-mono text-sm space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 w-20">Field:</span>
+              <span className="text-white">{tamperInfo.field}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 w-20">Original:</span>
+              <span className="text-green-400 line-through">{tamperInfo.originalValue}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 w-20">Tampered:</span>
+              <span className="text-red-400">{tamperInfo.tamperedValue}</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-3">
+            The signature was computed with the original data. Modifying any field after signing invalidates the cryptographic proof.
           </p>
         </motion.div>
       )}
@@ -231,7 +316,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result }) => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 
