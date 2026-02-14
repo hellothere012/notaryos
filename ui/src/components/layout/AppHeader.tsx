@@ -136,10 +136,10 @@ export const AppHeader: React.FC = () => {
                   Login
                 </button>
                 <button
-                  onClick={() => router.push('/docs#quickstart')}
+                  onClick={() => router.push('/sign-up')}
                   className="px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  Issue Your First Receipt
+                  Get Started Free
                 </button>
               </div>
             )}
@@ -232,11 +232,11 @@ export const AppHeader: React.FC = () => {
                       Login
                     </Link>
                     <Link
-                      href="/docs#quickstart"
+                      href="/sign-up"
                       className="px-4 py-2.5 text-white bg-gradient-to-r from-purple-500 to-cyan-500 rounded-lg font-semibold text-center"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Issue Your First Receipt
+                      Get Started Free
                     </Link>
                   </>
                 )}

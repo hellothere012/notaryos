@@ -1,850 +1,686 @@
-/**
- * LandingPage - Public marketing/landing page for Notary
- *
- * Landing page for NotaryOS.
- * Key message: "Verify AI agent receipts—cryptographically."
- */
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   Shield,
-  Github,
-  ArrowRight,
+  Check,
   CheckCircle,
-  FileJson,
-  Link2,
+  CheckCircle2,
+  Zap,
+  Lock,
+  Eye,
   Code,
+  Terminal,
+  Server,
+  Menu,
+  X,
+  Copy,
+  ArrowRight,
+  Sparkles,
+  Cpu,
+  Network,
+  FileCheck,
+  FileJson,
+  TrendingUp,
+  Building2,
+  Scale,
+  Link2,
   History,
   Key,
   Settings,
-  ChevronRight,
-  ExternalLink,
-  Server,
-  Users,
   AlertTriangle,
-  Terminal,
-  Copy,
-  Zap,
+  Users,
+  ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 
-// Animation variants
+/* ====================================================================== */
+/*  Animation variants                                                    */
+/* ====================================================================== */
+
 const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
 };
 
-// Feature Card Component
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  bullets: string[];
-  badge?: string;
-}
+/* ====================================================================== */
+/*  Static data                                                           */
+/* ====================================================================== */
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, bullets, badge }) => (
-  <motion.div
-    variants={fadeInUp}
-    className="card-hover relative"
-  >
-    {badge && (
-      <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-purple-600 text-white text-xs font-medium rounded-full">
-        {badge}
-      </span>
-    )}
-    <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-      {icon}
-    </div>
-    <h3 className="text-lg font-semibold text-white mb-3">{title}</h3>
-    <ul className="space-y-2">
-      {bullets.map((bullet, i) => (
-        <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
-          <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-          <span>{bullet}</span>
-        </li>
-      ))}
-    </ul>
-  </motion.div>
-);
+const comparisonRows = [
+  { feature: 'Cryptographic signatures', notary: 'check', traditional: 'dash' },
+  { feature: 'Per-agent hash chains', notary: 'check', traditional: 'dash' },
+  { feature: 'Tamper detection', notary: 'Automatic', traditional: 'Manual audit' },
+  { feature: 'Third-party verification', notary: 'Offline capable', traditional: 'Requires access' },
+  { feature: 'Proof of non-action', notary: 'check', traditional: 'dash' },
+  { feature: 'Provenance tracking', notary: 'DAG-based', traditional: 'Linear or none' },
+];
 
-// Step Card Component
-interface StepCardProps {
+const features = [
+  {
+    icon: Lock,
+    title: 'Per-Agent Hash Chains',
+    description: 'Every action is cryptographically linked to the previous one. Tamper with one receipt and the whole chain breaks.',
+    badge: 'Tamper detection built in',
+    color: 'violet',
+  },
+  {
+    icon: Eye,
+    title: 'Counterfactual Receipts',
+    description: 'Cryptographic proof that your AI chose not to act. Prove what didn\u2019t happen\u2014not just what did.',
+    badge: 'Proof of non-action',
+    color: 'cyan',
+  },
+  {
+    icon: Network,
+    title: 'Provenance DAG',
+    description: 'Track the causal chain across agents, services, and time with directed acyclic graph verification.',
+    badge: 'Cascading trust verification',
+    color: 'violet',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Third-Party Verifiable',
+    description: 'Anyone can verify a receipt without trusting NotaryOS. Zero-trust verification by default.',
+    badge: 'Zero-trust by default',
+    color: 'cyan',
+  },
+];
+
+const pricingTiers = [
+  {
+    name: 'Starter',
+    price: '$0',
+    period: '/month',
+    highlight: false,
+    badge: null as string | null,
+    stats: { receipts: '100/mo', verifications: '500/mo', rateLimit: '10/min', keyRotation: 'Manual' },
+    features: ['Single agent', 'Community support', 'Public API', 'Basic dashboard'],
+    cta: 'Start Free',
+  },
+  {
+    name: 'Explorer',
+    price: '$59',
+    period: '/month',
+    highlight: true,
+    badge: 'Most Popular',
+    stats: { receipts: '10,000/mo', verifications: '50,000/mo', rateLimit: '100/min', keyRotation: '30 days' },
+    features: ['Up to 10 agents', 'Email support', 'Counterfactual receipts', 'Webhook notifications'],
+    cta: 'Get Started',
+  },
+  {
+    name: 'Pro',
+    price: '$159',
+    period: '/month',
+    highlight: false,
+    badge: null as string | null,
+    stats: { receipts: '100,000/mo', verifications: '500,000/mo', rateLimit: '1,000/min', keyRotation: '7 days' },
+    features: ['Unlimited agents', 'Priority support', 'Provenance DAG', 'Custom webhooks', 'SSO'],
+    cta: 'Get Started',
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    highlight: false,
+    badge: null as string | null,
+    stats: { receipts: 'Unlimited', verifications: 'Unlimited', rateLimit: 'Custom', keyRotation: 'Auto' },
+    features: ['Dedicated infra', 'SLA guarantee', 'Air-gapped deploy', 'Custom integrations', 'Compliance reports'],
+    cta: 'Contact Sales',
+  },
+];
+
+const agents = [
+  { name: 'OPUS', role: 'Architecture', gradient: 'from-violet-500 to-purple-600' },
+  { name: 'TELE', role: 'Integration', gradient: 'from-blue-500 to-cyan-500' },
+  { name: 'KIMI', role: 'Design', gradient: 'from-pink-500 to-rose-500' },
+  { name: 'GROK', role: 'Security', gradient: 'from-amber-500 to-orange-500' },
+  { name: 'GEMINI', role: 'Optimization', gradient: 'from-green-500 to-emerald-500' },
+];
+
+/* ====================================================================== */
+/*  Sub-components                                                        */
+/* ====================================================================== */
+
+const StepCard: React.FC<{
   step: number;
   title: string;
   description: string;
-}
-
-const StepCard: React.FC<StepCardProps> = ({ step, title, description }) => (
-  <motion.div variants={fadeInUp} className="flex gap-4">
-    <div className="flex-shrink-0">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white font-bold">
-        {step}
-      </div>
+  icon: React.ReactNode;
+}> = ({ step, title, description, icon }) => (
+  <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover relative">
+    <span className="absolute top-4 right-4 text-4xl font-bold text-violet-500/20">{step}</span>
+    <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4 icon-glow">
+      {icon}
     </div>
-    <div>
-      <h4 className="text-white font-medium mb-1">{title}</h4>
-      <p className="text-sm text-gray-400">{description}</p>
-    </div>
+    <h3 className="text-white font-semibold mb-2">{title}</h3>
+    <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
   </motion.div>
 );
 
-// Use Case Card Component
-interface UseCaseCardProps {
+const UseCaseCard: React.FC<{
+  icon: React.ReactNode;
   title: string;
   description: string;
-  icon: React.ReactNode;
-}
-
-const UseCaseCard: React.FC<UseCaseCardProps> = ({ title, description, icon }) => (
-  <motion.div
-    variants={fadeInUp}
-    className="p-5 rounded-xl bg-gray-800/30 border border-gray-700/50 hover:border-purple-500/30 transition-colors"
-  >
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+}> = ({ icon, title, description }) => (
+  <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover group">
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
         {icon}
       </div>
       <div>
-        <h4 className="text-white font-medium mb-1">{title}</h4>
-        <p className="text-sm text-gray-400">{description}</p>
+        <h3 className="text-white font-semibold mb-2">{title}</h3>
+        <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
       </div>
     </div>
   </motion.div>
 );
 
-// FAQ Item Component
-interface FAQItemProps {
-  question: string;
-  answer: string;
+interface PricingTierProps {
+  name: string;
+  price: string;
+  period: string;
+  highlight: boolean;
+  badge: string | null;
+  stats: { receipts: string; verifications: string; rateLimit: string; keyRotation: string };
+  features: string[];
+  cta: string;
 }
 
-const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+const PricingTier: React.FC<PricingTierProps> = ({
+  name,
+  price,
+  period,
+  highlight,
+  badge,
+  stats,
+  features: tierFeatures,
+  cta,
+}) => (
+  <motion.div
+    variants={fadeInUp}
+    className={`rounded-xl p-6 flex flex-col ${highlight ? 'pricing-highlight' : 'glass-card'}`}
+  >
+    {badge && (
+      <span className="inline-flex self-start items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-500/20 text-violet-300 border border-violet-500/30 mb-3">
+        <Sparkles className="w-3 h-3" />
+        {badge}
+      </span>
+    )}
+    <h3 className="text-lg font-semibold text-white">{name}</h3>
+    <div className="mt-2 mb-4">
+      <span className="text-3xl font-bold text-white">{price}</span>
+      {period && <span className="text-gray-400 text-sm">{period}</span>}
+    </div>
+    <div className="space-y-2 mb-4 text-xs">
+      <div className="flex justify-between text-gray-400"><span>Receipts</span><span className="text-white">{stats.receipts}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Verifications</span><span className="text-white">{stats.verifications}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Rate limit</span><span className="text-white">{stats.rateLimit}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Key rotation</span><span className="text-white">{stats.keyRotation}</span></div>
+    </div>
+    <div className="section-divider mb-4" />
+    <ul className="space-y-2 flex-1 mb-6">
+      {tierFeatures.map((f, i) => (
+        <li key={i} className="flex items-center gap-2 text-sm text-gray-400">
+          <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+          <span>{f}</span>
+        </li>
+      ))}
+    </ul>
+    <Link
+      href={name === 'Enterprise' ? '/about' : '/sign-up'}
+      className={`block text-center py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+        highlight
+          ? 'bg-gradient-to-r from-violet-600 to-cyan-600 text-white hover:from-violet-500 hover:to-cyan-500 btn-shine'
+          : 'border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600'
+      }`}
+    >
+      {cta}
+    </Link>
+  </motion.div>
+);
+
+const AgentCard: React.FC<{ name: string; role: string; gradient: string }> = ({ name, role, gradient }) => (
+  <motion.div variants={fadeInUp} className="glass-card rounded-xl p-4 text-center w-28">
+    <div className={`w-10 h-10 mx-auto rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-sm mb-2`}>
+      {name[0]}
+    </div>
+    <p className="text-white text-sm font-medium">{name}</p>
+    <p className="text-gray-500 text-xs">{role}</p>
+  </motion.div>
+);
+
+/* ====================================================================== */
+/*  Particles (disabled on mobile — KIMI recommendation)                  */
+/* ====================================================================== */
+
+const Particles: React.FC = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    setIsMobile(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 15}s`,
+        size: `${3 + Math.random() * 3}px`,
+      })),
+    []
+  );
+
+  if (isMobile) return null;
 
   return (
-    <motion.div
-      variants={fadeInUp}
-      className="border-b border-gray-700/50 last:border-0"
-    >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full py-4 flex items-center justify-between text-left"
-      >
-        <span className="text-white font-medium">{question}</span>
-        <ChevronRight
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+    <div className="particles">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="particle"
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size, animationDelay: p.delay }}
         />
-      </button>
-      {isOpen && (
-        <motion.p
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="pb-4 text-sm text-gray-400"
-        >
-          {answer}
-        </motion.p>
-      )}
-    </motion.div>
+      ))}
+    </div>
   );
 };
 
-// Sample Receipt JSON for display
-const sampleReceipt = `{
-  "receipt_hash": "sha256:a1b2c3d4...",
-  "signature": "base64:SGVsbG8gV29y...",
-  "signed_at": "2026-01-31T10:30:00Z",
-  "signer_id": "notary-v1-ed25519",
-  "chain": {
-    "previous_hash": "sha256:0000...genesis",
-    "sequence_number": 42
-  }
-}`;
+/* ====================================================================== */
+/*  MAIN COMPONENT                                                        */
+/* ====================================================================== */
 
 export const LandingPage: React.FC = () => {
   const router = useRouter();
-  const [copied, setCopied] = React.useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const handleCopyReceipt = () => {
-    navigator.clipboard.writeText(sampleReceipt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">NotaryOS</span>
-            </Link>
-
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
-                About
-              </Link>
-              <a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Product
-              </a>
-              <a href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">
-                How it works
-              </a>
-              <Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Pricing
-              </Link>
-              <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Docs
-              </Link>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex items-center gap-3">
-              <a
-                href="https://github.com/hellothere012/notaryos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg text-sm font-medium transition-all"
-              >
-                <Github className="w-4 h-4" />
-                View on GitHub
-              </a>
-              <button
-                onClick={() => router.push('/docs#quickstart')}
-                className="btn-primary flex items-center gap-2 text-sm"
-              >
-                Get Started
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+      {/* ================================================================ */}
+      {/*  1. HERO                                                         */}
+      {/* ================================================================ */}
+      <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">
+        <div className="absolute inset-0 aurora-bg" />
+        <Particles />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl animate-pulse" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left: Copy */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={staggerContainer}
-            >
-              <motion.div variants={fadeInUp} className="mb-4">
-                <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-sm text-purple-300">
-                  <Zap className="w-3.5 h-3.5" />
-                  2.39ms verification — built on the ATS Protocol engine
+            <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
+              <motion.div variants={fadeInUp} className="flex flex-wrap gap-2 mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-violet-300">
+                  <Shield className="w-3 h-3" /> Tamper-proof signatures
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-cyan-300">
+                  <Eye className="w-3 h-3" /> Counterfactual receipts
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-green-300">
+                  <Zap className="w-3 h-3" /> 1,185 receipts/sec
                 </span>
               </motion.div>
 
-              <motion.h1
-                variants={fadeInUp}
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
-              >
-                Know what your AI did.
-                <br />
-                <span className="gradient-text">Prove what it didn't.</span>
+              <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+                Cryptographic receipts for{' '}
+                <span className="gradient-text">every AI action</span>
               </motion.h1>
 
-              <motion.p
-                variants={fadeInUp}
-                className="text-lg text-gray-400 mb-8 max-w-xl"
-              >
-                NotaryOS creates tamper-proof receipts for every AI agent action—including
-                cryptographic proof when an agent <em className="text-purple-300 not-italic font-medium">chose not to act</em>.
-                Verify signatures, chain integrity, and decision provenance in seconds.
+              <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8 max-w-xl leading-relaxed">
+                NotaryOS seals, chains, and verifies what your agents did&mdash;and what they
+                chose <em>not</em> to do. Tamper-proof. Third-party verifiable. Free tier: 100 receipts/month.
               </motion.p>
 
-              <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-4 mb-8">
-                <button
-                  onClick={() => router.push('/docs#quickstart')}
-                  className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
+              <motion.div variants={fadeInUp} className="flex flex-wrap gap-4">
+                <Link
+                  href="/sign-up"
+                  className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white rounded-lg font-medium transition-all duration-200 active:scale-95 animate-pulse-glow btn-shine"
                 >
-                  Start Proving in 5 Minutes
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                  Get Started Free <ArrowRight className="w-5 h-5" />
+                </Link>
                 <button
                   onClick={() => router.push('/verify?sample=true')}
                   className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
                 >
-                  <Shield className="w-5 h-5" />
-                  Verify a Receipt Now
+                  <Shield className="w-5 h-5" /> Verify a Receipt
                 </button>
-              </motion.div>
-
-              <motion.p variants={fadeInUp} className="text-sm text-gray-500 mb-6">
-                Free tier: 1,000 receipts/month. No credit card required.
-              </motion.p>
-
-              <motion.div
-                variants={fadeInUp}
-                className="flex flex-wrap items-center gap-6 text-sm text-gray-400"
-              >
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  Tamper-proof signatures
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  Counterfactual receipts
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  1,185 receipts/sec throughput
-                </span>
               </motion.div>
             </motion.div>
 
-            {/* Right: Receipt Preview */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="relative"
+              className="hidden lg:block animate-float"
             >
-              <div className="relative bg-gray-800/80 rounded-2xl border border-gray-700 overflow-hidden shadow-2xl">
-                {/* Terminal Header */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-gray-800 border-b border-gray-700">
+              <div className="code-window rounded-xl overflow-hidden">
+                <div className="code-header flex items-center gap-2 px-4 py-3">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="ml-2 text-sm text-gray-500">receipt.json</span>
-                  <button
-                    onClick={handleCopyReceipt}
-                    className="ml-auto p-1 text-gray-400 hover:text-white transition-colors"
-                  >
-                    {copied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
+                  <span className="ml-2 text-xs text-gray-500 font-mono">notary_demo.py</span>
                 </div>
+                <pre className="p-5 text-sm text-gray-300 font-mono leading-relaxed overflow-x-auto">
+                  <code>{`from notaryos import NotaryClient
 
-                {/* Code */}
-                <pre className="p-4 text-sm text-gray-300 font-mono overflow-x-auto">
-                  <code>{sampleReceipt}</code>
+notary = NotaryClient(api_key="sk_live_...")
+
+# Seal an action — tamper-proof receipt
+receipt = notary.seal(
+    action="trade.executed",
+    agent_id="trading-bot-v3",
+    payload={"pair": "BTC/USD", "qty": 0.5}
+)
+
+# Verify — anyone can, zero trust
+result = notary.verify(receipt.hash)
+assert result.valid  # True`}</code>
                 </pre>
-
-                {/* Verification Badge */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg glow-green">
-                    <CheckCircle className="w-10 h-10 text-white" />
-                  </div>
-                </div>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Demo Teaser Strip */}
-      <section className="py-12 bg-gray-800/30 border-y border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Don&apos;t trust us. Verify the math.</h2>
-              <p className="text-gray-400">
-                Paste any receipt into the public verifier. See exactly what passed, what failed, and why—no account needed.
-              </p>
+      {/* ================================================================ */}
+      {/*  2. VERIFIER CTA                                                 */}
+      {/* ================================================================ */}
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="glass-card rounded-2xl p-8 text-center">
+            <h2 className="text-2xl font-bold text-white mb-3">Don&apos;t trust us. Verify the math.</h2>
+            <p className="text-gray-400 mb-6 max-w-xl mx-auto">
+              Paste any NotaryOS receipt and verify it instantly&mdash;no account required.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Link href="/verify" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg font-medium text-sm transition-all btn-shine">
+                <Shield className="w-4 h-4" /> Open Verifier
+              </Link>
+              <Link href="/docs#receipt-spec" className="btn-ghost flex items-center gap-2 text-sm">
+                Read the Spec <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push('/verify')}
-                className="btn-primary flex items-center gap-2"
-              >
-                Open Verifier
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => router.push('/verify?sample=true')}
-                className="btn-ghost flex items-center gap-2"
-              >
-                Load Sample Receipt
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Notary Section */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              Logs tell you what happened.{' '}
-              <span className="gradient-text">Receipts prove it.</span>
-            </motion.h2>
-            <motion.p
-              variants={fadeInUp}
-              className="text-lg text-gray-400 max-w-3xl mx-auto"
-            >
-              AI agents make thousands of decisions daily across tools, services,
-              and teams. NotaryOS receipts are tamper-proof, mathematically verified records—so
-              every action (and every deliberate inaction) can be proven, not just claimed.
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            <motion.div variants={fadeInUp} className="card text-center">
-              <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-7 h-7 text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Instant verification</h3>
-              <p className="text-sm text-gray-400">
-                Validate signatures, chain continuity, and timestamps in one place.
-              </p>
-            </motion.div>
-
-            <motion.div variants={fadeInUp} className="card text-center">
-              <div className="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-7 h-7 text-cyan-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Explainable failures</h3>
-              <p className="text-sm text-gray-400">
-                Clear, actionable errors—no guessing what broke.
-              </p>
-            </motion.div>
-
-            <motion.div variants={fadeInUp} className="card text-center">
-              <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                <FileJson className="w-7 h-7 text-green-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Portable proof</h3>
-              <p className="text-sm text-gray-400">
-                Receipts are JSON and can be verified offline or in CI.
-              </p>
-            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Counterfactual Receipts Section */}
-      <section className="py-20 lg:py-28 bg-gradient-to-b from-gray-900 via-purple-900/10 to-gray-900">
+      {/* ================================================================ */}
+      {/*  3. COUNTERFACTUAL RECEIPTS                                      */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.div variants={fadeInUp} className="text-center mb-16">
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-sm text-cyan-300 mb-4">
-                What makes NotaryOS different
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-12">
+              <span className="inline-flex items-center gap-2 px-3 py-1 glass-card rounded-full text-sm text-violet-300 mb-4">
+                <Sparkles className="w-3.5 h-3.5" /> What makes NotaryOS different
               </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Proof of what your AI{' '}
-                <span className="gradient-text">chose not to do.</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+                Proof of what your AI chose <span className="gradient-text">not</span> to do
               </h2>
-              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-                Any logging system records what happened. Only NotaryOS can cryptographically prove
-                what <em className="text-cyan-300 not-italic">didn't</em> happen—and why.
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Counterfactual Receipts&mdash;cryptographic proof that your AI considered an action and deliberately declined it.
               </p>
             </motion.div>
 
-            {/* Counterfactual Explanation Cards */}
-            <motion.div variants={staggerContainer} className="grid lg:grid-cols-2 gap-8 mb-16">
-              {/* Left: The Problem */}
-              <motion.div
-                variants={fadeInUp}
-                className="p-8 rounded-2xl bg-gray-800/50 border border-gray-700/50"
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white">Without counterfactual receipts</h3>
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3 text-gray-400">
-                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
-                    <span>&quot;Did our AI follow the guardrails?&quot; — <span className="text-gray-500 italic">You hope so. You can&apos;t prove it.</span></span>
-                  </li>
-                  <li className="flex items-start gap-3 text-gray-400">
-                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
-                    <span>&quot;Why didn&apos;t your safeguards stop this?&quot; — <span className="text-gray-500 italic">You claim they worked. No evidence.</span></span>
-                  </li>
-                  <li className="flex items-start gap-3 text-gray-400">
-                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
-                    <span>&quot;Prove your AI didn&apos;t cause the incident.&quot; — <span className="text-gray-500 italic">Absence of logs proves nothing.</span></span>
-                  </li>
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-gray-500" /> Without NotaryOS
+                </h3>
+                <ul className="space-y-3 text-sm text-gray-500">
+                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> No record when an agent <em>doesn&apos;t</em> act</li>
+                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> &ldquo;It chose not to trade&rdquo; is just a claim</li>
+                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> Compliance gaps for regulated industries</li>
+                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> Disputes devolve into trust arguments</li>
                 </ul>
               </motion.div>
 
-              {/* Right: The Solution */}
-              <motion.div
-                variants={fadeInUp}
-                className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/30 to-cyan-900/20 border border-purple-500/20"
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-white">With counterfactual receipts</h3>
-                </div>
-                <ul className="space-y-4">
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Capability Proof</strong> — Your AI had the permission to act</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Opportunity Proof</strong> — The conditions for action were met</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-gray-300">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span><strong className="text-white">Decision Proof</strong> — It deliberately chose restraint, with a reason</span>
-                  </li>
+              <motion.div variants={fadeInUp} className="pricing-highlight rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-400 icon-glow" /> With NotaryOS
+                </h3>
+                <ul className="space-y-3 text-sm text-gray-300">
+                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Sealed receipt proves the agent saw an opportunity</li>
+                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Cryptographic proof it declined deliberately</li>
+                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Third-party verifiable without trust</li>
+                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Exportable evidence for compliance</li>
                 </ul>
-                <p className="mt-6 text-sm text-purple-300 border-t border-purple-500/20 pt-4">
-                  Think of it like a notary who witnesses refusals — timestamped, signed proof that your AI
-                  evaluated the situation and made the right call.
-                </p>
               </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================================================================ */}
+      {/*  4. FEATURES (4 cards)                                           */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-gray-800/20 to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Trust infrastructure for autonomous agents</h2>
+              <p className="text-lg text-gray-400 max-w-2xl mx-auto">Every action cryptographically sealed. Every decision verifiable.</p>
             </motion.div>
 
-            {/* Counter-Receipt Callout */}
-            <motion.div
-              variants={fadeInUp}
-              className="p-6 rounded-xl bg-gray-800/30 border border-gray-700/50 max-w-3xl mx-auto text-center"
-            >
-              <h4 className="text-white font-semibold mb-2">Counter-Sealed Receipts: Mutual Attestation</h4>
-              <p className="text-gray-400 text-sm">
-                When both parties sign a receipt, you get <strong className="text-white">counter-sealed</strong> proof.
-                The sending agent signs the action, the receiving agent counter-signs. Two independent
-                cryptographic signatures, one undeniable record. This isn&apos;t logging—it&apos;s evidence.
-              </p>
+            <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((f) => (
+                <motion.div key={f.title} variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover group">
+                  <div className={`w-12 h-12 rounded-lg ${f.color === 'violet' ? 'bg-violet-500/20' : 'bg-cyan-500/20'} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <f.icon className={`w-6 h-6 ${f.color === 'violet' ? 'text-violet-400' : 'text-cyan-400'}`} />
+                  </div>
+                  <span className="inline-block text-xs text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-full mb-3">{f.badge}</span>
+                  <h3 className="text-white font-semibold mb-2">{f.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{f.description}</p>
+                </motion.div>
+              ))}
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 lg:py-28 bg-gray-800/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              Everything you need for{' '}
-              <span className="gradient-text">production-grade accountability.</span>
-            </motion.h2>
-          </motion.div>
+      {/* ================================================================ */}
+      {/*  5. COMPARISON TABLE                                             */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Not another logging tool.</h2>
+              <p className="text-lg text-gray-400">NotaryOS provides cryptographic guarantees that traditional logging simply cannot.</p>
+            </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            <FeatureCard
-              icon={<Shield className="w-6 h-6 text-purple-400" />}
-              title="Verify receipts in seconds"
-              bullets={[
-                'Paste JSON or drag-and-drop a file',
-                'One-click sample receipt for demos',
-                'Copy/clear + keyboard shortcut support',
-                'Animated, readable results',
-              ]}
-            />
+            <motion.div variants={fadeInUp} className="hidden sm:block glass-card rounded-2xl overflow-hidden">
+              <table className="w-full comparison-table">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left text-gray-400 font-medium py-4 px-6">Feature</th>
+                    <th className="text-center text-violet-400 font-semibold py-4 px-4">NotaryOS</th>
+                    <th className="text-center text-gray-500 font-medium py-4 px-4">Traditional Logging</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows.map((row, i) => (
+                    <tr key={i}>
+                      <td className="text-gray-300 py-3 px-6">{row.feature}</td>
+                      <td className="text-center py-3 px-4">
+                        {row.notary === 'check' ? <CheckCircle className="w-5 h-5 text-green-400 mx-auto" /> : <span className="text-green-400 font-medium">{row.notary}</span>}
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        {row.traditional === 'dash' ? <span className="text-gray-600">&mdash;</span> : <span className="text-gray-500">{row.traditional}</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
 
-            <FeatureCard
-              icon={<Link2 className="w-6 h-6 text-purple-400" />}
-              title="See the chain, not just the verdict"
-              bullets={[
-                'Chain position + linkage checks',
-                'Signer identity surfaced clearly',
-                'Spot breaks and mismatches instantly',
-              ]}
-            />
-
-            <FeatureCard
-              icon={<Code className="w-6 h-6 text-purple-400" />}
-              title="Raw details when you need them"
-              bullets={[
-                'Overview for humans',
-                'Raw JSON for debugging',
-                'Crypto details for auditors',
-              ]}
-            />
-
-            <FeatureCard
-              icon={<History className="w-6 h-6 text-purple-400" />}
-              title="Track verifications over time"
-              bullets={[
-                'Search by receipt hash',
-                'Filter valid/invalid',
-                'Export CSV/JSON',
-              ]}
-              badge="Auth"
-            />
-
-            <FeatureCard
-              icon={<Key className="w-6 h-6 text-purple-400" />}
-              title="Integrate safely"
-              bullets={[
-                'Scoped permissions',
-                'IP allowlist',
-                'Expiration + revoke/rotate',
-              ]}
-              badge="Auth"
-            />
-
-            <FeatureCard
-              icon={<Settings className="w-6 h-6 text-purple-400" />}
-              title="Operate like a real service"
-              bullets={[
-                'Signer configuration',
-                'Key rotation',
-                'Usage and status metrics',
-              ]}
-              badge="Admin"
-            />
+            <motion.div variants={staggerContainer} className="sm:hidden space-y-3">
+              {comparisonRows.map((row, i) => (
+                <motion.div key={i} variants={fadeInUp} className="glass-card rounded-lg p-4">
+                  <p className="text-white font-medium text-sm mb-2">{row.feature}</p>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-green-400 flex items-center gap-1">
+                      {row.notary === 'check' ? <CheckCircle className="w-3.5 h-3.5" /> : row.notary}
+                      <span className="text-gray-500 ml-1">NotaryOS</span>
+                    </span>
+                    <span className="text-gray-600">{row.traditional === 'dash' ? '\u2014' : row.traditional}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 lg:py-28">
+      {/* ================================================================ */}
+      {/*  6. TARGET AUDIENCE                                              */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              How verification works
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="text-lg text-gray-400">
-              NotaryOS checks math, not promises. Here&apos;s the flow:
-            </motion.p>
-          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Built for teams that take agent trust seriously.</h2>
+            </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="max-w-2xl mx-auto space-y-8"
-          >
-            <StepCard
-              step={1}
-              title="You provide a receipt"
-              description="Paste JSON or upload a receipt file produced by an agent system."
-            />
-            <StepCard
-              step={2}
-              title="Notary parses + normalizes"
-              description="We validate structure, required fields, and canonicalization rules to ensure the signed bytes match what you see."
-            />
-            <StepCard
-              step={3}
-              title="Cryptography is verified"
-              description="We verify the signature using the declared algorithm and signer identity (e.g., Ed25519 public key)."
-            />
-            <StepCard
-              step={4}
-              title="Chain + time are checked"
-              description="We validate chain linkage and timestamp constraints, then return a human-readable verdict with full details."
-            />
-          </motion.div>
+            <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
+              <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
+                <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4"><Code className="w-6 h-6 text-violet-400" /></div>
+                <h3 className="text-lg font-semibold text-white mb-4">Agent Developers</h3>
+                <ul className="space-y-3">
+                  {['Add accountability in 3 lines of code', 'Python, TypeScript, and Go SDKs', 'Works with any agent framework'].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
+                  ))}
+                </ul>
+              </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-            className="flex justify-center gap-4 mt-12"
-          >
-            <button
-              onClick={() => router.push('/verify?sample=true')}
-              className="btn-primary flex items-center gap-2"
-            >
-              Try a Sample Receipt
-            </button>
-            <Link
-              href="/docs"
-              className="btn-ghost flex items-center gap-2"
-            >
-              Read the Receipt Spec
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
+                <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4"><Server className="w-6 h-6 text-cyan-400" /></div>
+                <h3 className="text-lg font-semibold text-white mb-4">Platform Teams</h3>
+                <ul className="space-y-3">
+                  {['Audit trail for every agent interaction', 'Provenance tracking across microservices', 'Self-hostable for air-gapped environments'].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
+                <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center mb-4"><Scale className="w-6 h-6 text-amber-400" /></div>
+                <h3 className="text-lg font-semibold text-white mb-4">Compliance &amp; Legal</h3>
+                <ul className="space-y-3">
+                  {['Counterfactual proofs for regulated industries', 'Exportable verification history', 'Cryptographic evidence for disputes'].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
+                  ))}
+                </ul>
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Use Cases Section */}
-      <section className="py-20 lg:py-28 bg-gray-800/20">
+      {/* ================================================================ */}
+      {/*  7. HOW IT WORKS (4-column)                                      */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-gray-800/20 to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              Built for builders, compliance teams, and CISOs
-            </motion.h2>
-          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How verification works</h2>
+              <p className="text-lg text-gray-400">NotaryOS checks math, not promises.</p>
+            </motion.div>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-2 gap-6"
-          >
-            <UseCaseCard
-              icon={<Users className="w-5 h-5 text-cyan-400" />}
-              title="Multi-agent orchestration"
-              description="Prove which agent produced what—and in what sequence—when workflows span tools and services."
-            />
-            <UseCaseCard
-              icon={<AlertTriangle className="w-5 h-5 text-cyan-400" />}
-              title="Incident response"
-              description="Validate whether a suspect 'agent action' receipt is authentic before you trust it in investigations."
-            />
-            <UseCaseCard
-              icon={<Terminal className="w-5 h-5 text-cyan-400" />}
-              title="CI / QA verification"
-              description="Fail builds when receipts don't verify. Treat trust as a testable invariant."
-            />
-            <UseCaseCard
-              icon={<FileJson className="w-5 h-5 text-cyan-400" />}
-              title="Compliance & audit trails"
-              description="Export verification history and preserve evidence with cryptographic integrity checks."
-            />
+            <div className="relative">
+              <div className="hidden lg:block absolute top-1/2 left-[12.5%] right-[12.5%] h-px">
+                <div className="w-full h-full bg-gradient-to-r from-violet-500/30 via-cyan-500/30 to-violet-500/30" />
+              </div>
+              <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+                <StepCard step={1} title="You provide a receipt" description="Paste JSON or upload a receipt file produced by an agent system." icon={<FileJson className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={2} title="Notary parses + normalizes" description="We validate structure, required fields, and canonicalization to ensure signed bytes match." icon={<FileCheck className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={3} title="Cryptography is verified" description="The signature is verified using the declared algorithm and signer identity (e.g., Ed25519)." icon={<Key className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={4} title="Chain + time checked" description="Chain linkage and timestamp constraints verified, then a readable verdict with full details." icon={<Link2 className="w-6 h-6 text-violet-400" />} />
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ATS Protocol Engine Section */}
-      <section className="py-20 lg:py-28">
+      {/* ================================================================ */}
+      {/*  8. USE CASES                                                    */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.div
-              variants={fadeInUp}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/30 via-gray-900 to-cyan-900/20 border border-purple-500/20 p-8 lg:p-12"
-            >
-              {/* Background glow */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Built for builders, compliance teams, and CISOs</h2>
+            </motion.div>
+            <motion.div variants={staggerContainer} className="grid md:grid-cols-2 gap-6">
+              <UseCaseCard icon={<Users className="w-5 h-5 text-cyan-400" />} title="Multi-agent orchestration" description="Prove which agent produced what\u2014and in what sequence\u2014when workflows span tools and services." />
+              <UseCaseCard icon={<AlertTriangle className="w-5 h-5 text-cyan-400" />} title="Incident response" description="Validate whether a suspect agent action receipt is authentic before you trust it in investigations." />
+              <UseCaseCard icon={<Terminal className="w-5 h-5 text-cyan-400" />} title="CI / QA verification" description="Fail builds when receipts don&apos;t verify. Treat trust as a testable invariant." />
+              <UseCaseCard icon={<FileJson className="w-5 h-5 text-cyan-400" />} title="Compliance &amp; audit trails" description="Export verification history and preserve evidence with cryptographic integrity checks." />
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ================================================================ */}
+      {/*  9. ATS PROTOCOL ENGINE                                          */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-violet-900/5 to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.div variants={fadeInUp} className="glass rounded-2xl relative overflow-hidden p-8 lg:p-12">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl" />
 
               <div className="relative grid lg:grid-cols-2 gap-8 items-center">
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-medium text-purple-300 bg-purple-500/10 px-3 py-1 rounded-full">
-                      The Engine Behind NotaryOS
-                    </span>
-                  </div>
-
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                    The only compliance layer that{' '}
-                    <span className="gradient-text">keeps up with inference speed.</span>
+                  <span className="text-xs font-medium text-violet-300 bg-violet-500/10 px-3 py-1 rounded-full">The Engine Behind NotaryOS</span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 mt-4">
+                    The only compliance layer that <span className="gradient-text">keeps up with inference speed.</span>
                   </h2>
+                  <p className="text-gray-400 mb-6 leading-relaxed">Powered by the ATS Protocol&mdash;a proprietary high-performance agent communication engine with 7-layer zero-trust security.</p>
 
-                  <p className="text-gray-400 mb-6">
-                    NotaryOS is powered by the ATS Protocol—a proprietary high-performance agent communication
-                    engine with 7-layer zero-trust security. Receipts are issued, signed, and chained without
-                    slowing down your agents.
-                  </p>
-
-                  {/* Performance Stats */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                      <div className="text-2xl font-bold text-white">2.39ms</div>
-                      <div className="text-xs text-gray-400">P50 verification latency</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                      <div className="text-2xl font-bold text-white">1,185</div>
-                      <div className="text-xs text-gray-400">Receipts per second</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                      <div className="text-2xl font-bold text-white">100%</div>
-                      <div className="text-xs text-gray-400">Success rate in production</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
-                      <div className="text-2xl font-bold text-white">7 layers</div>
-                      <div className="text-xs text-gray-400">Zero-trust security</div>
-                    </div>
+                    {[
+                      { value: '2.39ms', label: 'P50 verification latency' },
+                      { value: '1,185', label: 'Receipts per second' },
+                      { value: '100%', label: 'Success rate in production' },
+                      { value: '7 layers', label: 'Zero-trust security' },
+                    ].map((stat, i) => (
+                      <div key={i} className="p-3 rounded-lg glass-card">
+                        <div className="text-2xl font-bold stat-number">{stat.value}</div>
+                        <div className="text-xs text-gray-400">{stat.label}</div>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="flex flex-wrap gap-3">
-                    <Link
-                      href="/docs"
-                      className="btn-primary flex items-center gap-2 text-sm"
-                    >
-                      See the Docs
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <Link
-                      href="/pricing"
-                      className="btn-ghost flex items-center gap-2 text-sm"
-                    >
-                      View Pricing
-                    </Link>
+                    <Link href="/docs" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg text-sm font-medium transition-all btn-shine">See the Docs <ArrowRight className="w-4 h-4" /></Link>
+                    <Link href="/pricing" className="btn-ghost flex items-center gap-2 text-sm">View Pricing</Link>
                   </div>
                 </div>
 
-                {/* Code preview */}
-                <div className="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 border-b border-gray-700">
+                <div className="code-window rounded-xl overflow-hidden">
+                  <div className="code-header flex items-center gap-2 px-4 py-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
@@ -865,8 +701,6 @@ receipt = notary.seal(
 # Or prove what DIDN'T happen
 counterfactual = notary.seal_counterfactual(
     action_declined="trade.executed",
-    capability="trade_usdc",
-    opportunity={"spread": "0.02%"},
     reason="risk_threshold_exceeded"
 )
 
@@ -881,288 +715,126 @@ print(result.valid)  # True`}</code>
         </div>
       </section>
 
-      {/* Security Section */}
-      <section id="security" className="py-20 lg:py-28">
+      {/* ================================================================ */}
+      {/*  10. PRICING PREVIEW                                             */}
+      {/* ================================================================ */}
+      <section id="pricing" className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Trust signals you can verify
-              </h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Simple, transparent pricing</h2>
+              <p className="text-lg text-gray-400">Start free. Scale as you grow. No surprises.</p>
             </motion.div>
-
-            <motion.div
-              variants={staggerContainer}
-              className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {[
-                {
-                  icon: <Github className="w-6 h-6 text-purple-400" />,
-                  title: 'Open source core',
-                  desc: 'Review the verification logic and receipt format in public.',
-                },
-                {
-                  icon: <Server className="w-6 h-6 text-purple-400" />,
-                  title: 'Offline-verifiable',
-                  desc: 'Validate receipts without trusting our UI.',
-                },
-                {
-                  icon: <Key className="w-6 h-6 text-purple-400" />,
-                  title: 'Key rotation support',
-                  desc: 'Operational hygiene for real deployments.',
-                },
-                {
-                  icon: <AlertTriangle className="w-6 h-6 text-purple-400" />,
-                  title: 'Clear failure modes',
-                  desc: "If it fails, you'll know exactly why.",
-                },
-              ].map((item, i) => (
-                <motion.div key={i} variants={fadeInUp} className="card text-center">
-                  <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                    {item.icon}
-                  </div>
-                  <h3 className="text-white font-medium mb-2">{item.title}</h3>
-                  <p className="text-sm text-gray-400">{item.desc}</p>
-                </motion.div>
-              ))}
+            <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {pricingTiers.map((tier) => <PricingTier key={tier.name} {...tier} />)}
             </motion.div>
-
-            <motion.div variants={fadeInUp} className="flex justify-center gap-6 mt-12 text-sm">
-              <a href="#" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                Security practices <ExternalLink className="w-3 h-3" />
-              </a>
-              <a href="#" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                Responsible disclosure <ExternalLink className="w-3 h-3" />
-              </a>
-              <a href="#" className="text-purple-400 hover:text-purple-300 flex items-center gap-1">
-                Status <ExternalLink className="w-3 h-3" />
-              </a>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Open Source Section */}
-      <section id="open-source" className="py-20 lg:py-28 bg-gray-800/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              Open source core. Hosted demo for everyone.
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">
-              Notary's verification core is open source so teams can audit, fork, and self-host.
-              We also run a hosted demo so anyone can validate receipts instantly without setup.
-            </motion.p>
-
-            <motion.ul variants={fadeInUp} className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 mb-10">
-              <li className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                Self-host in your environment
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                Run locally for air-gapped verification
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                Use the hosted demo for quick checks
-              </li>
-            </motion.ul>
-
-            <motion.div variants={fadeInUp} className="flex justify-center gap-4">
-              <a
-                href="https://github.com/hellothere012/notaryos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary flex items-center gap-2"
-              >
-                <Github className="w-5 h-5" />
-                View on GitHub
-              </a>
-              <Link
-                href="/docs"
-                className="btn-secondary flex items-center gap-2"
-              >
-                Run Locally (Docker)
+            <motion.div variants={fadeInUp} className="text-center mt-8">
+              <Link href="/pricing" className="text-violet-400 hover:text-violet-300 text-sm font-medium inline-flex items-center gap-1">
+                See full pricing details <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-12 text-center"
-            >
-              Frequently asked questions
-            </motion.h2>
-
-            <motion.div variants={staggerContainer} className="card">
-              <FAQItem
-                question="What is a counterfactual receipt?"
-                answer="A counterfactual receipt is cryptographic proof that your AI agent had the capability and opportunity to act, but deliberately chose not to. It documents restraint with the same mathematical rigor as documenting action."
-              />
-              <FAQItem
-                question="What is a counter-sealed receipt?"
-                answer="When both the sending and receiving agents sign the same receipt, you get counter-sealed (dual-attestation) proof. Two independent signatures, one undeniable record. This is stronger than any single-party log."
-              />
-              <FAQItem
-                question="Do I need an account?"
-                answer="No for the public verifier — paste any receipt and check it instantly. Accounts are required for issuing receipts, history, API keys, and admin features. The free tier includes 1,000 receipts per month."
-              />
-              <FAQItem
-                question="How fast is verification?"
-                answer="NotaryOS runs on the ATS Protocol engine with 2.39ms P50 latency and handles 1,185 receipts per second. Signing and verification add near-zero overhead to your agent pipeline."
-              />
-              <FAQItem
-                question="Is this a blockchain?"
-                answer="No. Receipts use per-agent hash chains for tamper-evidence, not a distributed ledger. Each agent maintains its own chain, linked by cryptographic hashes. It's lightweight, fast, and doesn't require consensus."
-              />
-              <FAQItem
-                question="Can I verify offline?"
-                answer="Yes. Receipts are portable JSON with embedded signatures. The open source verification core can run locally, in CI/CD pipelines, or air-gapped — no network call required."
-              />
+      {/* ================================================================ */}
+      {/*  11. AI COLLABORATION                                            */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-gray-800/20 to-gray-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="text-center">
+            <motion.div variants={fadeInUp} className="mb-8">
+              <span className="inline-flex items-center gap-2 px-3 py-1 glass-card rounded-full text-sm text-violet-300 mb-4">
+                <Cpu className="w-3.5 h-3.5" /> Built by agents, for agents
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Multi-Agent Collaboration</h2>
             </motion.div>
+            <motion.div variants={staggerContainer} className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8">
+              {agents.map((agent) => <AgentCard key={agent.name} {...agent} />)}
+            </motion.div>
+            <motion.p variants={fadeInUp} className="text-sm text-gray-400 max-w-2xl mx-auto">
+              The first cryptographic receipt system designed through multi-agent collaboration.
+              Five specialized AI agents contributed architecture, integration, design, security, and optimization.
+            </motion.p>
           </motion.div>
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="py-20 lg:py-28 bg-gradient-to-b from-gray-900 to-purple-900/20">
+      {/* ================================================================ */}
+      {/*  12. CTA                                                         */}
+      {/* ================================================================ */}
+      <section className="py-16 sm:py-20 cta-gradient">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-3xl sm:text-4xl font-bold text-white mb-4"
-            >
-              When your AI acts, you have receipts.
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">
-              Start issuing tamper-proof receipts in 5 minutes. Free tier included—no credit card required.
-            </motion.p>
-
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-white mb-4">When your AI acts, you have receipts.</motion.h2>
+            <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">Start issuing tamper-proof receipts in 5 minutes. Free tier included&mdash;no credit card required.</motion.p>
             <motion.div variants={fadeInUp} className="flex justify-center gap-4 mb-8">
-              <button
-                onClick={() => router.push('/docs#quickstart')}
-                className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
-              >
-                Get Started Free
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => router.push('/verify?sample=true')}
-                className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
-              >
-                <Shield className="w-5 h-5" />
-                Verify a Receipt
+              <Link href="/sign-up" className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg font-medium transition-all btn-shine">
+                Get Started Free <ArrowRight className="w-5 h-5" />
+              </Link>
+              <button onClick={() => router.push('/verify?sample=true')} className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all">
+                <Shield className="w-5 h-5" /> Verify a Receipt
               </button>
             </motion.div>
-
             <motion.p variants={fadeInUp} className="text-sm text-gray-500">
-              Enterprise needs?{' '}
-              <Link href="/pricing" className="text-purple-400 hover:text-purple-300">
-                View pricing
-              </Link>{' '}
-              or{' '}
-              <a
-                href="https://github.com/hellothere012/notaryos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-purple-400 hover:text-purple-300"
-              >
-                explore the open source core
-              </a>.
+              Enterprise needs? <Link href="/pricing" className="text-violet-400 hover:text-violet-300">View pricing</Link> or <Link href="/docs" className="text-violet-400 hover:text-violet-300">read the docs</Link>.
             </motion.p>
           </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-gray-800">
+      {/* ================================================================ */}
+      {/*  13. FOOTER                                                      */}
+      {/* ================================================================ */}
+      <footer className="footer-gradient py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            {/* Product */}
             <div>
               <h4 className="text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/verify" className="text-gray-400 hover:text-white">Verifier</Link></li>
-                <li><Link href="/about" className="text-gray-400 hover:text-white">About</Link></li>
-                <li><Link href="/pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
-                <li><Link href="/history" className="text-gray-400 hover:text-white">History</Link></li>
-                <li><Link href="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
+                <li><Link href="/verify" className="text-gray-400 hover:text-white transition-colors">Verifier</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/history" className="text-gray-400 hover:text-white transition-colors">History</Link></li>
+                <li><Link href="/api-keys" className="text-gray-400 hover:text-white transition-colors">API Keys</Link></li>
               </ul>
             </div>
-
-            {/* Resources */}
             <div>
               <h4 className="text-white font-medium mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Receipt Spec</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Changelog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Status</a></li>
+                <li><Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Docs</Link></li>
+                <li><Link href="/docs#receipt-spec" className="text-gray-400 hover:text-white transition-colors">Receipt Spec</Link></li>
+                <li><Link href="/docs#changelog" className="text-gray-400 hover:text-white transition-colors">Changelog</Link></li>
+                <li><Link href="/status" className="text-gray-400 hover:text-white transition-colors">Status</Link></li>
               </ul>
             </div>
-
-            {/* Security */}
             <div>
               <h4 className="text-white font-medium mb-4">Security</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-400 hover:text-white">Security Practices</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Responsible Disclosure</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Privacy</a></li>
+                <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors">Security Practices</Link></li>
+                <li><Link href="/security#disclosure" className="text-gray-400 hover:text-white transition-colors">Responsible Disclosure</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
               </ul>
             </div>
-
-            {/* Open Source */}
             <div>
-              <h4 className="text-white font-medium mb-4">Open Source</h4>
+              <h4 className="text-white font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="https://github.com/hellothere012/notaryos" className="text-gray-400 hover:text-white">GitHub</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Contributing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">License</a></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
+                <li><Link href="/sign-up" className="text-gray-400 hover:text-white transition-colors">Sign Up</Link></li>
+                <li><Link href="/sign-in" className="text-gray-400 hover:text-white transition-colors">Log In</Link></li>
               </ul>
             </div>
           </div>
-
-          {/* Bottom */}
-          <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-gray-800">
+          <div className="section-divider mb-8" />
+          <div className="flex flex-col sm:flex-row items-center justify-between">
             <div className="flex items-center gap-3 mb-4 sm:mb-0">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
                 <Shield className="w-4 h-4 text-white" />
               </div>
-              <span className="text-gray-400 text-sm">NotaryOS</span>
+              <span className="text-gray-400 text-sm font-medium">NotaryOS</span>
             </div>
             <p className="text-gray-500 text-sm text-center sm:text-right">
-              Open source verification core. Hosted demo provided as-is.
+              &copy; {new Date().getFullYear()} NotaryOS. Cryptographic receipt verification for AI agents.
             </p>
           </div>
         </div>

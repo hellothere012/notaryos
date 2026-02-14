@@ -186,7 +186,7 @@ export const ProfilePage: React.FC = () => {
         return {
           gradient: 'from-gray-500 to-gray-600',
           label: 'Free',
-          features: ['100 verifications/mo', 'Documentation access', 'Public API'],
+          features: ['500 verifications/mo', 'Documentation access', 'Public API'],
         };
     }
   };

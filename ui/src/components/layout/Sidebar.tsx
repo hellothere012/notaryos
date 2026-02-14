@@ -81,7 +81,7 @@ export const Sidebar: React.FC = () => {
             <Shield className="w-5 h-5 text-purple-400" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white">Notary</h2>
+            <h2 className="text-sm font-semibold text-white">NotaryOS</h2>
             <p className="text-xs text-gray-500">Verification System</p>
           </div>
         </div>
