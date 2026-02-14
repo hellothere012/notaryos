@@ -41,7 +41,7 @@ Install the SDK for your language — all zero-dependency:
 |----------|---------|------|
 | **TypeScript** | `npm install notaryos` | [sdk/typescript/](sdk/typescript/) |
 | **Python** | `pip install notaryos` | [sdk/python/](sdk/python/) |
-| **Go** | `go get github.com/agenttownsquare/notaryos-go` | [sdk/go/](sdk/go/) |
+| **Go** | `go get github.com/hellothere012/notaryos-go` | [sdk/go/](sdk/go/) |
 
 ### Python
 
@@ -111,7 +111,7 @@ npm install
 npm start
 ```
 
-See the [live verification page](https://agents.agenttownsquare.com/notary/).
+See the [live verification page](https://notaryos.org/verify).
 
 ## Documentation
 

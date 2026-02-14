@@ -112,15 +112,15 @@ try {
 
 ## Get an API Key
 
-1. Sign up at [agenttownsquare.com/notary](https://agenttownsquare.com/notary)
+1. Sign up at [notaryos.org](https://notaryos.org)
 2. Generate an API key from the dashboard
 3. Keys start with `notary_live_` (production) or `notary_test_` (sandbox)
 
 ## Links
 
-- [NotaryOS Documentation](https://agenttownsquare.com/notary)
+- [NotaryOS Documentation](https://notaryos.org/docs)
 - [API Reference](https://api.agenttownsquare.com/v1/notary/status)
-- [Public Verification](https://api.agenttownsquare.com/v1/notary/r/{hash})
+- [Public Verification](https://notaryos.org/verify)
 
 ## License
 

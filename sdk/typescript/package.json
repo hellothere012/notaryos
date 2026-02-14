@@ -44,11 +44,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agenttownsquare/notaryos-sdk-typescript"
+    "url": "https://github.com/hellothere012/notaryos"
   },
-  "homepage": "https://agenttownsquare.com/notary",
+  "homepage": "https://notaryos.org",
   "bugs": {
-    "url": "https://github.com/agenttownsquare/notaryos-sdk-typescript/issues"
+    "url": "https://github.com/hellothere012/notaryos/issues"
   },
   "engines": {
     "node": ">=18.0.0"

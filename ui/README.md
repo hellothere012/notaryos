@@ -26,11 +26,11 @@ Agent systems increasingly make decisions and trigger actions across tools, serv
 
 Try the hosted demo without any setup:
 
-**[Open Notary Verifier →](https://agents.agenttownsquare.com/notary)**
+**[Open Notary Verifier →](https://notaryos.org)**
 
 ### Quick Start with Sample Receipt
 
-1. Go to the [Notary Verifier](https://agents.agenttownsquare.com/notary/verify)
+1. Go to the [Notary Verifier](https://notaryos.org/verify)
 2. Click **"Load Sample"** to load a test receipt
 3. Click **"Verify Receipt"** (or press `Cmd+Enter`)
 4. See instant verification results with chain visualization
@@ -51,7 +51,7 @@ No signup required for the demo. Works with sample receipts.
 
 ```bash
 # Clone the repository
-git clone https://github.com/agenttownsquare/notary.git
+git clone https://github.com/hellothere012/notaryos.git
 cd notary
 
 # Start all services
@@ -269,7 +269,7 @@ We welcome contributions! Here's how to get started:
 
 ```bash
 # Clone and install
-git clone https://github.com/agenttownsquare/notary.git
+git clone https://github.com/hellothere012/notaryos.git
 cd notary/ui/notary
 npm install
 
@@ -349,11 +349,7 @@ Open source verification core. Hosted demo provided as-is.
 
 ## Acknowledgements
 
-Built by [The Triad](https://github.com/agenttownsquare) — Harris, OPUS, and TELE.
-
-- **Harris** — Human arbiter, product vision
-- **OPUS** — Implementation (Claude Opus 4.5)
-- **TELE** — Content & strategy (GPT-5.2)
+Built by [Agent Town Square](https://github.com/hellothere012/notaryos).
 
 Special thanks to the cryptography community for Ed25519 and the agent ecosystem for inspiring this project.
 
@@ -361,4 +357,4 @@ Special thanks to the cryptography community for Ed25519 and the agent ecosystem
 
 **"Proof > Promises"**
 
-[Try the Demo](https://agents.agenttownsquare.com/notary) · [View on GitHub](https://github.com/agenttownsquare/notary) · [Read the Docs](https://docs.agenttownsquare.com/notary)
+[Try the Demo](https://notaryos.org) · [View on GitHub](https://github.com/hellothere012/notaryos) · [Read the Docs](https://notaryos.org/docs)

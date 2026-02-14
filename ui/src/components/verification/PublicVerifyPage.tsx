@@ -24,7 +24,7 @@
  *   object with receipt_hash, agent_id, and action_type that should
  *   populate og:title, og:description, and og:image on the server.
  *
- * Created by: OPUS (code) + KIMI (design)
+ * Public receipt verification page
  * Date: 2026-02-11
  */
 

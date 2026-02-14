@@ -108,7 +108,7 @@ export const AppHeader: React.FC = () => {
 
             {/* GitHub link */}
             <a
-              href="https://github.com/agenttownsquare/notary"
+              href="https://github.com/hellothere012/notaryos"
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors"

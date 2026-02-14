@@ -1,6 +1,6 @@
 # NotaryOS SDKs
 
-Official SDKs for [NotaryOS](https://agenttownsquare.com/notary) — cryptographic receipts for AI agent actions.
+Official SDKs for [NotaryOS](https://notaryos.org) — cryptographic receipts for AI agent actions.
 
 ## Available SDKs
 
@@ -8,7 +8,7 @@ Official SDKs for [NotaryOS](https://agenttownsquare.com/notary) — cryptograph
 |----------|---------|---------|------|
 | **TypeScript** | [`notaryos`](typescript/) | `npm install notaryos` | Zero (native fetch + Web Crypto) |
 | **Python** | [`notaryos`](python/) | `pip install notaryos` | Zero (stdlib urllib + hashlib) |
-| **Go** | [`notaryos-go`](go/) | `go get github.com/agenttownsquare/notaryos-go/notary` | Zero (stdlib net/http) |
+| **Go** | [`notaryos-go`](go/) | `go get github.com/hellothere012/notaryos-go/notary` | Zero (stdlib net/http) |
 
 ## 3-Line Quick Start
 
@@ -85,7 +85,7 @@ You (Developer)                    NotaryOS (Service)
 
 ## Get an API Key
 
-1. Sign up at [agenttownsquare.com/notary](https://agenttownsquare.com/notary)
+1. Sign up at [notaryos.org](https://notaryos.org)
 2. Generate an API key from the dashboard
 3. Keys: `notary_live_xxx` (production) or `notary_test_xxx` (sandbox)
 

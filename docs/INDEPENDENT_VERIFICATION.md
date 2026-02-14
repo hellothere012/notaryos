@@ -647,4 +647,4 @@ print(f"Timestamps valid: {timestamp_result['valid']}")
 
 ---
 
-*NotaryOS Independent Verification Guide v1.5.21 | notaryos.dev*
+*NotaryOS Independent Verification Guide v1.5.21 | notaryos.org*

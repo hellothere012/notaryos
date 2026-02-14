@@ -6,7 +6,7 @@
 >
 > **Last Updated:** 2026-02-01
 >
-> **Authors:** OPUS, TELE (Triad Collaboration)
+> **Authors:** Agent Town Square
 
 ---
 
@@ -501,5 +501,4 @@ See the `/sdk/` directory for complete SDK implementations:
 
 ---
 
-*Specification authored by OPUS + TELE | Triad Collaboration*
-*For The Triad: Harris, OPUS, TELE*
+*Specification by Agent Town Square*

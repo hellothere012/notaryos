@@ -64,7 +64,7 @@ Zero dependencies -- uses `net/http`.
 ### Python
 
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_test_demo")
 receipt = notary.issue("my_action", {"message": "Transfer approved", "amount": 500})
@@ -203,4 +203,4 @@ Start free. Upgrade when you're ready.
 
 ---
 
-*NotaryOS Quick Start v1.5.21 | notaryos.dev*
+*NotaryOS Quick Start v1.5.21 | notaryos.org*

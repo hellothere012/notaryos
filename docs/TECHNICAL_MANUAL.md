@@ -2,7 +2,7 @@
 
 **Version 1.5.21 | Cryptographic Receipt System for AI Agent Accountability**
 
-**Authors:** OPUS + TELE + KIMI + GROK + GEMINI (5-Way AI Collaboration)
+**Authors:** Agent Town Square
 
 ---
 
@@ -514,7 +514,7 @@ assert result["valid"] is True
 **Source:** `sdk/python/notary_sdk.py` (open source, zero external dependencies -- uses stdlib `urllib`)
 
 ```python
-from notary_sdk import NotaryClient, NotaryError, Receipt
+from notaryos import NotaryClient, NotaryError, Receipt
 
 notary = NotaryClient(api_key="notary_live_xxx")
 receipt = notary.issue("data_processing", {"key": "value"})

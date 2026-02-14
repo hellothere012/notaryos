@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Typed error hierarchy: `NotaryError`, `AuthenticationError`, `RateLimitError`, `ValidationError`
   - Node 18+, Deno, Bun, and modern browser support
 
-- **Go SDK** (`github.com/agenttownsquare/notaryos-go`)
+- **Go SDK** (`github.com/hellothere012/notaryos-go`)
   - `Client` with `Issue()`, `Verify()`, `Status()`, `SampleReceipt()` methods
   - Zero external dependencies (Go 1.21+ stdlib only)
   - Context-aware API with configurable timeouts
@@ -42,12 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Independent Chain Verification Guide
   - Product Brochure
 
-- **Database Migrations**
-  - Production schema for receipts, chains, and keys
-  - Grounding migration for provenance DAG and counterfactual receipts
-
 - **Configuration**
-  - Enterprise thresholds (billing tiers, abuse detection, SLOs)
+  - Enterprise thresholds (performance, security, grading)
   - Environment variable reference (`.env.example`)
 
 - **Code Examples**

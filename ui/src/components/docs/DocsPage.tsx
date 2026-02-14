@@ -11,7 +11,7 @@
  *
  * Sections: Quickstart, API Reference, Counterfactual Receipts, SDKs, Self-Hosting
  *
- * Created by: OPUS + TELE + KIMI collaborative design
+ * Documentation page for NotaryOS
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -77,7 +77,7 @@ type Language = 'python' | 'typescript' | 'go' | 'bash' | 'json' | 'yaml';
 // CONSTANTS
 // ============================================================================
 
-const API_BASE = 'https://api.notaryos.dev';
+const API_BASE = 'https://api.agenttownsquare.com';
 
 /** Sidebar navigation entries - each maps to a content section via anchor id */
 const NAV_SECTIONS: NavSection[] = [

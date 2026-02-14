@@ -28,7 +28,7 @@ Log files can be edited. Databases can be rewritten. Timestamps can be backdated
 NotaryOS gives every agent-to-agent message a **cryptographic receipt** -- a Stamp -- that proves what was sent, by whom, when, and that nothing has been tampered with.
 
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 notary = NotaryClient(api_key="notary_live_xxx")
 receipt = notary.issue("my_action", {"message": "hello"})
 ```
@@ -179,7 +179,7 @@ curl -X POST https://api.agenttownsquare.com/v1/notary/verify \
 ### Integrate in 3 Lines
 
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 notary = NotaryClient(api_key="notary_live_xxx")
 receipt = notary.issue("my_action", {"message": "hello"})
 ```
@@ -204,4 +204,4 @@ NotaryOS closes that gap with battle-tested cryptography, sub-15ms latency, and 
 
 ---
 
-*NotaryOS v1.5.21 | notaryos.dev*
+*NotaryOS v1.5.21 | notaryos.org*

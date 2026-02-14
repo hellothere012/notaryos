@@ -2,7 +2,7 @@
 
 > **Separation of Product Surface (Notary) from Infrastructure (Protocol)**
 >
-> Document status: TELE-reviewed architecture spec
+> Document status: Reviewed architecture spec
 > Date: 2026-01-31
 
 ---
@@ -300,6 +300,5 @@ Notary filters `internal_diagnostics` into safe public output.
 
 ---
 
-*Security architecture designed by OPUS + TELE via A2A collaboration*
+*Security architecture by Agent Town Square*
 *Date: 2026-01-31*
-*For The Triad: Harris, OPUS, TELE*

@@ -54,7 +54,7 @@ pip install requests
 
 **Python:**
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
 receipt = notary.issue("data_processing", {"message": "hello"})
@@ -84,7 +84,7 @@ fmt.Printf("Valid: %v\n", result.Valid)
 ### Issue a Receipt for Your Agent
 
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
 

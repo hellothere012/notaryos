@@ -358,11 +358,11 @@ export const PricingPage: React.FC = () => {
           {[
             {
               lang: 'Python',
-              code: `from notary_sdk import NotaryClient\nnotary = NotaryClient(api_key="notary_live_xxx")\nreceipt = notary.issue("action", {"key": "val"})`,
+              code: `from notaryos import NotaryClient\nnotary = NotaryClient(api_key="notary_live_xxx")\nreceipt = notary.issue("action", {"key": "val"})`,
             },
             {
               lang: 'TypeScript',
-              code: `import { NotaryClient } from './notary-sdk';\nconst notary = new NotaryClient({ apiKey: 'notary_live_xxx' });\nconst receipt = await notary.issue('action', { key: 'val' });`,
+              code: `import { NotaryClient } from 'notaryos';\nconst notary = new NotaryClient({ apiKey: 'notary_live_xxx' });\nconst receipt = await notary.issue('action', { key: 'val' });`,
             },
             {
               lang: 'Go',

@@ -247,7 +247,7 @@ def main():
 
     # In real use, the auditor would receive this file from the client
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sdk', 'python'))
-    from notary_sdk import NotaryClient
+    from notaryos import NotaryClient
 
     api_key = os.environ.get("NOTARY_API_KEY", "notary_test_demo")
     notary = NotaryClient(api_key=api_key)

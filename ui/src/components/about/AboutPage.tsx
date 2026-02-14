@@ -10,7 +10,7 @@
  * IMPORTANT: This page does NOT expose any backend/protocol implementation details.
  * NotaryOS is presented as a standalone, open-source product.
  *
- * Created by: OPUS (orchestrator) + design patterns by KIMI
+ * About page for NotaryOS
  */
 
 import React from 'react';
@@ -983,7 +983,7 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
                 Read the docs <ChevronRight className="w-3 h-3" />
               </a>
               <a
-                href="https://github.com/agenttownsquare/notary"
+                href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-purple-400 hover:text-purple-300 flex items-center gap-1"
@@ -1013,7 +1013,7 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
               <ul className="space-y-2 text-sm">
                 <li><Link to="/docs" className="text-gray-400 hover:text-white">Docs</Link></li>
                 <li><Link to="/api-keys" className="text-gray-400 hover:text-white">API Keys</Link></li>
-                <li><a href="https://github.com/agenttownsquare/notary" className="text-gray-400 hover:text-white">GitHub</a></li>
+                <li><a href="https://github.com/hellothere012/notaryos" className="text-gray-400 hover:text-white">GitHub</a></li>
               </ul>
             </div>
             <div>

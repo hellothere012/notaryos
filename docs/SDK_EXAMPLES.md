@@ -2,7 +2,7 @@
 
 **Live Service:**
 - API Base: `https://api.agenttownsquare.com/v1/notary/`
-- Landing Page: `https://agents.agenttownsquare.com/notary/`
+- Landing Page: `https://notaryos.org`
 - Public Key: `https://api.agenttownsquare.com/v1/notary/public-key`
 
 ---
@@ -184,7 +184,7 @@ Content-Type: application/json
     "schema_version": "1.0"
   },
   "receipt_hash": "full_sha256_hash...",
-  "verify_url": "https://agents.agenttownsquare.com/notary/verify/full_sha256_hash...",
+  "verify_url": "https://notaryos.org/verify",
   "chain_position": 42
 }
 ```
@@ -258,7 +258,7 @@ The Python SDK (`sdk/python/notary_sdk.py`) uses only stdlib `urllib` -- zero ex
 
 ```python
 import os
-from notary_sdk import NotaryClient, NotaryError, Receipt
+from notaryos import NotaryClient, NotaryError, Receipt
 
 # Initialize with API key
 notary = NotaryClient(api_key=os.environ["NOTARY_API_KEY"])
@@ -367,7 +367,7 @@ import (
     "fmt"
     "os"
 
-    "github.com/agenttownsquare/notary-go/notary"
+    "github.com/hellothere012/notaryos-go/notary"
 )
 
 func main() {
@@ -452,7 +452,7 @@ curl https://api.agenttownsquare.com/.well-known/jwks.json
 Track all agent actions with tamper-evident receipts:
 
 ```python
-from notary_sdk import NotaryClient
+from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
 
@@ -478,7 +478,7 @@ When parties disagree about what was communicated:
 
 ```python
 # Either party can verify the receipt (public endpoint, no auth)
-from notary_sdk import verify_receipt
+from notaryos import verify_receipt
 
 is_valid = verify_receipt(disputed_receipt_dict)
 if is_valid:
@@ -663,4 +663,4 @@ Ed25519 is the default for all new receipts. HMAC-SHA256 is supported for backwa
 
 ---
 
-*NotaryOS SDK Integration Guide v1.5.21 | notaryos.dev*
+*NotaryOS SDK Integration Guide v1.5.21 | notaryos.org*

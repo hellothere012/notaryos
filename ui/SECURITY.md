@@ -13,7 +13,7 @@ This security policy covers:
 - **Notary UI** — React frontend for receipt verification
 - **Notary API** — Backend verification endpoints
 - **Verification Core** — Cryptographic verification logic
-- **Hosted Demo** — Public demo at agents.agenttownsquare.com
+- **Hosted Demo** — Public demo at notaryos.org
 
 ---
 

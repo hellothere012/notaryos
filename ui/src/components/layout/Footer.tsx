@@ -19,7 +19,7 @@ export const Footer: React.FC = () => {
           {/* Center - Links */}
           <div className="flex items-center gap-6 text-sm">
             <a
-              href="https://docs.agenttownsquare.com/notary"
+              href="https://notaryos.org/docs"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"

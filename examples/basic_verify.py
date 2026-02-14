@@ -14,7 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sdk', 'python'))
 
-from notary_sdk import NotaryClient, NotaryError, Receipt
+from notaryos import NotaryClient, NotaryError, Receipt
 
 
 def main():

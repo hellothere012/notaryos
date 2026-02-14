@@ -10,7 +10,7 @@ The following components accept contributions:
 - **Verification UI** (`ui/`) — React-based receipt verification interface
 - **Documentation** (`docs/`) — Technical manual, user guides, examples
 - **Examples** (`examples/`) — Code examples and integration patterns
-- **Migrations** (`migrations/`) — Database schema files
+- **Configuration** (`config/`) — Enterprise threshold configuration
 
 The NotaryOS backend engine (signing, grounding, abuse detection) is proprietary and not part of this repository.
 
@@ -21,13 +21,13 @@ The NotaryOS backend engine (signing, grounding, abuse detection) is proprietary
 - Node.js 18+ (for UI and TypeScript SDK)
 - Python 3.8+ (for Python SDK and examples)
 - Go 1.21+ (for Go SDK)
-- PostgreSQL 14+ (for running migrations locally)
+
 
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/agenttownsquare/notaryos.git
+git clone https://github.com/hellothere012/notaryos.git
 cd notaryos
 
 # UI development
@@ -47,7 +47,7 @@ cd sdk/go && go test ./...
 
 ### Reporting Bugs
 
-1. Check existing [issues](https://github.com/agenttownsquare/notaryos/issues) first
+1. Check existing [issues](https://github.com/hellothere012/notaryos/issues) first
 2. Use the bug report template
 3. Include: SDK version, language/runtime version, steps to reproduce, expected vs actual behavior
 
@@ -123,6 +123,6 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ## Questions?
 
-- Open a [discussion](https://github.com/agenttownsquare/notaryos/discussions)
+- Open a [discussion](https://github.com/hellothere012/notaryos/discussions)
 - Check the [documentation](docs/)
 - Visit [agenttownsquare.com](https://agenttownsquare.com)

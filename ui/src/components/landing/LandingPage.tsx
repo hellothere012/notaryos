@@ -1,7 +1,7 @@
 /**
  * LandingPage - Public marketing/landing page for Notary
  *
- * Based on OPUS-TELE collaboration for launch copy.
+ * Landing page for NotaryOS.
  * Key message: "Verify AI agent receipts—cryptographically."
  */
 
@@ -215,7 +215,7 @@ export const LandingPage: React.FC = () => {
             {/* CTA Buttons */}
             <div className="flex items-center gap-3">
               <a
-                href="https://github.com/agenttownsquare/notary"
+                href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg text-sm font-medium transition-all"
@@ -276,7 +276,7 @@ export const LandingPage: React.FC = () => {
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 <a
-                  href="https://github.com/agenttownsquare/notary"
+                  href="https://github.com/hellothere012/notaryos"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
@@ -849,7 +849,7 @@ print(receipt.valid)  # True`}</code>
 
             <motion.div variants={fadeInUp} className="flex justify-center gap-4">
               <a
-                href="https://github.com/agenttownsquare/notary"
+                href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary flex items-center gap-2"
@@ -934,7 +934,7 @@ print(receipt.valid)  # True`}</code>
                 <ArrowRight className="w-5 h-5" />
               </button>
               <a
-                href="https://github.com/agenttownsquare/notary"
+                href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
@@ -996,7 +996,7 @@ print(receipt.valid)  # True`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Open Source</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="https://github.com/agenttownsquare/notary" className="text-gray-400 hover:text-white">GitHub</a></li>
+                <li><a href="https://github.com/hellothere012/notaryos" className="text-gray-400 hover:text-white">GitHub</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">Contributing</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white">License</a></li>
               </ul>

@@ -1,4 +1,4 @@
-module github.com/agenttownsquare/notaryos-go
+module github.com/hellothere012/notaryos-go
 
 go 1.21
 

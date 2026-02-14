@@ -39,10 +39,10 @@ dependencies = []
 dev = ["pytest", "pytest-cov", "mypy"]
 
 [project.urls]
-Homepage = "https://agenttownsquare.com/notary"
-Documentation = "https://agenttownsquare.com/notary/docs"
-Repository = "https://github.com/agenttownsquare/notaryos-sdk-python"
-Issues = "https://github.com/agenttownsquare/notaryos-sdk-python/issues"
+Homepage = "https://notaryos.org"
+Documentation = "https://notaryos.org/docs"
+Repository = "https://github.com/hellothere012/notaryos"
+Issues = "https://github.com/hellothere012/notaryos/issues"
 
 [project.scripts]
 notaryos = "notary_sdk:main"
