@@ -19,7 +19,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { authClient, API_ENDPOINTS } from '../../config/api';
+import { useUser as useClerkUser } from '@clerk/nextjs';
 
 interface UsageStats {
   totalVerifications: number;
@@ -31,6 +31,7 @@ interface UsageStats {
 
 export const ProfilePage: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const { user: clerkUser } = useClerkUser();
 
   // Username editing state
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -100,11 +101,14 @@ export const ProfilePage: React.FC = () => {
     setUsernameError(null);
 
     try {
-      await authClient.patch(API_ENDPOINTS.profile, { username: newUsername });
+      // Update username via Clerk — triggers reactive state update
+      if (clerkUser) {
+        await clerkUser.update({ username: newUsername });
+      }
       await refreshUser();
       setIsEditingUsername(false);
     } catch (error: any) {
-      setUsernameError(error.response?.data?.detail || 'Failed to update username');
+      setUsernameError(error?.errors?.[0]?.message || 'Failed to update username');
     } finally {
       setIsSavingUsername(false);
     }
@@ -135,10 +139,13 @@ export const ProfilePage: React.FC = () => {
     setIsChangingPassword(true);
 
     try {
-      await authClient.post(API_ENDPOINTS.changePassword, {
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
+      // Clerk manages passwords — use Clerk's updatePassword method
+      if (clerkUser) {
+        await clerkUser.updatePassword({
+          currentPassword,
+          newPassword,
+        });
+      }
       setPasswordSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
@@ -148,7 +155,7 @@ export const ProfilePage: React.FC = () => {
         setPasswordSuccess(false);
       }, 2000);
     } catch (error: any) {
-      setPasswordError(error.response?.data?.detail || 'Failed to change password');
+      setPasswordError(error?.errors?.[0]?.message || 'Failed to change password');
     } finally {
       setIsChangingPassword(false);
     }

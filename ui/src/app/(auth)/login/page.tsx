@@ -1,14 +1,8 @@
-'use client';
-
-import { LoginPage } from '@/components/auth/LoginPage';
+import { redirect } from 'next/navigation';
 
 /**
- * /login route page
- *
- * Thin wrapper that renders the LoginPage component within
- * the auth layout (centered, no sidebar). All login form logic,
- * validation, and redirect handling lives in the component.
+ * Legacy /login route — redirects to Clerk's /sign-in page.
  */
 export default function LoginRoute() {
-  return <LoginPage />;
+  redirect('/sign-in');
 }

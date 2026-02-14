@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -74,7 +76,19 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className={`${inter.className} bg-gray-900 text-white antialiased`}>
-        <Providers>{children}</Providers>
+        <ClerkProvider
+          appearance={{
+            baseTheme: dark,
+            variables: {
+              colorPrimary: '#a855f7',
+              colorBackground: '#111827',
+              colorInputBackground: '#1f2937',
+              colorInputText: '#f9fafb',
+            },
+          }}
+        >
+          <Providers>{children}</Providers>
+        </ClerkProvider>
       </body>
     </html>
   );

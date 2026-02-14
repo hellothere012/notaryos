@@ -2,17 +2,14 @@
  * Legacy import bridge.
  *
  * Components import from '../../config/api'. The actual implementation
- * has moved to @/lib/api-client (cookie-based, SSR-compatible).
+ * lives in @/lib/api-client (Clerk-based auth).
  * This file re-exports everything so existing component imports
  * continue to work without modification.
  */
 export {
   publicClient,
   authClient,
-  setAuthToken,
-  getAuthToken,
-  clearAuthTokens,
-  hasAuthToken,
+  setClerkTokenGetter,
   API_ENDPOINTS,
   API_BASE,
 } from '@/lib/api-client';

@@ -32,7 +32,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   // Auth pages: no sidebar, just centered content
-  if (location.pathname === '/login' || location.pathname === '/signup') {
+  if (location.pathname === '/sign-in' || location.pathname === '/sign-up') {
     return (
       <div className="min-h-screen flex flex-col">
         <AppHeader />
@@ -74,8 +74,8 @@ const App: React.FC = () => {
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/verify" element={<VerifyPanel />} />
             <Route path="/r/:hash" element={<PublicVerifyPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/sign-in" element={<LoginPage />} />
+            <Route path="/sign-up" element={<SignupPage />} />
 
             {/* Protected routes */}
             <Route path="/history" element={

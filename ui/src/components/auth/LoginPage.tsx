@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      await login({ email, password, rememberMe });
+      await login({ email, password });
       router.push(redirectPath);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -157,7 +157,7 @@ export const LoginPage: React.FC = () => {
           {/* Sign Up Link */}
           <p className="text-center text-gray-400">
             Don't have an account?{' '}
-            <Link href="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
+            <Link href="/sign-up" className="text-purple-400 hover:text-purple-300 font-medium">
               Sign up
             </Link>
           </p>

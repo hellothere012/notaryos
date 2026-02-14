@@ -1,15 +1,8 @@
-'use client';
-
-import { SignupPage } from '@/components/auth/SignupPage';
+import { redirect } from 'next/navigation';
 
 /**
- * /signup route page
- *
- * Thin wrapper that renders the SignupPage component within
- * the auth layout (centered, no sidebar). All signup form logic,
- * password strength validation, and terms acceptance lives in
- * the component.
+ * Legacy /signup route — redirects to Clerk's /sign-up page.
  */
-export default function SignupRoute() {
-  return <SignupPage />;
+export default function SignUpRoute() {
+  redirect('/sign-up');
 }

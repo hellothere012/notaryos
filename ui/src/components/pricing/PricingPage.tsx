@@ -21,7 +21,8 @@ import {
   Star,
   Loader2,
 } from 'lucide-react';
-import { authClient, API_ENDPOINTS, hasAuthToken } from '../../config/api';
+import { useAuth } from '@clerk/nextjs';
+import { authClient, API_ENDPOINTS } from '../../config/api';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -152,12 +153,13 @@ const tiers: PricingTier[] = [
 
 const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index }) => {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleCta = useCallback(async () => {
-    // Free tier → signup page
+    // Free tier → sign-up page
     if (tier.name === 'Starter') {
-      router.push('/signup');
+      router.push('/sign-up');
       return;
     }
 
@@ -168,8 +170,8 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
     }
 
     // Paid tiers → require login, then create Stripe Checkout session
-    if (!hasAuthToken()) {
-      router.push(`/signup?plan=${tier.name.toLowerCase()}`);
+    if (!isSignedIn) {
+      router.push(`/sign-up?plan=${tier.name.toLowerCase()}`);
       return;
     }
 
@@ -184,12 +186,12 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
       }
     } catch (err: any) {
       console.error('Checkout error:', err?.response?.data || err);
-      // Fallback: direct to signup if checkout fails
-      router.push(`/signup?plan=${tier.name.toLowerCase()}`);
+      // Fallback: direct to sign-up if checkout fails
+      router.push(`/sign-up?plan=${tier.name.toLowerCase()}`);
     } finally {
       setLoading(false);
     }
-  }, [tier.name, router]);
+  }, [tier.name, router, isSignedIn]);
 
   return (
     <motion.div

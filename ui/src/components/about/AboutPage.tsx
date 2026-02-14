@@ -961,7 +961,7 @@ print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
 
             <motion.div variants={fadeInUp} className="flex flex-wrap justify-center gap-4 mb-8">
               <button
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push('/sign-up')}
                 className="btn-primary flex items-center gap-2 px-8 py-3 text-base"
               >
                 Get Started Free

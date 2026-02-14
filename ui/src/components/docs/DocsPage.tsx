@@ -1547,7 +1547,7 @@ curl http://localhost:8000/v1/notary/status
                     </p>
                   </div>
                   <Link
-                    href="/signup"
+                    href="/sign-up"
                     className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap"
                   >
                     Get Started Free
@@ -1576,7 +1576,7 @@ curl http://localhost:8000/v1/notary/status
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
-                  href="/signup"
+                  href="/sign-up"
                   className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
                 >
                   Create Free Account

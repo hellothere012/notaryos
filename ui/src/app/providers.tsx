@@ -1,22 +1,18 @@
 'use client';
 
 import { ThemeProvider } from 'next-themes';
-import { AuthProvider } from '@/lib/auth-context';
+import { ClerkUserSync } from '@/lib/clerk-user-sync';
+import { ClerkTokenProvider } from '@/lib/clerk-token-provider';
 
 /**
  * Client-side provider tree.
  *
- * Combines all context providers required by the application into a single
- * wrapper consumed by the root layout. Keeping providers in a dedicated
- * Client Component avoids forcing the entire root layout to become a
- * Client Component.
- *
  * Provider order (outer to inner):
- * 1. ThemeProvider  - injects the `dark` class on <html>, must be outermost
- *                     so all children (including AuthProvider UI) respect
- *                     the active theme.
- * 2. AuthProvider   - manages JWT token lifecycle, user state, and
- *                     Axios interceptors.
+ * 1. ThemeProvider       - injects the `dark` class on <html>
+ * 2. ClerkTokenProvider  - wires Clerk's getToken into the Axios client
+ * 3. ClerkUserSync       - upserts Clerk user to backend on login
+ *
+ * Note: ClerkProvider wraps this in layout.tsx (Server Component).
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -26,7 +22,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <AuthProvider>{children}</AuthProvider>
+      <ClerkTokenProvider>
+        <ClerkUserSync />
+        {children}
+      </ClerkTokenProvider>
     </ThemeProvider>
   );
 }

@@ -48,7 +48,7 @@ export const UserMenu: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsOpen(false);
-    router.push('/login');
+    router.push('/');
   };
 
   // Get user initials for avatar

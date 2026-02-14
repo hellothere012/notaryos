@@ -130,7 +130,7 @@ export const AppHeader: React.FC = () => {
             ) : (
               <div className="hidden sm:flex items-center gap-2">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push('/sign-in')}
                   className="px-4 py-2 text-gray-300 hover:text-white transition-colors font-medium rounded-lg hover:bg-gray-800/50"
                 >
                   Login
@@ -225,7 +225,7 @@ export const AppHeader: React.FC = () => {
                   <>
                     <div className="h-px bg-gray-800 my-2" />
                     <Link
-                      href="/login"
+                      href="/sign-in"
                       className="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg"
                       onClick={() => setMobileMenuOpen(false)}
                     >
