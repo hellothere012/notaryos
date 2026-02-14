@@ -1,13 +1,17 @@
 /**
  * Verify Layout (/verify) - Server Component for verify route metadata
  *
- * Since the verify page.tsx is a client component (VerifyPanel uses hooks
- * like useSearchParams, useState, useEffect at the top level), we export
- * metadata from this layout instead. Layout files are always Server
- * Components in Next.js App Router.
+ * Wraps the VerifyPanel page with AppHeader and Footer for consistent
+ * navigation across the site. Metadata is exported for SEO since
+ * the page.tsx is a client component.
+ *
+ * Note: Server Components can render Client Components (AppHeader, Footer).
+ * The client boundary starts at each 'use client' component.
  */
 
 import type { Metadata } from 'next';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'Receipt Verifier -- NotaryOS',
@@ -34,5 +38,11 @@ export default function VerifyLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <AppHeader />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
 }

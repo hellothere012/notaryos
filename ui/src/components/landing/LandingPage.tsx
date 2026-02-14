@@ -227,10 +227,10 @@ export const LandingPage: React.FC = () => {
                 View on GitHub
               </a>
               <button
-                onClick={() => router.push('/verify')}
+                onClick={() => router.push('/docs#quickstart')}
                 className="btn-primary flex items-center gap-2 text-sm"
               >
-                Try the Demo
+                Get Started
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -253,44 +253,50 @@ export const LandingPage: React.FC = () => {
               animate="visible"
               variants={staggerContainer}
             >
+              <motion.div variants={fadeInUp} className="mb-4">
+                <span className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-full text-sm text-purple-300">
+                  <Zap className="w-3.5 h-3.5" />
+                  2.39ms verification — built on the ATS Protocol engine
+                </span>
+              </motion.div>
+
               <motion.h1
                 variants={fadeInUp}
                 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
               >
-                Verify AI agent receipts
-                <span className="gradient-text">—cryptographically.</span>
+                Know what your AI did.
+                <br />
+                <span className="gradient-text">Prove what it didn't.</span>
               </motion.h1>
 
               <motion.p
                 variants={fadeInUp}
                 className="text-lg text-gray-400 mb-8 max-w-xl"
               >
-                Notary is the trust layer for agent-to-agent systems. Upload a receipt (JSON) and
-                verify signatures, chain integrity, and timestamps in seconds—open source core with
-                a public hosted demo.
+                NotaryOS creates tamper-proof receipts for every AI agent action—including
+                cryptographic proof when an agent <em className="text-purple-300 not-italic font-medium">chose not to act</em>.
+                Verify signatures, chain integrity, and decision provenance in seconds.
               </motion.p>
 
               <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-4 mb-8">
                 <button
-                  onClick={() => router.push('/verify')}
+                  onClick={() => router.push('/docs#quickstart')}
                   className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
                 >
-                  Try the Demo
+                  Start Proving in 5 Minutes
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <a
-                  href="https://github.com/hellothere012/notaryos"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => router.push('/verify?sample=true')}
                   className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
                 >
-                  <Github className="w-5 h-5" />
-                  View on GitHub
-                </a>
+                  <Shield className="w-5 h-5" />
+                  Verify a Receipt Now
+                </button>
               </motion.div>
 
               <motion.p variants={fadeInUp} className="text-sm text-gray-500 mb-6">
-                No signup required for the demo. Works with sample receipts.
+                Free tier: 1,000 receipts/month. No credit card required.
               </motion.p>
 
               <motion.div
@@ -299,15 +305,15 @@ export const LandingPage: React.FC = () => {
               >
                 <span className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400" />
-                  Ed25519 + HMAC support
+                  Tamper-proof signatures
                 </span>
                 <span className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400" />
-                  Chain-aware verification
+                  Counterfactual receipts
                 </span>
                 <span className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-400" />
-                  Human-readable results
+                  1,185 receipts/sec throughput
                 </span>
               </motion.div>
             </motion.div>
@@ -356,9 +362,9 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Paste a receipt. Get a verdict.</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Don&apos;t trust us. Verify the math.</h2>
               <p className="text-gray-400">
-                Drop a JSON receipt into the verifier and see exactly what passed, what failed, and why.
+                Paste any receipt into the public verifier. See exactly what passed, what failed, and why—no account needed.
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -394,16 +400,16 @@ export const LandingPage: React.FC = () => {
               variants={fadeInUp}
               className="text-3xl sm:text-4xl font-bold text-white mb-4"
             >
-              Most agent logs are easy to fake.{' '}
-              <span className="gradient-text">Receipts aren't.</span>
+              Logs tell you what happened.{' '}
+              <span className="gradient-text">Receipts prove it.</span>
             </motion.h2>
             <motion.p
               variants={fadeInUp}
               className="text-lg text-gray-400 max-w-3xl mx-auto"
             >
-              Agent systems increasingly make decisions and trigger actions across tools, services,
-              and teams. Notary receipts add cryptographic proof—so "this happened" can be verified,
-              not just asserted.
+              AI agents make thousands of decisions daily across tools, services,
+              and teams. NotaryOS receipts are tamper-proof, mathematically verified records—so
+              every action (and every deliberate inaction) can be proven, not just claimed.
             </motion.p>
           </motion.div>
 
@@ -447,6 +453,106 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Counterfactual Receipts Section */}
+      <section className="py-20 lg:py-28 bg-gradient-to-b from-gray-900 via-purple-900/10 to-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div variants={fadeInUp} className="text-center mb-16">
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-sm text-cyan-300 mb-4">
+                What makes NotaryOS different
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Proof of what your AI{' '}
+                <span className="gradient-text">chose not to do.</span>
+              </h2>
+              <p className="text-lg text-gray-400 max-w-3xl mx-auto">
+                Any logging system records what happened. Only NotaryOS can cryptographically prove
+                what <em className="text-cyan-300 not-italic">didn't</em> happen—and why.
+              </p>
+            </motion.div>
+
+            {/* Counterfactual Explanation Cards */}
+            <motion.div variants={staggerContainer} className="grid lg:grid-cols-2 gap-8 mb-16">
+              {/* Left: The Problem */}
+              <motion.div
+                variants={fadeInUp}
+                className="p-8 rounded-2xl bg-gray-800/50 border border-gray-700/50"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Without counterfactual receipts</h3>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3 text-gray-400">
+                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
+                    <span>&quot;Did our AI follow the guardrails?&quot; — <span className="text-gray-500 italic">You hope so. You can&apos;t prove it.</span></span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-400">
+                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
+                    <span>&quot;Why didn&apos;t your safeguards stop this?&quot; — <span className="text-gray-500 italic">You claim they worked. No evidence.</span></span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-400">
+                    <span className="w-6 h-6 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs text-gray-500">?</span>
+                    <span>&quot;Prove your AI didn&apos;t cause the incident.&quot; — <span className="text-gray-500 italic">Absence of logs proves nothing.</span></span>
+                  </li>
+                </ul>
+              </motion.div>
+
+              {/* Right: The Solution */}
+              <motion.div
+                variants={fadeInUp}
+                className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/30 to-cyan-900/20 border border-purple-500/20"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">With counterfactual receipts</h3>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Capability Proof</strong> — Your AI had the permission to act</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Opportunity Proof</strong> — The conditions for action were met</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-gray-300">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span><strong className="text-white">Decision Proof</strong> — It deliberately chose restraint, with a reason</span>
+                  </li>
+                </ul>
+                <p className="mt-6 text-sm text-purple-300 border-t border-purple-500/20 pt-4">
+                  Think of it like a notary who witnesses refusals — timestamped, signed proof that your AI
+                  evaluated the situation and made the right call.
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* Counter-Receipt Callout */}
+            <motion.div
+              variants={fadeInUp}
+              className="p-6 rounded-xl bg-gray-800/30 border border-gray-700/50 max-w-3xl mx-auto text-center"
+            >
+              <h4 className="text-white font-semibold mb-2">Counter-Sealed Receipts: Mutual Attestation</h4>
+              <p className="text-gray-400 text-sm">
+                When both parties sign a receipt, you get <strong className="text-white">counter-sealed</strong> proof.
+                The sending agent signs the action, the receiving agent counter-signs. Two independent
+                cryptographic signatures, one undeniable record. This isn&apos;t logging—it&apos;s evidence.
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-20 lg:py-28 bg-gray-800/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -461,7 +567,8 @@ export const LandingPage: React.FC = () => {
               variants={fadeInUp}
               className="text-3xl sm:text-4xl font-bold text-white mb-4"
             >
-              Everything you need to validate receipts in production.
+              Everything you need for{' '}
+              <span className="gradient-text">production-grade accountability.</span>
             </motion.h2>
           </motion.div>
 
@@ -556,7 +663,7 @@ export const LandingPage: React.FC = () => {
               How verification works
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-lg text-gray-400">
-              Notary checks proof, not promises. Here's the flow:
+              NotaryOS checks math, not promises. Here&apos;s the flow:
             </motion.p>
           </motion.div>
 
@@ -627,7 +734,7 @@ export const LandingPage: React.FC = () => {
               variants={fadeInUp}
               className="text-3xl sm:text-4xl font-bold text-white mb-4"
             >
-              Built for builders and security teams
+              Built for builders, compliance teams, and CISOs
             </motion.h2>
           </motion.div>
 
@@ -662,7 +769,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* OpenClaw Integration Callout */}
+      {/* ATS Protocol Engine Section */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div
@@ -673,48 +780,65 @@ export const LandingPage: React.FC = () => {
           >
             <motion.div
               variants={fadeInUp}
-              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-900/30 via-gray-900 to-purple-900/20 border border-orange-500/20 p-8 lg:p-12"
+              className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-900/30 via-gray-900 to-cyan-900/20 border border-purple-500/20 p-8 lg:p-12"
             >
               {/* Background glow */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl" />
 
               <div className="relative grid lg:grid-cols-2 gap-8 items-center">
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-3xl">🦞</span>
-                    <div>
-                      <span className="text-xs font-medium text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                        Featured Integration
-                      </span>
-                    </div>
+                    <span className="text-xs font-medium text-purple-300 bg-purple-500/10 px-3 py-1 rounded-full">
+                      The Engine Behind NotaryOS
+                    </span>
                   </div>
 
                   <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                    Using OpenClaw?
-                    <br />
-                    <span className="text-orange-400">Your agents need receipts.</span>
+                    The only compliance layer that{' '}
+                    <span className="gradient-text">keeps up with inference speed.</span>
                   </h2>
 
                   <p className="text-gray-400 mb-6">
-                    OpenClaw agents execute commands, manage files, and browse the web autonomously.
-                    NotaryOS adds cryptographic proof of every action&mdash;so security teams can
-                    verify what happened without trusting the agent's own logs.
+                    NotaryOS is powered by the ATS Protocol—a proprietary high-performance agent communication
+                    engine with 7-layer zero-trust security. Receipts are issued, signed, and chained without
+                    slowing down your agents.
                   </p>
+
+                  {/* Performance Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                      <div className="text-2xl font-bold text-white">2.39ms</div>
+                      <div className="text-xs text-gray-400">P50 verification latency</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                      <div className="text-2xl font-bold text-white">1,185</div>
+                      <div className="text-xs text-gray-400">Receipts per second</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                      <div className="text-2xl font-bold text-white">100%</div>
+                      <div className="text-xs text-gray-400">Success rate in production</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700/50">
+                      <div className="text-2xl font-bold text-white">7 layers</div>
+                      <div className="text-xs text-gray-400">Zero-trust security</div>
+                    </div>
+                  </div>
 
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href="/docs"
                       className="btn-primary flex items-center gap-2 text-sm"
                     >
-                      See Integration Guide
+                      See the Docs
                       <ArrowRight className="w-4 h-4" />
                     </Link>
-                    <button
-                      onClick={() => router.push('/verify?sample=true')}
+                    <Link
+                      href="/pricing"
                       className="btn-ghost flex items-center gap-2 text-sm"
                     >
-                      Try a Sample Receipt
-                    </button>
+                      View Pricing
+                    </Link>
                   </div>
                 </div>
 
@@ -724,22 +848,31 @@ export const LandingPage: React.FC = () => {
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                    <span className="ml-2 text-xs text-gray-500 font-mono">skills/notary_seal.py</span>
+                    <span className="ml-2 text-xs text-gray-500 font-mono">seal_and_verify.py</span>
                   </div>
                   <pre className="p-4 text-xs text-gray-300 font-mono overflow-x-auto leading-relaxed">
                     <code>{`from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_sk_...")
 
-# Every OpenClaw action gets a receipt
+# Seal an action — 2ms, tamper-proof
 receipt = notary.seal(
-    action="file.written",
-    agent_id="openclaw-agent",
-    payload={"path": "/home/user/report.md"}
+    action="trade.executed",
+    agent_id="trading-bot-v3",
+    payload={"pair": "BTC/USD", "amount": 0.5}
 )
 
-print(receipt.hash)   # "sha256:a1b2c3..."
-print(receipt.valid)  # True`}</code>
+# Or prove what DIDN'T happen
+counterfactual = notary.seal_counterfactual(
+    action_declined="trade.executed",
+    capability="trade_usdc",
+    opportunity={"spread": "0.02%"},
+    reason="risk_threshold_exceeded"
+)
+
+# Anyone can verify — no trust required
+result = notary.verify(receipt.hash)
+print(result.valid)  # True`}</code>
                   </pre>
                 </div>
               </div>
@@ -889,20 +1022,28 @@ print(receipt.valid)  # True`}</code>
 
             <motion.div variants={staggerContainer} className="card">
               <FAQItem
+                question="What is a counterfactual receipt?"
+                answer="A counterfactual receipt is cryptographic proof that your AI agent had the capability and opportunity to act, but deliberately chose not to. It documents restraint with the same mathematical rigor as documenting action."
+              />
+              <FAQItem
+                question="What is a counter-sealed receipt?"
+                answer="When both the sending and receiving agents sign the same receipt, you get counter-sealed (dual-attestation) proof. Two independent signatures, one undeniable record. This is stronger than any single-party log."
+              />
+              <FAQItem
                 question="Do I need an account?"
-                answer="No for the public demo verifier. Accounts are required for history, API keys, and admin features."
+                answer="No for the public verifier — paste any receipt and check it instantly. Accounts are required for issuing receipts, history, API keys, and admin features. The free tier includes 1,000 receipts per month."
               />
               <FAQItem
-                question="What formats do you support?"
-                answer="JSON receipts following the Notary receipt format. We show raw JSON and crypto details to make debugging straightforward."
-              />
-              <FAQItem
-                question="Can I verify offline?"
-                answer="Yes. The format is designed to be portable, and the open source core can be run locally."
+                question="How fast is verification?"
+                answer="NotaryOS runs on the ATS Protocol engine with 2.39ms P50 latency and handles 1,185 receipts per second. Signing and verification add near-zero overhead to your agent pipeline."
               />
               <FAQItem
                 question="Is this a blockchain?"
-                answer="No. 'Chain' refers to cryptographic linkage between receipts for integrity, not a public blockchain."
+                answer="No. Receipts use per-agent hash chains for tamper-evidence, not a distributed ledger. Each agent maintains its own chain, linked by cryptographic hashes. It's lightweight, fast, and doesn't require consensus."
+              />
+              <FAQItem
+                question="Can I verify offline?"
+                answer="Yes. Receipts are portable JSON with embedded signatures. The open source verification core can run locally, in CI/CD pipelines, or air-gapped — no network call required."
               />
             </motion.div>
           </motion.div>
@@ -922,37 +1063,43 @@ print(receipt.valid)  # True`}</code>
               variants={fadeInUp}
               className="text-3xl sm:text-4xl font-bold text-white mb-4"
             >
-              Verify your first receipt in under a minute.
+              When your AI acts, you have receipts.
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">
-              Use the hosted demo now, then pull the open source core when you're ready to self-host.
+              Start issuing tamper-proof receipts in 5 minutes. Free tier included—no credit card required.
             </motion.p>
 
             <motion.div variants={fadeInUp} className="flex justify-center gap-4 mb-8">
               <button
-                onClick={() => router.push('/verify')}
+                onClick={() => router.push('/docs#quickstart')}
                 className="btn-primary flex items-center gap-2 px-6 py-3 text-base"
               >
-                Try the Demo
+                Get Started Free
                 <ArrowRight className="w-5 h-5" />
               </button>
+              <button
+                onClick={() => router.push('/verify?sample=true')}
+                className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
+              >
+                <Shield className="w-5 h-5" />
+                Verify a Receipt
+              </button>
+            </motion.div>
+
+            <motion.p variants={fadeInUp} className="text-sm text-gray-500">
+              Enterprise needs?{' '}
+              <Link href="/pricing" className="text-purple-400 hover:text-purple-300">
+                View pricing
+              </Link>{' '}
+              or{' '}
               <a
                 href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
+                className="text-purple-400 hover:text-purple-300"
               >
-                <Github className="w-5 h-5" />
-                View on GitHub
-              </a>
-            </motion.div>
-
-            <motion.p variants={fadeInUp} className="text-sm text-gray-500">
-              Want API access?{' '}
-              <Link href="/signup" className="text-purple-400 hover:text-purple-300">
-                Create an account
-              </Link>{' '}
-              to generate keys with scoped permissions.
+                explore the open source core
+              </a>.
             </motion.p>
           </motion.div>
         </div>
