@@ -10,7 +10,7 @@ Use Case:
     modified, deleted, or inserted.
 
 Usage:
-    export NOTARY_API_KEY="notary_test_demo"
+    export NOTARY_API_KEY="notary_live_..."  # Get one at https://notaryos.org/api-keys
     python chain_verification.py
 """
 
@@ -176,7 +176,10 @@ def main():
     print("NotaryOS - Chain Verification Example")
     print("=" * 50)
 
-    api_key = os.environ.get("NOTARY_API_KEY", "notary_test_demo")
+    api_key = os.environ.get("NOTARY_API_KEY")
+    if not api_key:
+        print("Error: Set NOTARY_API_KEY env var. Get one at https://notaryos.org/api-keys")
+        sys.exit(1)
     notary = NotaryClient(api_key=api_key)
 
     try:

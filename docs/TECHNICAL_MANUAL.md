@@ -935,21 +935,21 @@ This is the economic engine: signing is paid, verification is free and unlimited
 
 ## 15. Pricing and Tiers
 
-| Feature | Free ($0/mo) | Starter ($29/mo) | Pro ($99/mo) |
-|---------|:---:|:---:|:---:|
-| Receipts/month | 100 | 10,000 | 100,000 |
-| Verifications/month | 500 | 50,000 | 500,000 |
-| Rate limit | 60 req/min | 300 req/min | 1,000 req/min |
-| Ed25519 signatures | Yes | Yes | Yes |
-| SDKs (Python/TS/Go) | Yes | Yes | Yes |
-| Public key & JWKS | Yes | Yes | Yes |
-| Hash chain linking | -- | Yes | Yes |
-| Provenance DAG | -- | Yes | Yes |
-| Counterfactual receipts | -- | -- | Yes |
-| Webhook notifications | -- | Yes | Yes |
-| Telegram notifications | -- | Yes | Yes |
-| Priority support | -- | -- | Yes |
-| Key rotation | Manual | Auto (90d) | Auto (custom) |
+| Feature | Starter ($0/mo) | Explorer ($59/mo) | Pro ($159/mo) | Enterprise |
+|---------|:---:|:---:|:---:|:---:|
+| Receipts/month | 100 | 10,000 | 100,000 | Unlimited |
+| Verifications/month | 500 | 50,000 | 500,000 | Unlimited |
+| Rate limit | 60 req/min | 300 req/min | 1,000 req/min | Custom |
+| Ed25519 signatures | Yes | Yes | Yes | Yes |
+| SDKs (Python/TS/Go) | Yes | Yes | Yes | Yes |
+| Public key & JWKS | Yes | Yes | Yes | Yes |
+| Hash chain linking | -- | Yes | Yes | Yes |
+| Provenance DAG | -- | Yes | Yes | Yes |
+| Counterfactual receipts | -- | -- | Yes | Yes |
+| Webhook notifications | -- | Yes | Yes | Yes |
+| Telegram notifications | -- | Yes | Yes | Yes |
+| Priority support | -- | -- | Yes | Yes |
+| Key rotation | Manual | Auto (90d) | Auto (custom) | Auto (custom) |
 
 **Overage:** Soft limit at 120% (warning), hard limit at 200% (blocked). 7-day grace period for new accounts.
 

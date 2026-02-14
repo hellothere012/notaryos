@@ -10,7 +10,7 @@ Use Case:
     After each action, issue/verify a receipt and store it.
 
 Usage:
-    export NOTARY_API_KEY="notary_test_demo"
+    export NOTARY_API_KEY="notary_live_..."  # Get one at https://notaryos.org/api-keys
     python audit_trail.py
 """
 
@@ -47,7 +47,7 @@ class AuditTrail:
     def __init__(self, storage_path: str = "audit_trail.json", api_key: Optional[str] = None):
         self.storage_path = Path(storage_path)
         self.notary = NotaryClient(
-            api_key=api_key or os.environ.get("NOTARY_API_KEY", "notary_test_demo")
+            api_key=api_key or os.environ.get("NOTARY_API_KEY")
         )
         self.entries: list[AuditEntry] = []
 
@@ -169,8 +169,13 @@ def main():
     print("NotaryOS - Audit Trail Example")
     print("=" * 50)
 
+    api_key = os.environ.get("NOTARY_API_KEY")
+    if not api_key:
+        print("Error: Set NOTARY_API_KEY env var. Get one at https://notaryos.org/api-keys")
+        sys.exit(1)
+
     # Create audit trail (uses local JSON file)
-    trail = AuditTrail("example_audit_trail.json")
+    trail = AuditTrail("example_audit_trail.json", api_key=api_key)
 
     try:
         # Simulate adding receipts from agent communications

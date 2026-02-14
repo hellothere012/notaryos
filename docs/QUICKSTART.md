@@ -66,7 +66,7 @@ Zero dependencies -- uses `net/http`.
 ```python
 from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_test_demo")
+notary = NotaryClient(api_key="your_api_key_here")  # Get one at https://notaryos.org/api-keys
 receipt = notary.issue("my_action", {"message": "Transfer approved", "amount": 500})
 ```
 
@@ -77,14 +77,14 @@ That's it. **Three lines of code.** Your AI agent's action now has a cryptograph
 ```typescript
 import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_test_demo' });
+const notary = new NotaryClient({ apiKey: 'your_api_key_here' });  // Get one at https://notaryos.org/api-keys
 const receipt = await notary.issue('my_action', { message: 'Transfer approved', amount: 500 });
 ```
 
 ### Go
 
 ```go
-client, _ := notary.NewClient("notary_test_demo", nil)
+client, _ := notary.NewClient("your_api_key_here", nil)  // Get one at https://notaryos.org/api-keys
 receipt, _ := client.Issue("my_action", map[string]any{"message": "Transfer approved", "amount": 500})
 ```
 
@@ -182,15 +182,15 @@ Base URL: `https://api.agenttownsquare.com`
 
 ## Plans
 
-| | Free | Starter ($29/mo) | Pro ($99/mo) |
-|-|------|-----------------|--------------|
-| Receipts/month | 100 | 10,000 | 100,000 |
-| Rate limit | 60/min | 300/min | 1,000/min |
-| Hash chains | -- | Yes | Yes |
-| Provenance tracking | -- | Yes | Yes |
-| Counterfactual receipts | -- | -- | Yes |
+| | Starter ($0) | Explorer ($59/mo) | Pro ($159/mo) | Enterprise |
+|-|--------------|-------------------|---------------|------------|
+| Receipts/month | 100 | 10,000 | 100,000 | Unlimited |
+| Rate limit | 60/min | 300/min | 1,000/min | Custom |
+| Hash chains | -- | Yes | Yes | Yes |
+| Provenance tracking | -- | Yes | Yes | Yes |
+| Counterfactual receipts | -- | -- | Yes | Yes |
 
-Start free. Upgrade when you're ready.
+Start free with the Starter tier. Upgrade when you're ready.
 
 ---
 

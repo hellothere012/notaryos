@@ -130,7 +130,7 @@ See the [live verification page](https://notaryos.org/verify).
 | `/v1/notary/status` | GET | None | Service health |
 | `/v1/notary/sample-receipt` | GET | None | Generate demo receipt |
 | `/v1/notary/verify` | POST | None | Verify any receipt |
-| `/v1/notary/seal` | POST | API Key | Create a signed receipt |
+| `/v1/notary/issue` | POST | API Key | Create a signed receipt |
 | `/v1/notary/public-key` | GET | None | Get verification public key |
 
 **Base URL:** `https://api.agenttownsquare.com`
@@ -166,12 +166,12 @@ Verification is free and works offline (via SDKs). Receipt creation requires an 
 
 ## Pricing
 
-| Tier | Receipts/month | Price |
-|------|---------------|-------|
-| **Free** | 1,000 | $0 |
-| **Starter** | 10,000 | $29/mo |
-| **Professional** | 100,000 | $99/mo |
-| **Enterprise** | Unlimited | Custom |
+| Tier | Receipts/month | Rate Limit | Price |
+|------|---------------|------------|-------|
+| **Starter** | 100 | 60/min | $0 |
+| **Explorer** | 10,000 | 300/min | $59/mo |
+| **Pro** | 100,000 | 1,000/min | $159/mo |
+| **Enterprise** | Unlimited | Custom | Custom |
 
 See [Pricing Details](docs/TECHNICAL_MANUAL.md#15-pricing-and-tiers).
 

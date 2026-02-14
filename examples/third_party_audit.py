@@ -10,7 +10,7 @@ Use Case:
     They receive an export file and the public key, then verify offline.
 
 Usage:
-    export NOTARY_API_KEY="notary_test_demo"
+    export NOTARY_API_KEY="notary_live_..."  # Get one at https://notaryos.org/api-keys
     python third_party_audit.py
 """
 
@@ -249,7 +249,10 @@ def main():
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sdk', 'python'))
     from notaryos import NotaryClient
 
-    api_key = os.environ.get("NOTARY_API_KEY", "notary_test_demo")
+    api_key = os.environ.get("NOTARY_API_KEY")
+    if not api_key:
+        print("Error: Set NOTARY_API_KEY env var. Get one at https://notaryos.org/api-keys")
+        sys.exit(1)
     notary = NotaryClient(api_key=api_key)
 
     # Get public key and issue some receipts

@@ -5,7 +5,7 @@ Basic Receipt Verification Example
 Demonstrates the simplest use case: issue a receipt and verify it.
 
 Usage:
-    export NOTARY_API_KEY="notary_test_demo"
+    export NOTARY_API_KEY="notary_live_..."  # Get one at https://notaryos.org/api-keys
     python basic_verify.py
 """
 
@@ -21,8 +21,11 @@ def main():
     print("NotaryOS - Basic Verification Example")
     print("=" * 50)
 
-    # Create client (reads API key from environment or uses test key)
-    api_key = os.environ.get("NOTARY_API_KEY", "notary_test_demo")
+    # Create client (reads API key from environment)
+    api_key = os.environ.get("NOTARY_API_KEY")
+    if not api_key:
+        print("Error: Set NOTARY_API_KEY env var. Get one at https://notaryos.org/api-keys")
+        sys.exit(1)
     notary = NotaryClient(api_key=api_key)
 
     try:
