@@ -657,7 +657,7 @@ assert result.valid  # True`}</code>
                   <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 mt-4">
                     The only compliance layer that <span className="gradient-text">keeps up with inference speed.</span>
                   </h2>
-                  <p className="text-gray-400 mb-6 leading-relaxed">Powered by the ATS Protocol&mdash;a proprietary high-performance agent communication engine with 7-layer zero-trust security.</p>
+                  <p className="text-gray-400 mb-6 leading-relaxed">Powered by the ATS Protocol&mdash;a high-performance agent communication engine with 7-layer zero-trust security.</p>
 
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {[

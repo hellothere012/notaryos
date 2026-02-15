@@ -89,6 +89,7 @@ const NAV_SECTIONS: NavSection[] = [
   { id: 'api', label: 'API Reference', icon: <Code className="w-4 h-4" /> },
   { id: 'counterfactuals', label: 'Counterfactuals', icon: <EyeOff className="w-4 h-4" /> },
   { id: 'integrations', label: 'Integrations', icon: <Layers className="w-4 h-4" /> },
+  { id: 'auto-receipts', label: 'Auto-Receipts', icon: <FileCheck className="w-4 h-4" /> },
   { id: 'sdks', label: 'SDKs', icon: <Package className="w-4 h-4" /> },
   { id: 'self-hosting', label: 'Self-Hosting', icon: <Server className="w-4 h-4" /> },
 ];
@@ -1335,6 +1336,141 @@ print(result.checks)          # {"signature": "pass", "chain": "pass", "timestam
                     <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
                       <h4 className="text-white font-medium text-sm mb-1">Custom A2A / MCP</h4>
                       <p className="text-xs text-gray-400">Use the REST API or SDKs directly. 3 lines of code, any language.</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </section>
+
+            {/* Divider */}
+            <hr className="border-gray-800/50 my-16" />
+
+            {/* ============================================================ */}
+            {/* SECTION 4b: AUTO-RECEIPTING                                   */}
+            {/* ============================================================ */}
+            <section id="auto-receipts" className="scroll-mt-20">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-50px' }}
+                variants={staggerContainer}
+              >
+                <motion.h2
+                  variants={fadeInUp}
+                  className="text-2xl font-bold text-white mb-2 flex items-center gap-3"
+                >
+                  <FileCheck className="w-6 h-6 text-emerald-400" />
+                  Auto-Receipting
+                </motion.h2>
+                <motion.p variants={fadeInUp} className="text-gray-400 mb-8">
+                  Wrap any agent so every public method call automatically produces
+                  a cryptographic receipt&mdash;zero changes to the agent class.
+                </motion.p>
+
+                {/* 2-line integration */}
+                <motion.div variants={fadeInUp} className="mb-10">
+                  <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    2-Line Integration
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Call <code className="text-emerald-400">notary.wrap(agent)</code> and
+                    every public method on your agent automatically issues a receipt.
+                  </p>
+                  <CodeBlock
+                    language="python"
+                    filename="agent.py"
+                    code={`from notaryos import NotaryClient
+
+notary = NotaryClient(api_key="notary_live_sk_...")
+notary.wrap(my_agent)  # Every public method now auto-receipts
+
+my_agent.place_order("BTC", 10)    # Receipt issued automatically
+my_agent.analyze(api_key="secret") # api_key redacted in receipt`}
+                  />
+                </motion.div>
+
+                {/* Class decorator */}
+                <motion.div variants={fadeInUp} className="mb-10">
+                  <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                    <Code className="w-4 h-4 text-purple-400" />
+                    Class Decorator
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Use <code className="text-purple-400">@receipted</code> to auto-wrap
+                    every instance at construction time.
+                  </p>
+                  <CodeBlock
+                    language="python"
+                    filename="trading_bot.py"
+                    code={`from notaryos import NotaryClient, receipted
+
+notary = NotaryClient(api_key="notary_live_sk_...")
+
+@receipted(notary)
+class TradingBot:
+    def trade(self, symbol, amount):
+        return execute_trade(symbol, amount)
+
+bot = TradingBot()  # Auto-wrapped at __init__
+bot.trade("ETH", 5) # Receipt issued automatically`}
+                  />
+                </motion.div>
+
+                {/* Configuration */}
+                <motion.div variants={fadeInUp} className="mb-10">
+                  <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-cyan-400" />
+                    Configuration
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Control receipt mode, sampling rate, and secret redaction.
+                  </p>
+                  <CodeBlock
+                    language="python"
+                    filename="config.py"
+                    code={`from notaryos import NotaryClient, AutoReceiptConfig
+
+config = AutoReceiptConfig(
+    mode="all",           # "all", "errors_only", or "sample"
+    sample_rate=0.5,      # Sample 50% of calls (for "sample" mode)
+    fire_and_forget=True, # Non-blocking (background thread)
+    dry_run=False,        # Set True to log without issuing
+    redact_secrets=True,  # Redact args matching secret patterns
+)
+
+notary = NotaryClient(api_key="notary_live_sk_...")
+notary.wrap(agent, config=config)`}
+                  />
+                </motion.div>
+
+                {/* Features grid */}
+                <motion.div variants={fadeInUp} className="mb-8">
+                  <h3 className="text-lg font-semibold text-white mb-4">Features</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Secret Redaction</h4>
+                      <p className="text-xs text-gray-400">Args named api_key, password, token, secret, credential, auth are automatically replaced with [REDACTED].</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Chain Linking</h4>
+                      <p className="text-xs text-gray-400">Receipts reference the previous receipt hash for tamper-evident ordering of agent actions.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Async Support</h4>
+                      <p className="text-xs text-gray-400">Detects async methods and creates matching async wrappers automatically.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Error Capture</h4>
+                      <p className="text-xs text-gray-400">Failed calls produce receipts with status: &quot;error&quot; and error_type for full accountability.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Fire-and-Forget</h4>
+                      <p className="text-xs text-gray-400">Background daemon thread with bounded queue. Receipt issuance never blocks your agent.</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-800/30 border border-gray-700/50">
+                      <h4 className="text-white font-medium text-sm mb-1">Unwrap &amp; Stats</h4>
+                      <p className="text-xs text-gray-400">notary.unwrap(agent) restores originals. notary.receipt_stats shows issued/failed/dropped counts.</p>
                     </div>
                   </div>
                 </motion.div>

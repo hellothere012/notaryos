@@ -670,17 +670,19 @@ export const AboutPage: React.FC = () => {
               <span className="ml-2 text-sm text-gray-500">your_agent.py</span>
             </div>
             <pre className="p-6 text-sm text-gray-300 font-mono overflow-x-auto leading-relaxed">
-              <code>{`from notary import seal, verify
+              <code>{`from notaryos import NotaryClient
 
-# Seal an action — one line
-receipt = await seal(
-    {"message": "Task completed", "result": data},
-    from_agent="my-agent",
-    to_agent="dashboard"
+notary = NotaryClient(api_key="notary_test_...")
+
+# Issue a receipt — one line
+receipt = notary.issue(
+    action_type="task.completed",
+    payload={"message": "Task completed", "result": data}
 )
 
 # Verify anywhere — no API key needed
-assert receipt.valid   # True
+result = notary.verify(receipt.receipt_hash)
+print(result.valid)    # True
 print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
             </pre>
           </motion.div>

@@ -79,10 +79,9 @@ npm start
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `REACT_APP_API_URL` | Backend API URL | `http://localhost:8000` |
-| `NOTARY_SECRET_KEY` | HMAC signing key (backend) | Required in production |
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://...` |
-| `REDIS_URL` | Redis connection | `redis://localhost:6379` |
+| `NEXT_PUBLIC_API_URL` | NotaryOS API URL | `https://api.agenttownsquare.com` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk auth key | Required |
+| `NOTARY_API_KEY` | NotaryOS API key | `notary_live_...` |
 
 ---
 

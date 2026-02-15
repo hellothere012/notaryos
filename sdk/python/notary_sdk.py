@@ -10,13 +10,30 @@ Zero external dependencies beyond `requests` (or uses urllib as fallback).
 """
 
 __version__ = "1.0.0"
-__all__ = ["NotaryClient", "NotaryError", "Receipt", "VerificationResult"]
+__all__ = [
+    "NotaryClient",
+    "NotaryError",
+    "Receipt",
+    "VerificationResult",
+    "AutoReceiptConfig",
+    "receipted",
+]
 
+import asyncio
+import atexit
+import functools
 import hashlib
+import inspect
 import json
+import queue
+import random
+import sys
+import threading
 import time
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+import warnings
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -206,6 +223,7 @@ class NotaryClient:
         self._base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
         self._timeout = timeout
         self._max_retries = max_retries
+        self._receipt_queue = None  # type: Optional[_ReceiptQueue]
 
     def _request(self, method: str, path: str, body: Optional[Dict] = None) -> Dict[str, Any]:
         """Make an HTTP request to the Notary API."""
@@ -423,6 +441,557 @@ class NotaryClient:
             Dict with agent_id, agent_name, tier, scopes, rate_limit
         """
         return self._request("GET", "/agents/me")
+
+    # =========================================================================
+    # Auto-receipting
+    # =========================================================================
+
+    def wrap(
+        self,
+        obj: Any,
+        config: Optional["AutoReceiptConfig"] = None,
+    ) -> Any:
+        """
+        Wrap an object so every public method automatically issues a receipt.
+
+        Args:
+            obj: The agent or object to wrap
+            config: Optional AutoReceiptConfig (defaults to AutoReceiptConfig())
+
+        Returns:
+            The same object (for chaining): ``agent = notary.wrap(MyAgent())``
+
+        Raises:
+            ValueError: If obj is a NotaryClient (prevents infinite recursion)
+
+        Example:
+            notary = NotaryClient(api_key="notary_live_xxx")
+            notary.wrap(my_agent)
+            my_agent.place_order("BTC", 10)  # auto-receipted!
+        """
+        if isinstance(obj, NotaryClient):
+            raise ValueError(
+                "Cannot wrap a NotaryClient instance (would cause infinite recursion)"
+            )
+
+        if getattr(obj, "_notary_wrapped", False):
+            return obj
+
+        cfg = config or AutoReceiptConfig()
+        if not cfg.enabled:
+            return obj
+
+        # Lazy-init the shared receipt queue
+        if self._receipt_queue is None:
+            self._receipt_queue = _ReceiptQueue()
+
+        chain_state = _ChainState(agent_id=obj.__class__.__name__)
+        methods = _discover_methods(obj)
+        originals = {}  # type: Dict[str, Any]
+
+        for name, method in methods:
+            originals[name] = method
+            wrapper = _make_wrapper(
+                method, name, self, obj, cfg, self._receipt_queue, chain_state,
+            )
+            # Instance-level setattr — doesn't pollute the class
+            setattr(obj, name, wrapper)
+
+        obj._notary_wrapped = True
+        obj._notary_originals = originals
+        obj._notary_chain = chain_state
+
+        class_name = obj.__class__.__name__
+        print(
+            f"[NotaryOS] Auto-receipts enabled for {class_name} ({len(methods)} methods)",
+            file=sys.stderr,
+        )
+        return obj
+
+    def unwrap(self, obj: Any) -> Any:
+        """
+        Remove auto-receipt wrappers, restoring original methods.
+
+        Args:
+            obj: A previously wrapped object
+
+        Returns:
+            The same object with original methods restored
+        """
+        originals = getattr(obj, "_notary_originals", None)
+        if originals is None:
+            return obj
+
+        for name, method in originals.items():
+            setattr(obj, name, method)
+
+        for attr in ("_notary_wrapped", "_notary_originals", "_notary_chain"):
+            try:
+                delattr(obj, attr)
+            except AttributeError:
+                pass
+
+        return obj
+
+    @property
+    def receipt_stats(self) -> Dict[str, int]:
+        """
+        Get auto-receipt queue statistics.
+
+        Returns:
+            Dict with issued, failed, dropped, pending counts
+        """
+        if self._receipt_queue is None:
+            return {"issued": 0, "failed": 0, "dropped": 0, "pending": 0}
+        return self._receipt_queue.stats
+
+
+# =============================================================================
+# Auto-receipt configuration
+# =============================================================================
+
+
+@dataclass
+class AutoReceiptConfig:
+    """
+    Configuration for auto-receipting behavior.
+
+    Example:
+        config = AutoReceiptConfig(mode="errors_only", dry_run=True)
+        notary.wrap(agent, config=config)
+    """
+
+    enabled: bool = True
+    mode: str = "all"  # "all", "errors_only", "sample"
+    sample_rate: float = 1.0
+    max_payload_bytes: int = 4096
+    fire_and_forget: bool = True
+    dry_run: bool = False
+    redact_secrets: bool = True
+    secret_patterns: FrozenSet[str] = field(default_factory=lambda: frozenset(
+        {"key", "secret", "token", "password", "credential", "auth"}
+    ))
+
+    def should_receipt(self, status: str) -> bool:
+        """Decide whether to issue a receipt based on mode and sampling."""
+        if not self.enabled:
+            return False
+        if self.mode == "errors_only":
+            return status == "error"
+        if self.mode == "sample":
+            return random.random() < self.sample_rate
+        return True  # mode == "all"
+
+
+# =============================================================================
+# Chain state (per-agent client-side chain linking)
+# =============================================================================
+
+
+class _ChainState:
+    """Thread-safe tracker for receipt chain linking within a single agent."""
+
+    __slots__ = ("agent_id", "last_hash", "sequence", "_lock")
+
+    def __init__(self, agent_id: str) -> None:
+        self.agent_id = agent_id
+        self.last_hash = None  # type: Optional[str]
+        self.sequence = 0
+        self._lock = threading.Lock()
+
+    def get_and_advance(self, receipt_hash: str) -> Tuple[Optional[str], int]:
+        """
+        Atomically return the current (prev_hash, sequence) and advance.
+
+        Returns:
+            (previous_receipt_hash, current_sequence) before advancing
+        """
+        with self._lock:
+            prev = self.last_hash
+            seq = self.sequence
+            self.last_hash = receipt_hash
+            self.sequence += 1
+            return prev, seq
+
+    def peek(self) -> Tuple[Optional[str], int]:
+        """Return current (last_hash, sequence) without advancing."""
+        with self._lock:
+            return self.last_hash, self.sequence
+
+
+# =============================================================================
+# Background receipt queue (fire-and-forget)
+# =============================================================================
+
+
+class _ReceiptQueue:
+    """
+    Daemon thread + bounded queue for non-blocking receipt issuance.
+    Thread starts lazily on first enqueue.
+    """
+
+    _SENTINEL = object()
+
+    def __init__(self, maxsize: int = 1000) -> None:
+        self._queue = queue.Queue(maxsize=maxsize)  # type: queue.Queue
+        self._thread = None  # type: Optional[threading.Thread]
+        self._started = False
+        self._start_lock = threading.Lock()
+        self._issued = 0
+        self._failed = 0
+        self._dropped = 0
+
+    def _ensure_started(self) -> None:
+        if self._started:
+            return
+        with self._start_lock:
+            if self._started:
+                return
+            self._thread = threading.Thread(
+                target=self._consumer_loop, daemon=True, name="notary-receipt-queue",
+            )
+            self._thread.start()
+            atexit.register(self._shutdown)
+            self._started = True
+
+    def enqueue(
+        self,
+        client: "NotaryClient",
+        action_type: str,
+        payload: Dict[str, Any],
+        chain_state: _ChainState,
+    ) -> None:
+        """Add a receipt job. Never raises — drops with warning if full."""
+        self._ensure_started()
+        try:
+            self._queue.put_nowait((client, action_type, payload, chain_state))
+        except queue.Full:
+            self._dropped += 1
+            warnings.warn(
+                "[NotaryOS] Receipt queue full — dropping receipt for "
+                f"'{action_type}'. Consider increasing queue size or reducing "
+                "call frequency.",
+                stacklevel=2,
+            )
+
+    def _consumer_loop(self) -> None:
+        while True:
+            item = self._queue.get()
+            if item is self._SENTINEL:
+                self._queue.task_done()
+                break
+            client, action_type, payload, chain_state = item
+            try:
+                prev_hash, _ = chain_state.peek()
+                receipt = client.issue(
+                    action_type=action_type,
+                    payload=payload,
+                    previous_receipt_hash=prev_hash,
+                )
+                if receipt.receipt_hash:
+                    chain_state.get_and_advance(receipt.receipt_hash)
+                self._issued += 1
+            except Exception:
+                self._failed += 1
+            finally:
+                self._queue.task_done()
+
+    def _shutdown(self) -> None:
+        if not self._started:
+            return
+        try:
+            self._queue.put_nowait(self._SENTINEL)
+        except queue.Full:
+            return
+        if self._thread is not None:
+            self._thread.join(timeout=30)
+
+    @property
+    def stats(self) -> Dict[str, int]:
+        return {
+            "issued": self._issued,
+            "failed": self._failed,
+            "dropped": self._dropped,
+            "pending": self._queue.qsize(),
+        }
+
+
+# =============================================================================
+# Auto-receipt helper functions
+# =============================================================================
+
+
+def _discover_methods(obj: Any) -> List[Tuple[str, Callable]]:
+    """
+    Discover public methods on an object suitable for auto-receipting.
+    Uses inspect.getattr_static to avoid triggering property getters.
+    """
+    methods = []
+    for name in dir(obj):
+        if name.startswith("_"):
+            continue
+        static_attr = inspect.getattr_static(obj, name, None)
+        if isinstance(static_attr, (property, classmethod, staticmethod)):
+            continue
+        attr = getattr(obj, name, None)
+        if attr is None or not callable(attr):
+            continue
+        if getattr(attr, "_auto_receipted", False):
+            continue
+        methods.append((name, attr))
+    return methods
+
+
+def _build_args_dict(
+    method: Callable, args: tuple, kwargs: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Map positional + keyword args to named dict using inspect.signature."""
+    try:
+        sig = inspect.signature(method)
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return dict(bound.arguments)
+    except (TypeError, ValueError):
+        result = {}
+        for i, a in enumerate(args):
+            result[f"arg{i}"] = a
+        result.update(kwargs)
+        return result
+
+
+def _redact_secrets(
+    args_dict: Dict[str, Any], patterns: FrozenSet[str],
+) -> Dict[str, Any]:
+    """Replace values whose key names contain secret-like substrings."""
+    redacted = {}
+    for k, v in args_dict.items():
+        k_lower = k.lower()
+        if any(p in k_lower for p in patterns):
+            redacted[k] = "[REDACTED]"
+        else:
+            redacted[k] = v
+    return redacted
+
+
+def _safe_repr(value: Any, max_depth: int = 3) -> Any:
+    """
+    Convert a value to a JSON-safe representation.
+    Primitives pass through; complex objects become class name strings.
+    """
+    if max_depth <= 0:
+        return "..." if value is not None else None
+
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value[:500] if len(value) > 500 else value
+    if isinstance(value, dict):
+        return "<dict keys={}>".format(list(value.keys())[:10])
+    if isinstance(value, (list, tuple)):
+        return "<{} len={}>".format(type(value).__name__, len(value))
+    if isinstance(value, bytes):
+        return "<bytes len={}>".format(len(value))
+    return "<{}>".format(type(value).__name__)
+
+
+def _truncate_payload(payload: Dict[str, Any], max_bytes: int) -> Dict[str, Any]:
+    """Truncate payload to fit within max_bytes when JSON-encoded."""
+    encoded = json.dumps(payload, default=str)
+    if len(encoded.encode("utf-8")) <= max_bytes:
+        return payload
+
+    # Truncate result_summary first
+    if "result_summary" in payload:
+        payload["result_summary"] = "<truncated>"
+        encoded = json.dumps(payload, default=str)
+        if len(encoded.encode("utf-8")) <= max_bytes:
+            return payload
+
+    # Then truncate arguments
+    if "arguments" in payload:
+        payload["arguments"] = "<truncated>"
+        encoded = json.dumps(payload, default=str)
+        if len(encoded.encode("utf-8")) <= max_bytes:
+            return payload
+
+    # Last resort: strip to essentials
+    return {
+        "agent": payload.get("agent", ""),
+        "auto_receipt": True,
+        "function": payload.get("function", ""),
+        "status": payload.get("status", "unknown"),
+        "truncated": True,
+    }
+
+
+def _make_wrapper(
+    method: Callable,
+    method_name: str,
+    client: "NotaryClient",
+    obj: Any,
+    config: "AutoReceiptConfig",
+    receipt_queue: _ReceiptQueue,
+    chain_state: _ChainState,
+) -> Callable:
+    """Create a sync or async wrapper that auto-receipts method calls."""
+    class_name = obj.__class__.__name__
+
+    if asyncio.iscoroutinefunction(method):
+        @functools.wraps(method)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            status = "success"
+            error_type = None
+            result = None
+            t0 = time.monotonic()
+            try:
+                result = await method(*args, **kwargs)
+                return result
+            except Exception as exc:
+                status = "error"
+                error_type = type(exc).__name__
+                raise
+            finally:
+                try:
+                    duration_ms = (time.monotonic() - t0) * 1000
+                    if config.should_receipt(status):
+                        args_dict = _build_args_dict(method, args, kwargs)
+                        if config.redact_secrets:
+                            args_dict = _redact_secrets(args_dict, config.secret_patterns)
+                        # Safe-repr all arg values
+                        safe_args = {k: _safe_repr(v) for k, v in args_dict.items()}
+
+                        payload = {
+                            "agent": class_name,
+                            "auto_receipt": True,
+                            "class_name": class_name,
+                            "function": method_name,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "duration_ms": round(duration_ms, 2),
+                            "status": status,
+                            "error_type": error_type,
+                            "arguments": safe_args,
+                            "result_summary": _safe_repr(result),
+                        }
+                        payload = _truncate_payload(payload, config.max_payload_bytes)
+
+                        if config.dry_run:
+                            print(
+                                f"[NotaryOS DRY RUN] {method_name}: "
+                                f"{json.dumps(payload, default=str)}",
+                                file=sys.stderr,
+                            )
+                        elif config.fire_and_forget:
+                            receipt_queue.enqueue(
+                                client, method_name, payload, chain_state,
+                            )
+                        else:
+                            prev_hash, _ = chain_state.peek()
+                            rcpt = client.issue(
+                                action_type=method_name,
+                                payload=payload,
+                                previous_receipt_hash=prev_hash,
+                            )
+                            if rcpt.receipt_hash:
+                                chain_state.get_and_advance(rcpt.receipt_hash)
+                except Exception:
+                    pass  # Never break the agent
+
+        async_wrapper._auto_receipted = True  # type: ignore[attr-defined]
+        return async_wrapper
+
+    else:
+        @functools.wraps(method)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            status = "success"
+            error_type = None
+            result = None
+            t0 = time.monotonic()
+            try:
+                result = method(*args, **kwargs)
+                return result
+            except Exception as exc:
+                status = "error"
+                error_type = type(exc).__name__
+                raise
+            finally:
+                try:
+                    duration_ms = (time.monotonic() - t0) * 1000
+                    if config.should_receipt(status):
+                        args_dict = _build_args_dict(method, args, kwargs)
+                        if config.redact_secrets:
+                            args_dict = _redact_secrets(args_dict, config.secret_patterns)
+                        safe_args = {k: _safe_repr(v) for k, v in args_dict.items()}
+
+                        payload = {
+                            "agent": class_name,
+                            "auto_receipt": True,
+                            "class_name": class_name,
+                            "function": method_name,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "duration_ms": round(duration_ms, 2),
+                            "status": status,
+                            "error_type": error_type,
+                            "arguments": safe_args,
+                            "result_summary": _safe_repr(result),
+                        }
+                        payload = _truncate_payload(payload, config.max_payload_bytes)
+
+                        if config.dry_run:
+                            print(
+                                f"[NotaryOS DRY RUN] {method_name}: "
+                                f"{json.dumps(payload, default=str)}",
+                                file=sys.stderr,
+                            )
+                        elif config.fire_and_forget:
+                            receipt_queue.enqueue(
+                                client, method_name, payload, chain_state,
+                            )
+                        else:
+                            prev_hash, _ = chain_state.peek()
+                            rcpt = client.issue(
+                                action_type=method_name,
+                                payload=payload,
+                                previous_receipt_hash=prev_hash,
+                            )
+                            if rcpt.receipt_hash:
+                                chain_state.get_and_advance(rcpt.receipt_hash)
+                except Exception:
+                    pass  # Never break the agent
+
+        sync_wrapper._auto_receipted = True  # type: ignore[attr-defined]
+        return sync_wrapper
+
+
+def receipted(
+    notary_client: "NotaryClient",
+    config: Optional[AutoReceiptConfig] = None,
+) -> Callable:
+    """
+    Class decorator that auto-receipts all instances.
+
+    Example:
+        notary = NotaryClient(api_key="notary_live_xxx")
+
+        @receipted(notary)
+        class MyAgent:
+            def act(self):
+                return "done"
+
+        agent = MyAgent()  # auto-wrapped at __init__ time
+        agent.act()         # receipt issued
+    """
+    def decorator(cls: type) -> type:
+        original_init = cls.__init__
+
+        @functools.wraps(original_init)
+        def new_init(self: Any, *args: Any, **kwargs: Any) -> None:
+            original_init(self, *args, **kwargs)
+            notary_client.wrap(self, config)
+
+        cls.__init__ = new_init  # type: ignore[misc]
+        return cls
+
+    return decorator
 
 
 # =============================================================================

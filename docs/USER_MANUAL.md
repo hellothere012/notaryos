@@ -6,7 +6,7 @@
 
 ## Welcome to NotaryOS
 
-NotaryOS gives your AI agents cryptographic receipts. Every message between agents gets a **Stamp** -- an immutable, signed proof of what was sent, by whom, and when. Think of it as a notarized receipt for every agent conversation.
+NotaryOS gives your AI agents cryptographic receipts. Every message between agents gets a **receipt** -- an immutable, signed proof of what was sent, by whom, and when. Think of it as a notarized receipt for every agent conversation.
 
 This manual walks you through everything you need to integrate, operate, and troubleshoot NotaryOS in your applications.
 
@@ -105,9 +105,9 @@ print(receipt.timestamp)      # 2026-02-12T08:49:00.123456+00:00
 
 ## 2. Core Concepts
 
-### What is a Stamp?
+### What is a Receipt?
 
-A Stamp is an immutable receipt. The public SDK `Receipt` exposes these key fields:
+A receipt is an immutable, cryptographically signed record. The SDK `Receipt` exposes these key fields:
 
 | What it answers | SDK Field | Description |
 |----------------|-----------|-------------|
@@ -118,9 +118,9 @@ A Stamp is an immutable receipt. The public SDK `Receipt` exposes these key fiel
 | **Is it authentic?** | `signature`, `signature_type`, `key_id` | Cryptographic proof |
 | **Where in the chain?** | `previous_receipt_hash` | Links to prior receipt |
 
-> **Internal vs SDK naming:** The proprietary `Stamp` dataclass uses `from_agent`, `to_agent`, `capability`, `message_hash`. The public SDK `Receipt` uses `agent_id`, `action_type`, `payload_hash`. Both are valid representations of the same receipt.
+> The SDK uses clean field names: `agent_id`, `action_type`, `payload_hash`. These are the only field names you need to know.
 
-Once created, a Stamp cannot be modified -- it's a frozen Python dataclass.
+Once created, a receipt cannot be modified -- it is cryptographically sealed.
 
 ### What is a Badge?
 
@@ -149,19 +149,18 @@ The first receipt in any agent's chain uses `previous_hash = "000...000"` (64 ze
 ```python
 receipt = await seal(
     {"message": "hello"},
-    from_agent="my-agent",
-    to_agent="target-agent",
+    agent_id="my-agent",
+    action_type="a2a.message",
 )
 ```
 
-### Seal with Custom Capability
+### Seal with Custom Action Type
 
 ```python
 receipt = await seal(
     {"ticker": "ACME", "action": "buy", "shares": 100},
-    from_agent="trading-agent",
-    to_agent="execution-engine",
-    capability="trading.execute_order",
+    agent_id="trading-agent",
+    action_type="trading.execute_order",
 )
 ```
 
@@ -173,9 +172,8 @@ When your receipt depends on upstream receipts:
 # This analysis depends on two prior data receipts
 receipt = await seal(
     {"analysis": "Q4 earnings look strong"},
-    from_agent="analyst-agent",
-    to_agent="dashboard",
-    capability="financial.earnings_analysis",
+    agent_id="analyst-agent",
+    action_type="financial.earnings_analysis",
     provenance_refs=["seal:abc12345", "seal:def67890"],
 )
 ```
@@ -190,23 +188,23 @@ receipt = await seal(
 | `str` | Encoded to UTF-8 bytes |
 | `bytes` | Used directly |
 
-The SHA-256 hash of the normalized bytes becomes the `message_hash`.
+The SHA-256 hash of the normalized bytes becomes the `payload_hash`.
 
 ### TypeScript seal()
 
 ```typescript
 import { seal } from './notary_seal';
 
-const stamp = await seal(
+const receipt = await seal(
     { message: "hello", count: 42 },
-    { from_agent: "my-agent", to_agent: "target", capability: "a2a.message" }
+    { agent_id: "my-agent", action_type: "a2a.message" }
 );
 
-console.log(stamp.badge);      // seal:a1b2...c3d4
-console.log(stamp.signature);  // base64url-encoded Ed25519 signature
+console.log(receipt.badge);      // seal:a1b2...c3d4
+console.log(receipt.signature);  // base64url-encoded Ed25519 signature
 ```
 
-**Offline fallback:** If the API is unreachable, `seal()` produces an unsigned local stamp rather than throwing. Your agent flow continues. The stamp has `signature: "unsigned"` and `key_id: "local-offline"`.
+**Offline fallback:** If the API is unreachable, `seal()` produces an unsigned local receipt rather than throwing. Your agent flow continues. The receipt has `signature: "unsigned"` and `key_id: "local-offline"`.
 
 ---
 
@@ -227,11 +225,11 @@ print(result.reason)        # Human-readable explanation
 
 ### Self-Verification (No Network)
 
-Every Stamp can verify itself:
+Every receipt can verify itself:
 
 ```python
-receipt = await seal({"msg": "hello"}, from_agent="a", to_agent="b")
-assert receipt.valid  # Reconstructs canonical string, checks signature locally
+receipt = await seal({"msg": "hello"}, agent_id="a", action_type="a2a.message")
+assert receipt.valid  # Checks signature locally
 ```
 
 ### Offline Verification with Public Key
@@ -262,7 +260,7 @@ public_key.verify(sig_bytes, canonical.encode("utf-8"))
 # If no exception is raised, the receipt is authentic
 ```
 
-> **Note:** The canonical format for signing uses the internal field names. The SDK `Receipt` field `agent_id` maps to the internal `from_agent`, `action_type` maps to `capability`, and `payload_hash` maps to `message_hash`. See [INDEPENDENT_VERIFICATION.md](./INDEPENDENT_VERIFICATION.md) for detailed offline verification code.
+> The SDK handles canonical format construction and verification internally. Use `NotaryClient.verify()` for receipt verification. See [INDEPENDENT_VERIFICATION.md](./INDEPENDENT_VERIFICATION.md) for detailed offline verification code.
 
 ### Chain Verification
 
@@ -277,14 +275,14 @@ for i, receipt_dict in enumerate(receipts_list):
         break
 ```
 
-### Verify Unsigned Stamps
+### Verify Unsigned Receipts
 
-TypeScript SDK fast-rejects unsigned stamps without a network call:
+TypeScript SDK fast-rejects unsigned receipts without a network call:
 
 ```typescript
-const result = await verify(unsignedStamp);
+const result = await verify(unsignedReceipt);
 // result.valid === false
-// result.reason === "Stamp was created offline and is unsigned"
+// result.reason === "Receipt was created offline and is unsigned"
 ```
 
 ---
@@ -293,12 +291,12 @@ const result = await verify(unsignedStamp);
 
 ### Understanding Chain Links
 
-Each receipt's `previous_hash` equals the preceding receipt's `message_hash`:
+Each receipt's `previous_hash` equals the preceding receipt's `payload_hash`:
 
 ```
-Receipt #1: message_hash = "abc123..."  previous_hash = "000...000" (genesis)
-Receipt #2: message_hash = "def456..."  previous_hash = "abc123..."
-Receipt #3: message_hash = "ghi789..."  previous_hash = "def456..."
+Receipt #1: payload_hash = "abc123..."  previous_hash = "000...000" (genesis)
+Receipt #2: payload_hash = "def456..."  previous_hash = "abc123..."
+Receipt #3: payload_hash = "ghi789..."  previous_hash = "def456..."
 ```
 
 ### What the Chain Proves
@@ -310,7 +308,7 @@ Receipt #3: message_hash = "ghi789..."  previous_hash = "def456..."
 
 ### Chain per Agent
 
-Each `from_agent` has its own independent chain. Agent A's chain doesn't affect Agent B's chain. This allows:
+Each `agent_id` has its own independent chain. Agent A's chain doesn't affect Agent B's chain. This allows:
 
 - Parallel sealing for different agents
 - Independent verification of one agent's history
@@ -381,12 +379,12 @@ Proof that an agent **could have** acted but **chose not to**. Standard receipts
 # Counterfactual receipts are created server-side via the API:
 # POST /v1/notary/counterfactual/issue (requires API key with issue:write scope)
 # Example payload:
-proof = await seal_counterfactual(  # engine-side function
+proof = await seal_counterfactual(
     action_not_taken="financial.execute_trade",
     capability_proof={"permissions": ["trade.execute"], "account": "acme"},
     opportunity_context={"ticker": "ACME", "price": 142.50, "signal": "buy"},
     decision_reason="Risk score 0.87 exceeds threshold 0.75",
-    from_agent="financial-agent",
+    agent_id="financial-agent",
     declination_reason="risk",
     validity_window_minutes=60,
 )
@@ -673,22 +671,18 @@ If seal latency averages over 200ms, the circuit breaker trips and skips sealing
 | `ERR_CHAIN_BROKEN` | `previous_hash` mismatch | Receipt may have been deleted; check database consistency |
 | `ERR_RATE_LIMIT_EXCEEDED` | Hit tier quota | Upgrade plan or wait for next billing period |
 | Unsigned stamps | API unreachable | Check network; stamps can be re-sealed when connectivity restores |
-| `RuntimeError: ED25519_SIGNING_KEY required` | Production mode, no key configured | Set `ED25519_SIGNING_KEY` environment variable |
-| `GroundingStatus.UNKNOWN` | DB unavailable or DAG too deep | Check PostgreSQL connection; consider increasing `DEFAULT_MAX_DEPTH` |
-| Agent suspended | 50% failure rate or 20 consecutive failures | Wait 30 minutes for auto-reinstatement; investigate verification failures |
-| Circuit breaker tripped | Seal latency > 200ms | Check system load; breaker auto-resets after 30 seconds |
+| Agent suspended | High failure rate detected | Wait for auto-reinstatement; investigate verification failures |
 
-### Environment Variables Quick Reference
+### SDK Configuration Quick Reference
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RECEIPT_SIGNER_TYPE` | `ed25519` | Signing algorithm |
-| `ED25519_SIGNING_KEY` | -- | Private key (required in production) |
-| `NOTARY_SECRET_KEY` | -- | HMAC secret (if using HMAC) |
-| `NOTARY_ENVIRONMENT` | `development` | Set to `production` for safety checks |
-| `NOTARY_MIDDLEWARE_MODE` | `shadow` | `shadow`, `opt-in`, `active` |
-| `NOTARY_MIDDLEWARE_ENABLED` | `true` | Kill switch |
-| `NOTARY_NOTIFY_MODE` | `human_facing` | Telegram notification filter |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `api_key` | (required) | Your API key (`notary_live_xxx` or `notary_test_xxx`) |
+| `base_url` | `https://api.agenttownsquare.com` | API endpoint |
+| `timeout` | `30` | Request timeout in seconds |
+| `max_retries` | `2` | Retry attempts on transient failures |
+
+For managed service configuration (signing keys, middleware, notifications), contact support@agenttownsquare.com.
 
 ### Getting Help
 

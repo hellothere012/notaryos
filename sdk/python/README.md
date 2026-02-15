@@ -65,6 +65,74 @@ print(key_info["public_key_pem"])
 result = notary.lookup("abc123def456...")
 ```
 
+## Auto-Receipting
+
+Wrap any agent so every public method call automatically produces a receipt — zero changes to the agent class.
+
+### Basic Usage (2 lines)
+
+```python
+from notaryos import NotaryClient
+
+notary = NotaryClient(api_key="notary_live_xxx")
+
+class MyAgent:
+    def place_order(self, symbol, qty):
+        return {"order_id": "123", "symbol": symbol, "qty": qty}
+
+    def analyze(self, data, api_key="sk_xxx"):
+        return {"trend": "bullish"}
+
+agent = MyAgent()
+notary.wrap(agent)  # Every public method now auto-receipts
+
+agent.place_order("BTC", 10)    # Receipt issued automatically
+agent.analyze(data, api_key="secret")  # api_key redacted in receipt
+```
+
+### Class Decorator
+
+```python
+from notaryos import NotaryClient, receipted
+
+notary = NotaryClient(api_key="notary_live_xxx")
+
+@receipted(notary)
+class TradingBot:
+    def trade(self, symbol, amount):
+        return execute_trade(symbol, amount)
+
+bot = TradingBot()  # Auto-wrapped at __init__
+bot.trade("ETH", 5)  # Receipt issued
+```
+
+### Configuration
+
+```python
+from notaryos import NotaryClient, AutoReceiptConfig
+
+config = AutoReceiptConfig(
+    mode="all",          # "all", "errors_only", or "sample"
+    sample_rate=0.5,     # Sample 50% of calls (for "sample" mode)
+    fire_and_forget=True, # Non-blocking (background thread)
+    dry_run=False,       # Set True to log without issuing
+    redact_secrets=True, # Redact args matching secret patterns
+)
+
+notary = NotaryClient(api_key="notary_live_xxx")
+notary.wrap(agent, config=config)
+```
+
+### Features
+
+- **Secret redaction**: Args named `api_key`, `password`, `token`, `secret`, `credential`, `auth` are automatically replaced with `[REDACTED]`
+- **Async support**: Detects `async def` methods and creates matching async wrappers
+- **Error capture**: Failed calls produce receipts with `status: "error"` and `error_type`
+- **Fire-and-forget**: Background daemon thread — receipt issuance never blocks your agent
+- **Chain linking**: Receipts reference the previous receipt hash for tamper-evident ordering
+- **Unwrap**: `notary.unwrap(agent)` restores original methods
+- **Stats**: `notary.receipt_stats` returns `{"issued": N, "failed": N, "dropped": N, "pending": N}`
+
 ## API Reference
 
 ### `NotaryClient(api_key, base_url=None, timeout=30, max_retries=2)`
@@ -78,6 +146,9 @@ result = notary.lookup("abc123def456...")
 | `public_key()` | API Key | Get Ed25519 public key |
 | `lookup(receipt_hash)` | Public | Look up receipt by hash |
 | `me()` | API Key | Authenticated agent info |
+| `wrap(obj, config=None)` | — | Auto-receipt all public methods |
+| `unwrap(obj)` | — | Restore original methods |
+| `receipt_stats` | — | Get queue stats (property) |
 
 ### `verify_receipt(receipt_dict, base_url=None) -> bool`
 

@@ -206,9 +206,8 @@ CORS_ORIGINS = [
 
 | Secret | Storage | Rotation |
 |--------|---------|----------|
-| `NOTARY_SECRET_KEY` | Environment variable or secrets manager | Annually or on compromise |
-| JWT signing key | Environment variable | Quarterly |
-| Database credentials | Secrets manager (Vault, AWS Secrets) | On access changes |
+| `NOTARY_API_KEY` | Environment variable or secrets manager | Annually or on compromise |
+| Clerk publishable key | Environment variable | On access changes |
 
 ### Audit Logging
 
