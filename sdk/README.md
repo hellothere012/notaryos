@@ -35,42 +35,57 @@ client, _ := notary.NewClient("notary_live_xxx", nil)
 receipt, _ := client.Issue("my_action", map[string]any{"key": "value"})
 ```
 
-## Verify Without API Key
+## SDK v2.0 Features
 
-All SDKs support public verification without authentication:
+### Core API (all SDKs)
+- **Issue** — Create signed receipts for agent actions
+- **Verify** — Verify receipt signatures and integrity
+- **Lookup** — Public receipt lookup by hash
+- **History** — Paginated receipt history (Clerk JWT auth)
+- **Provenance** — DAG provenance reports for receipt chains
+- **Compute Hash** — Client-side SHA-256 matching server hashing
+- **Error Codes** — 16 standardized error constants
 
-```typescript
-// TypeScript
-import { verifyReceipt } from 'notaryos';
-const isValid = await verifyReceipt(receiptJson);
-```
+### Counterfactual Receipts (Enterprise)
+- **v1 Issue** — Proof of non-action (agent chose not to act)
+- **v2 Commit-Reveal** — Temporal binding with delayed reveal
+- **Corroboration** — Multi-agent counter-signing
+- **Compliance Certificates** — Human-readable audit documents
+- **Chain Verification** — Per-agent chain continuity checks
 
-```python
-# Python
-from notaryos import verify_receipt
-is_valid = verify_receipt(receipt_dict)
-```
+### Auto-Receipting
+- **Python** — `notary.wrap(agent)` + `@receipted(notary)` decorator
+- **TypeScript** — `notary.wrap(agent)` via ES6 Proxy
+- **Go** — `ReceiptQueue` + `RecordAction()` helper
 
-```go
-// Go
-isValid, _ := notary.VerifyReceipt(receiptMap, "")
-```
+### Offline Verification (Optional Modules)
+- **Python** — `notary_offline.py` (requires `cryptography`)
+- **TypeScript** — `offline.ts` (Web Crypto API, zero-dep)
+- **Go** — `offline.go` (stdlib `crypto/ed25519`)
 
-## Architecture
+### Framework Integrations
 
-```
-You (Developer)                    NotaryOS (Service)
-===============                    ==================
+#### Python (9 frameworks)
 
-  SDK (open source)        -->     Signing Engine (proprietary)
-  - issue()                        - Ed25519 signing
-  - verify()                       - Hash chain management
-  - status()                       - Abuse detection
-                                   - Key rotation
+| Framework | Import | Pattern |
+|-----------|--------|---------|
+| **LangChain** | `from notaryos.integrations.langchain import NotaryCallbackHandler` | Callback handler |
+| **CrewAI** | `from notaryos.integrations.crewai import notary_task_callback` | Task decorator |
+| **OpenAI Agents** | `from notaryos.integrations.openai_agents import NotaryGuardrail` | Guardrail |
+| **PydanticAI** | `from notaryos.integrations.pydantic_ai import notary_tool` | Tool decorator |
+| **Anthropic Claude** | `from notaryos.integrations.anthropic_claude import NotaryToolUseHook` | Tool use hook |
+| **Google ADK** | `from notaryos.integrations.google_adk import NotaryADKCallback` | Callback |
+| **LlamaIndex** | `from notaryos.integrations.llamaindex import NotaryCallbackHandler` | Callback handler |
+| **AWS Bedrock** | `from notaryos.integrations.aws_bedrock import NotaryBedrockHook` | Response hook |
+| **SmolAgents** | `from notaryos.integrations.smolagents import NotarySmolCallback` | Callback |
 
-  Verification is FREE             Signing is PAID
-  and works offline                and requires API key
-```
+#### TypeScript (3 frameworks)
+
+| Framework | Import | Pattern |
+|-----------|--------|---------|
+| **Vercel AI SDK** | `from 'notaryos/integrations/vercel-ai'` | Middleware |
+| **LangChain.js** | `from 'notaryos/integrations/langchain'` | Callback handler |
+| **OpenAI Agents** | `from 'notaryos/integrations/openai-agents'` | Tool wrapper |
 
 ## API Endpoints
 
@@ -79,9 +94,15 @@ You (Developer)                    NotaryOS (Service)
 | `POST /v1/notary/issue` | API Key | Issue signed receipt |
 | `POST /v1/notary/verify` | Public | Verify receipt |
 | `GET /v1/notary/r/{hash}` | Public | Look up receipt |
+| `GET /v1/notary/r/{hash}/provenance` | Public | Provenance DAG report |
+| `GET /v1/notary/history` | Clerk JWT | Receipt history |
 | `GET /v1/notary/status` | Public | Service health |
 | `GET /v1/notary/public-key` | Public | Ed25519 public key |
 | `GET /.well-known/jwks.json` | Public | JWKS key set |
+| `POST /v1/notary/counterfactual/issue` | API Key | Counterfactual receipt |
+| `POST /v1/notary/counterfactual/commit` | API Key | Commit-reveal Phase 1 |
+| `POST /v1/notary/counterfactual/reveal` | API Key | Commit-reveal Phase 2 |
+| `POST /v1/notary/counterfactual/corroborate` | API Key | Counter-sign |
 
 ## Get an API Key
 

@@ -28,8 +28,18 @@ export const ApiKeysPage: React.FC = () => {
 
     try {
       const response = await authClient.get(API_ENDPOINTS.apiKeys);
-      const keys = response.data.keys || response.data.items || response.data || [];
-      setApiKeys(Array.isArray(keys) ? keys : []);
+      // Extract keys array from response — must check Array.isArray first
+      // because Array.prototype.keys is a built-in method (truthy function)
+      // that would short-circuit a naive `response.data.keys || ...` chain.
+      const data = response.data;
+      const keys = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data?.keys)
+            ? data.keys
+            : [];
+      setApiKeys(keys);
     } catch (err: any) {
       console.error('Failed to fetch API keys:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load API keys');

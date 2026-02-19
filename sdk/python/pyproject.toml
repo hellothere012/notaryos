@@ -19,7 +19,6 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -27,6 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Security :: Cryptography",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
@@ -36,7 +36,15 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "mypy"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "pytest-timeout>=2.2", "pytest-cov", "mypy"]
+langchain = ["langchain>=0.3", "langchain-core>=0.3", "langchain-community>=0.3"]
+crewai = ["crewai>=0.80"]
+openai-agents = ["openai-agents>=0.0.7"]
+pydantic-ai = ["pydantic-ai>=0.0.30"]
+autogen = ["autogen-agentchat>=0.4"]
+all-frameworks = [
+    "notaryos[langchain,crewai,openai-agents,pydantic-ai,autogen,dev]",
+]
 
 [project.urls]
 Homepage = "https://notaryos.org"

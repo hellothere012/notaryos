@@ -31,35 +31,6 @@ const isValid = await verifyReceipt(receiptJson);
 // true
 ```
 
-### Full Example
-
-```typescript
-import { NotaryClient } from 'notaryos';
-
-const notary = new NotaryClient({ apiKey: 'notary_live_xxx' });
-
-// Issue a receipt for an agent action
-const receipt = await notary.issue('financial.transfer', {
-  from: 'billing-agent',
-  to: 'ledger-agent',
-  amount: 150.00,
-  currency: 'USD',
-});
-
-// Verify it
-const result = await notary.verify(receipt);
-console.log(result.valid);        // true
-console.log(result.signature_ok); // true
-
-// Check service health
-const status = await notary.status();
-console.log(status.status); // "active"
-
-// Get public key for offline verification
-const keyInfo = await notary.publicKey();
-console.log(keyInfo.public_key_pem);
-```
-
 ## API Reference
 
 ### `NotaryClient`
@@ -72,24 +43,99 @@ console.log(keyInfo.public_key_pem);
 | `status()` | API Key | Service health check |
 | `publicKey()` | API Key | Get Ed25519 public key |
 | `me()` | API Key | Authenticated agent info |
+| `lookup(receiptHash)` | Public | Look up receipt by hash |
+| `history(options?)` | Clerk JWT | Paginated receipt history |
+| `provenance(receiptHash)` | Public | Provenance DAG report |
+| `wrap(obj, config?)` | API Key | Auto-receipt wrapping |
 
-### `verifyReceipt(receipt, baseUrl?)`
+### `notary.counterfactual.*`
 
-Public verification without API key. Returns `boolean`.
+| Method | Auth | Description |
+|--------|------|-------------|
+| `issue(options)` | API Key | Issue v1 counterfactual |
+| `get(receiptHash)` | Public | Verify counterfactual |
+| `listByAgent(agentId)` | Public | List agent's counterfactuals |
+| `commit(options)` | API Key | v2 commit phase |
+| `reveal(hash, plaintext)` | API Key | v2 reveal phase |
+| `commitStatus(hash)` | Public | Check commit-reveal status |
+| `corroborate(hash, signals)` | API Key | Counter-sign |
+| `certificate(hash, format?)` | Public | Compliance certificate |
+| `verifyChain(agentId)` | Public | Chain continuity |
 
-### `computeHash(payload)`
+### Standalone Functions
 
-SHA-256 hash matching server-side computation. Returns hex string.
+| Function | Description |
+|----------|-------------|
+| `verifyReceipt(receipt, baseUrl?)` | Public verification (returns boolean) |
+| `computeHash(payload)` | SHA-256 matching server-side hashing |
 
-## Configuration
+### Error Codes
 
 ```typescript
-const notary = new NotaryClient({
-  apiKey: 'notary_live_xxx',     // Required
-  baseUrl: 'https://...',        // Default: https://api.agenttownsquare.com
-  timeout: 30_000,               // Default: 30s
-  maxRetries: 2,                 // Default: 2
+import { NotaryErrorCode } from 'notaryos';
+
+NotaryErrorCode.ERR_RECEIPT_NOT_FOUND   // 404
+NotaryErrorCode.ERR_INVALID_API_KEY     // 401
+NotaryErrorCode.ERR_RATE_LIMIT_EXCEEDED // 429
+NotaryErrorCode.ERR_CHAIN_BROKEN        // 400
+// ... 16 total error codes
+```
+
+## Auto-Receipting
+
+```typescript
+const agent = notary.wrap(myAgent, { mode: 'all', fireAndForget: true });
+await agent.processData(input); // auto-receipted!
+```
+
+Options: `mode` (`'all'` | `'errors_only'` | `'sample'`), `sampleRate`, `fireAndForget`, `dryRun`.
+
+## Counterfactual Receipts
+
+```typescript
+// v1: Direct issuance
+const stamp = await notary.counterfactual.issue({
+  actionNotTaken: 'delete_user_data',
+  capabilityProof: { scope: 'data:delete', granted: true },
+  opportunityContext: { user_id: 'u_123' },
+  decisionReason: 'GDPR retention period not yet expired',
 });
+
+// v2: Commit-reveal
+const commit = await notary.counterfactual.commit({ ...options });
+const reveal = await notary.counterfactual.reveal(hash, plaintext);
+```
+
+## Offline Verification
+
+```typescript
+import { OfflineVerifier } from 'notaryos/offline';
+
+const verifier = await OfflineVerifier.fromJWKS();
+const result = await verifier.verify(receipt);
+console.log(result.valid); // true — no API call needed
+```
+
+## Framework Integrations
+
+### Vercel AI SDK
+
+```typescript
+import { notaryMiddleware } from 'notaryos/integrations/vercel-ai';
+```
+
+### LangChain.js
+
+```typescript
+import { NotaryCallbackHandler } from 'notaryos/integrations/langchain';
+const handler = new NotaryCallbackHandler(notary);
+```
+
+### OpenAI Agents
+
+```typescript
+import { notaryToolWrapper } from 'notaryos/integrations/openai-agents';
+const wrappedTool = notaryToolWrapper(notary, myToolFn, 'my_tool');
 ```
 
 ## Error Handling
@@ -110,17 +156,16 @@ try {
 }
 ```
 
-## Get an API Key
+## Configuration
 
-1. Sign up at [notaryos.org](https://notaryos.org)
-2. Generate an API key from the dashboard
-3. Keys start with `notary_live_` (production) or `notary_test_` (sandbox)
-
-## Links
-
-- [NotaryOS Documentation](https://notaryos.org/docs)
-- [API Reference](https://api.agenttownsquare.com/v1/notary/status)
-- [Public Verification](https://notaryos.org/verify)
+```typescript
+const notary = new NotaryClient({
+  apiKey: 'notary_live_xxx',     // Required
+  baseUrl: 'https://...',        // Default: https://api.agenttownsquare.com
+  timeout: 30_000,               // Default: 30s
+  maxRetries: 2,                 // Default: 2
+});
+```
 
 ## License
 

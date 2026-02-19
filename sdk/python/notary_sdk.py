@@ -9,13 +9,15 @@ Usage:
 Zero external dependencies beyond `requests` (or uses urllib as fallback).
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __all__ = [
     "NotaryClient",
     "NotaryError",
+    "NotaryErrorCode",
     "Receipt",
     "VerificationResult",
     "AutoReceiptConfig",
+    "CounterfactualClient",
     "receipted",
 ]
 
@@ -69,6 +71,35 @@ class RateLimitError(NotaryError):
 class ValidationError(NotaryError):
     """Request validation failed."""
     pass
+
+
+# =============================================================================
+# Error Codes
+# =============================================================================
+
+
+class NotaryErrorCode:
+    """Standardized error codes mirroring the backend API."""
+
+    # 4xx Client Errors
+    ERR_RECEIPT_NOT_FOUND = "ERR_RECEIPT_NOT_FOUND"
+    ERR_INVALID_SIGNATURE = "ERR_INVALID_SIGNATURE"
+    ERR_INVALID_STRUCTURE = "ERR_INVALID_STRUCTURE"
+    ERR_INVALID_TIMESTAMP = "ERR_INVALID_TIMESTAMP"
+    ERR_UNKNOWN_SIGNER = "ERR_UNKNOWN_SIGNER"
+    ERR_UNSUPPORTED_ALGORITHM = "ERR_UNSUPPORTED_ALGORITHM"
+    ERR_CHAIN_BROKEN = "ERR_CHAIN_BROKEN"
+    ERR_CHAIN_MISSING = "ERR_CHAIN_MISSING"
+    ERR_PAYLOAD_TOO_LARGE = "ERR_PAYLOAD_TOO_LARGE"
+    ERR_RATE_LIMIT_EXCEEDED = "ERR_RATE_LIMIT_EXCEEDED"
+    ERR_INVALID_API_KEY = "ERR_INVALID_API_KEY"
+    ERR_INSUFFICIENT_SCOPE = "ERR_INSUFFICIENT_SCOPE"
+    ERR_VALIDATION_FAILED = "ERR_VALIDATION_FAILED"
+
+    # 5xx Server Errors
+    ERR_INTERNAL_ERROR = "ERR_INTERNAL_ERROR"
+    ERR_DATABASE_ERROR = "ERR_DATABASE_ERROR"
+    ERR_SIGNING_ERROR = "ERR_SIGNING_ERROR"
 
 
 # =============================================================================
@@ -224,6 +255,22 @@ class NotaryClient:
         self._timeout = timeout
         self._max_retries = max_retries
         self._receipt_queue = None  # type: Optional[_ReceiptQueue]
+        self._counterfactual = None  # type: Optional[CounterfactualClient]
+        self._admin = None  # type: Optional[_AdminClient]
+
+    @property
+    def counterfactual(self) -> "CounterfactualClient":
+        """Access counterfactual receipt operations (enterprise premium)."""
+        if self._counterfactual is None:
+            self._counterfactual = CounterfactualClient(self)
+        return self._counterfactual
+
+    @property
+    def admin(self) -> "_AdminClient":
+        """Access admin-only operations (invalidation, etc.)."""
+        if self._admin is None:
+            self._admin = _AdminClient(self)
+        return self._admin
 
     def _request(self, method: str, path: str, body: Optional[Dict] = None) -> Dict[str, Any]:
         """Make an HTTP request to the Notary API."""
@@ -441,6 +488,138 @@ class NotaryClient:
             Dict with agent_id, agent_name, tier, scopes, rate_limit
         """
         return self._request("GET", "/agents/me")
+
+    @staticmethod
+    def compute_hash(payload: "Dict[str, Any] | str") -> str:
+        """
+        Compute SHA-256 hash of a payload, matching server-side hashing.
+
+        Uses sorted-key JSON serialization for deterministic hashing.
+
+        Args:
+            payload: String or JSON-serializable dict
+
+        Returns:
+            Hex-encoded SHA-256 digest
+
+        Example:
+            hash_val = NotaryClient.compute_hash({"key": "value"})
+        """
+        if isinstance(payload, str):
+            data = payload
+        else:
+            data = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+    def history(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        status: Optional[str] = None,
+        search: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        clerk_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get paginated receipt history for the authenticated user.
+
+        Requires Clerk JWT authentication (not API key auth).
+
+        Args:
+            page: Page number (1-indexed)
+            page_size: Items per page (1-100)
+            status: Filter: 'valid', 'invalid', or 'all'
+            search: Free-text search on receipt_hash, action_type, agent_id
+            start_date: ISO date lower bound (inclusive)
+            end_date: ISO date upper bound (inclusive)
+            clerk_token: Clerk JWT token for authentication
+
+        Returns:
+            Dict with items, total, totalPages, page, pageSize
+
+        Example:
+            history = notary.history(page=1, page_size=20, clerk_token="ey...")
+        """
+        params = [f"page={page}", f"page_size={page_size}"]
+        if status:
+            params.append(f"status={status}")
+        if search:
+            from urllib.parse import quote
+            params.append(f"search={quote(search)}")
+        if start_date:
+            params.append(f"start_date={start_date}")
+        if end_date:
+            params.append(f"end_date={end_date}")
+
+        query = "&".join(params)
+        url = f"{self._base_url}/v1/notary/history?{query}"
+
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+        if clerk_token:
+            headers["Authorization"] = f"Bearer {clerk_token}"
+        else:
+            headers["X-API-Key"] = self._api_key
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_HISTORY"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+    def provenance(self, receipt_hash: str) -> Dict[str, Any]:
+        """
+        Get the provenance DAG report for a receipt.
+
+        Returns grounding status, ancestors, tainted paths, and integrity info.
+
+        Args:
+            receipt_hash: The receipt hash to check provenance for
+
+        Returns:
+            Dict with grounding_status, is_root, ancestors_checked, etc.
+
+        Example:
+            report = notary.provenance("abc123def456...")
+        """
+        url = f"{self._base_url}/v1/notary/r/{receipt_hash}/provenance"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_PROVENANCE"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
 
     # =========================================================================
     # Auto-receipting
@@ -992,6 +1171,370 @@ def receipted(
         return cls
 
     return decorator
+
+
+# =============================================================================
+# Counterfactual Client (Enterprise Premium)
+# =============================================================================
+
+
+class CounterfactualClient:
+    """
+    Sub-client for counterfactual receipt operations (proof of non-action).
+
+    Accessed via ``notary.counterfactual.*``:
+
+        stamp = notary.counterfactual.issue(
+            action_not_taken="delete_user_data",
+            capability_proof={"scope": "data:delete"},
+            opportunity_context={"user_id": "u_123"},
+            decision_reason="GDPR retention period not expired",
+        )
+    """
+
+    def __init__(self, client: "NotaryClient") -> None:
+        self._client = client
+
+    def issue(
+        self,
+        action_not_taken: str,
+        capability_proof: Dict[str, Any],
+        opportunity_context: Dict[str, Any],
+        decision_reason: str,
+        declination_reason: str = "unknown",
+        provenance_refs: Optional[List[str]] = None,
+        validity_window_minutes: int = 60,
+    ) -> Dict[str, Any]:
+        """
+        Issue a v1 counterfactual receipt (proof of non-action).
+
+        Args:
+            action_not_taken: The action the agent chose not to take
+            capability_proof: Evidence the agent had permission
+            opportunity_context: Conditions that triggered evaluation
+            decision_reason: Why the agent declined (10-2000 chars)
+            declination_reason: Category: policy, capacity, conflict, risk, etc.
+            provenance_refs: Related upstream receipt IDs
+            validity_window_minutes: How long this proof is meaningful (1-525600)
+
+        Returns:
+            Dict with success, receipt, receipt_hash, verify_url, proofs_complete
+        """
+        body: Dict[str, Any] = {
+            "action_not_taken": action_not_taken,
+            "capability_proof": capability_proof,
+            "opportunity_context": opportunity_context,
+            "decision_reason": decision_reason,
+            "declination_reason": declination_reason,
+            "validity_window_minutes": validity_window_minutes,
+        }
+        if provenance_refs:
+            body["provenance_refs"] = provenance_refs
+
+        return self._client._request("POST", "/counterfactual/issue", body)
+
+    def get(self, receipt_hash: str) -> Dict[str, Any]:
+        """
+        Verify/retrieve a counterfactual receipt by hash (public).
+
+        Args:
+            receipt_hash: The counterfactual receipt hash
+
+        Returns:
+            Dict with found, receipt_type, receipt, proofs, verification, meta
+        """
+        url = f"{self._client._base_url}/v1/notary/counterfactual/r/{receipt_hash}"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._client._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            if e.code == 404:
+                return {"found": False}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+    def list_by_agent(
+        self, agent_id: str, limit: int = 50, offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        List counterfactual receipts for a specific agent (public).
+
+        Args:
+            agent_id: The agent ID to query
+            limit: Max items (default 50, max 100)
+            offset: Pagination offset
+
+        Returns:
+            Dict with agent_id, total, counterfactuals list
+        """
+        url = (
+            f"{self._client._base_url}/v1/notary/counterfactual/agent/{agent_id}"
+            f"?limit={limit}&offset={offset}"
+        )
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._client._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+    def commit(
+        self,
+        action_not_taken: str,
+        capability_proof: Dict[str, Any],
+        opportunity_context: Dict[str, Any],
+        decision_reason: str,
+        declination_reason: str = "unknown",
+        provenance_refs: Optional[List[str]] = None,
+        validity_window_minutes: int = 60,
+        min_reveal_delay_seconds: int = 300,
+        max_reveal_window_seconds: int = 86400,
+    ) -> Dict[str, Any]:
+        """
+        Commit a v2 counterfactual receipt (Phase 1 of commit-reveal).
+
+        The decision_reason is hashed but NOT stored. You must call
+        reveal() with the original plaintext within the reveal window.
+
+        Returns:
+            Dict with success, format_version, receipt, receipt_hash, commit_reveal, next_step
+        """
+        body: Dict[str, Any] = {
+            "action_not_taken": action_not_taken,
+            "capability_proof": capability_proof,
+            "opportunity_context": opportunity_context,
+            "decision_reason": decision_reason,
+            "declination_reason": declination_reason,
+            "validity_window_minutes": validity_window_minutes,
+            "min_reveal_delay_seconds": min_reveal_delay_seconds,
+            "max_reveal_window_seconds": max_reveal_window_seconds,
+        }
+        if provenance_refs:
+            body["provenance_refs"] = provenance_refs
+
+        return self._client._request("POST", "/counterfactual/commit", body)
+
+    def reveal(
+        self, receipt_hash: str, decision_reason_plaintext: str
+    ) -> Dict[str, Any]:
+        """
+        Reveal a committed counterfactual receipt (Phase 2 of commit-reveal).
+
+        Verifies SHA-256(plaintext) == commit_hash within the time window.
+
+        Args:
+            receipt_hash: The committed receipt hash
+            decision_reason_plaintext: The original decision reason (must match commit)
+
+        Returns:
+            Dict with success, reveal_timestamp, reveal_delay_seconds
+        """
+        return self._client._request(
+            "POST",
+            "/counterfactual/reveal",
+            {
+                "receipt_hash": receipt_hash,
+                "decision_reason_plaintext": decision_reason_plaintext,
+            },
+        )
+
+    def commit_status(self, receipt_hash: str) -> Dict[str, Any]:
+        """
+        Check the commit-reveal lifecycle status of a counterfactual receipt (public).
+
+        Returns:
+            Dict with receipt_hash, format_version, agent_id, commit_reveal state
+        """
+        url = f"{self._client._base_url}/v1/notary/counterfactual/commit-status/{receipt_hash}"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._client._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+    def corroborate(
+        self, receipt_hash: str, signals: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Counter-sign a counterfactual receipt (corroboration).
+
+        A second agent provides corroboration signals to upgrade
+        attestation from self_attested to corroborated.
+
+        Args:
+            receipt_hash: The receipt to corroborate
+            signals: Corroboration evidence (e.g., ["log_entry", "witness_agent"])
+
+        Returns:
+            Dict with success, attestation_type, counter_signature
+        """
+        return self._client._request(
+            "POST",
+            "/counterfactual/corroborate",
+            {
+                "receipt_hash": receipt_hash,
+                "corroboration_signals": signals,
+            },
+        )
+
+    def certificate(
+        self, receipt_hash: str, format: str = "markdown"
+    ) -> Dict[str, Any]:
+        """
+        Generate a compliance certificate for a counterfactual receipt (public).
+
+        Returns a three-column document: Proves / Supports / Does NOT Prove.
+
+        Args:
+            receipt_hash: The counterfactual receipt hash
+            format: Output format ('markdown' or 'json')
+
+        Returns:
+            Dict with receipt_hash, format, certificate
+        """
+        url = (
+            f"{self._client._base_url}/v1/notary/counterfactual/r/{receipt_hash}/certificate"
+            f"?format={format}"
+        )
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._client._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+    def verify_chain(self, agent_id: str) -> Dict[str, Any]:
+        """
+        Verify counterfactual chain continuity for an agent (public).
+
+        Walks the chain back to GENESIS_HASH, checking for gaps and omissions.
+
+        Args:
+            agent_id: The agent ID whose chain to verify
+
+        Returns:
+            Dict with chain verification results
+        """
+        url = f"{self._client._base_url}/v1/notary/counterfactual/chain/{agent_id}/verify"
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+
+        try:
+            req = Request(url, headers=headers, method="GET")
+            with urlopen(req, timeout=self._client._timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except HTTPError as e:
+            body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            raise NotaryError(
+                error_data.get("detail", str(e)),
+                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
+
+
+# =============================================================================
+# Admin Client (server-side tooling)
+# =============================================================================
+
+
+class _AdminClient:
+    """Admin operations accessible via ``notary.admin.*``."""
+
+    def __init__(self, client: "NotaryClient") -> None:
+        self._client = client
+
+    def invalidate(self, receipt_hash: str, reason: str) -> Dict[str, Any]:
+        """
+        Invalidate a receipt and cascade ungrounding (admin only).
+
+        This is a destructive operation that marks a receipt as invalid
+        and cascades UNGROUNDED status to all dependent receipts.
+
+        Args:
+            receipt_hash: The receipt hash to invalidate
+            reason: Mandatory reason for invalidation (10-500 chars)
+
+        Returns:
+            Dict with cascade report
+        """
+        return self._client._request(
+            "POST",
+            f"/admin/invalidate/{receipt_hash}",
+            {"reason": reason},
+        )
 
 
 # =============================================================================

@@ -11,18 +11,21 @@ package notary
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 )
 
 const (
 	// SDKVersion is the current SDK version.
-	SDKVersion = "1.0.0"
+	SDKVersion = "2.0.0"
 
 	// DefaultBaseURL is the default NotaryOS API endpoint.
 	DefaultBaseURL = "https://api.agenttownsquare.com"
@@ -32,6 +35,26 @@ const (
 
 	// DefaultMaxRetries is the default number of retry attempts.
 	DefaultMaxRetries = 2
+)
+
+// Error code constants mirroring the backend API.
+const (
+	ErrReceiptNotFound     = "ERR_RECEIPT_NOT_FOUND"
+	ErrInvalidSignature    = "ERR_INVALID_SIGNATURE"
+	ErrInvalidStructure    = "ERR_INVALID_STRUCTURE"
+	ErrInvalidTimestamp    = "ERR_INVALID_TIMESTAMP"
+	ErrUnknownSigner       = "ERR_UNKNOWN_SIGNER"
+	ErrUnsupportedAlgorithm = "ERR_UNSUPPORTED_ALGORITHM"
+	ErrChainBroken         = "ERR_CHAIN_BROKEN"
+	ErrChainMissing        = "ERR_CHAIN_MISSING"
+	ErrPayloadTooLarge     = "ERR_PAYLOAD_TOO_LARGE"
+	ErrRateLimitExceeded   = "ERR_RATE_LIMIT_EXCEEDED"
+	ErrInvalidAPIKey       = "ERR_INVALID_API_KEY"
+	ErrInsufficientScope   = "ERR_INSUFFICIENT_SCOPE"
+	ErrValidationFailed    = "ERR_VALIDATION_FAILED"
+	ErrInternalError       = "ERR_INTERNAL_ERROR"
+	ErrDatabaseError       = "ERR_DATABASE_ERROR"
+	ErrSigningError        = "ERR_SIGNING_ERROR"
 )
 
 // Config holds client configuration options.
@@ -453,6 +476,154 @@ func (c *Client) Lookup(receiptHash string) (*LookupResult, error) {
 	}
 
 	return &result, nil
+}
+
+// Counterfactual returns a sub-client for counterfactual receipt operations.
+func (c *Client) Counterfactual() *CounterfactualClient {
+	return &CounterfactualClient{client: c}
+}
+
+// ComputeHash computes SHA-256 of a payload matching server-side hashing.
+// Uses sorted-key JSON serialization for deterministic output.
+func ComputeHash(payload map[string]any) string {
+	// Sort keys for deterministic serialization
+	keys := make([]string, 0, len(payload))
+	for k := range payload {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Build sorted JSON manually with compact separators
+	data, _ := json.Marshal(payload)
+	// json.Marshal already uses compact format, but we need sorted keys
+	// Re-marshal with sorted keys by building ordered map
+	ordered := make([]byte, 0, len(data))
+	ordered = append(ordered, '{')
+	for i, k := range keys {
+		if i > 0 {
+			ordered = append(ordered, ',')
+		}
+		keyBytes, _ := json.Marshal(k)
+		valBytes, _ := json.Marshal(payload[k])
+		ordered = append(ordered, keyBytes...)
+		ordered = append(ordered, ':')
+		ordered = append(ordered, valBytes...)
+	}
+	ordered = append(ordered, '}')
+
+	hash := sha256.Sum256(ordered)
+	return hex.EncodeToString(hash[:])
+}
+
+// HistoryOptions holds parameters for receipt history queries.
+type HistoryOptions struct {
+	Page       int
+	PageSize   int
+	Status     string
+	Search     string
+	StartDate  string
+	EndDate    string
+	ClerkToken string
+}
+
+// HistoryResult holds paginated receipt history.
+type HistoryResult struct {
+	Items      []map[string]any `json:"items"`
+	Total      int              `json:"total"`
+	TotalPages int              `json:"totalPages"`
+	Page       int              `json:"page"`
+	PageSize   int              `json:"pageSize"`
+}
+
+// History returns paginated receipt history (requires Clerk JWT).
+func (c *Client) History(opts HistoryOptions) (*HistoryResult, error) {
+	if opts.Page == 0 {
+		opts.Page = 1
+	}
+	if opts.PageSize == 0 {
+		opts.PageSize = 10
+	}
+
+	url := fmt.Sprintf("%s/v1/notary/history?page=%d&page_size=%d",
+		c.baseURL, opts.Page, opts.PageSize)
+	if opts.Status != "" {
+		url += "&status=" + opts.Status
+	}
+	if opts.Search != "" {
+		url += "&search=" + opts.Search
+	}
+	if opts.StartDate != "" {
+		url += "&start_date=" + opts.StartDate
+	}
+	if opts.EndDate != "" {
+		url += "&end_date=" + opts.EndDate
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, &NotaryError{Message: fmt.Sprintf("failed to create request: %v", err), Code: "ERR_REQUEST"}
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "notary-go-sdk/"+SDKVersion)
+	if opts.ClerkToken != "" {
+		req.Header.Set("Authorization", "Bearer "+opts.ClerkToken)
+	} else {
+		req.Header.Set("X-API-Key", c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, &NotaryError{Message: fmt.Sprintf("connection failed: %v", err), Code: "ERR_CONNECTION"}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, &NotaryError{Message: "failed to read response", Code: "ERR_READ"}
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, &NotaryError{Message: string(body), Code: "ERR_HISTORY", Status: resp.StatusCode}
+	}
+
+	var result HistoryResult
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, &NotaryError{Message: "failed to parse history", Code: "ERR_PARSE"}
+	}
+	return &result, nil
+}
+
+// Provenance returns the provenance DAG report for a receipt (public).
+func (c *Client) Provenance(receiptHash string) (map[string]any, error) {
+	url := c.baseURL + "/v1/notary/r/" + receiptHash + "/provenance"
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, &NotaryError{Message: fmt.Sprintf("failed to create request: %v", err), Code: "ERR_REQUEST"}
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "notary-go-sdk/"+SDKVersion)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, &NotaryError{Message: fmt.Sprintf("connection failed: %v", err), Code: "ERR_CONNECTION"}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, &NotaryError{Message: "failed to read response", Code: "ERR_READ"}
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, &NotaryError{Message: string(body), Code: "ERR_PROVENANCE", Status: resp.StatusCode}
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, &NotaryError{Message: "failed to parse provenance", Code: "ERR_PARSE"}
+	}
+	return result, nil
 }
 
 // VerifyReceipt is a convenience function for quick verification without an API key.

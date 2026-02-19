@@ -31,48 +31,103 @@ is_valid = verify_receipt(receipt_dict)
 # True
 ```
 
-### Full Example
+## API Reference
+
+### `NotaryClient(api_key, base_url=None, timeout=30, max_retries=2)`
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `issue(action_type, payload, ...)` | API Key | Issue a signed receipt |
+| `verify(receipt)` | API Key | Verify a receipt |
+| `verify_by_id(receipt_id)` | API Key | Verify by receipt ID |
+| `status()` | API Key | Service health check |
+| `public_key()` | API Key | Get Ed25519 public key |
+| `me()` | API Key | Authenticated agent info |
+| `lookup(receipt_hash)` | Public | Look up receipt by hash |
+| `history(options)` | Clerk JWT | Paginated receipt history |
+| `provenance(receipt_hash)` | Public | Provenance DAG report |
+| `wrap(obj, config=None)` | — | Auto-receipt all public methods |
+| `unwrap(obj)` | — | Restore original methods |
+| `receipt_stats` | — | Get queue stats (property) |
+
+### `notary.counterfactual.*`
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `issue(options)` | API Key | Issue v1 counterfactual |
+| `get(receipt_hash)` | Public | Verify counterfactual |
+| `list_by_agent(agent_id, limit, offset)` | Public | List agent's counterfactuals |
+| `commit(options)` | API Key | v2 commit phase |
+| `reveal(hash, plaintext)` | API Key | v2 reveal phase |
+| `commit_status(hash)` | Public | Check commit-reveal status |
+| `corroborate(hash, signals)` | API Key | Counter-sign |
+| `certificate(hash, format)` | Public | Compliance certificate |
+| `verify_chain(agent_id)` | Public | Chain continuity |
+
+### `notary.admin.*`
+
+| Method | Auth | Description |
+|--------|------|-------------|
+| `invalidate(receipt_hash, reason)` | Admin | Invalidate a receipt |
+
+### Standalone Functions
+
+| Function | Description |
+|----------|-------------|
+| `verify_receipt(receipt, base_url)` | Public verification (returns bool) |
+| `NotaryClient.compute_hash(payload)` | SHA-256 matching server-side hashing |
+
+### Error Code Constants
 
 ```python
-from notaryos import NotaryClient
+from notaryos import NotaryErrorCode
 
-notary = NotaryClient(api_key="notary_live_xxx")
+NotaryErrorCode.ERR_RECEIPT_NOT_FOUND     # 404
+NotaryErrorCode.ERR_INVALID_API_KEY       # 401
+NotaryErrorCode.ERR_RATE_LIMIT_EXCEEDED   # 429
+NotaryErrorCode.ERR_CHAIN_BROKEN          # 400
+# ... 16 total error codes
+```
 
-# Issue a receipt for an agent action
-receipt = notary.issue("financial.transfer", {
-    "from": "billing-agent",
-    "to": "ledger-agent",
-    "amount": 150.00,
-    "currency": "USD",
-})
-print(f"Receipt: {receipt.receipt_id}")
-print(f"Verify:  {receipt.verify_url}")
+## Counterfactual Receipts
 
-# Verify it
-result = notary.verify(receipt)
-print(f"Valid: {result.valid}")          # True
-print(f"Signature: {result.signature_ok}")  # True
+Proof that an agent *chose not to act* — critical for compliance and audit trails.
 
-# Check service health
-status = notary.status()
-print(f"Service: {status.status}")  # "active"
+```python
+cf = notary.counterfactual
 
-# Get public key for offline verification
-key_info = notary.public_key()
-print(key_info["public_key_pem"])
+# v1: Direct issuance
+stamp = cf.issue(
+    action_not_taken="delete_user_data",
+    capability_proof={"scope": "data:delete", "granted": True},
+    opportunity_context={"user_id": "u_123"},
+    decision_reason="GDPR retention period not yet expired",
+)
 
-# Look up a receipt by hash (public, no API key)
-result = notary.lookup("abc123def456...")
+# v2: Commit-reveal (temporal binding)
+commit = cf.commit(
+    action_not_taken="execute_trade",
+    capability_proof={"scope": "trade:execute"},
+    decision_hash="sha256_of_reason",
+)
+reveal = cf.reveal(commit["receipt_hash"], "Market volatility exceeded threshold")
+
+# Corroboration (multi-agent counter-signing)
+result = cf.corroborate(receipt_hash, signals=["log_entry", "witness_agent"])
+
+# Query
+status = cf.commit_status(receipt_hash)
+cert = cf.certificate(receipt_hash, format="markdown")
+chain = cf.verify_chain(agent_id)
+history = cf.list_by_agent(agent_id)
 ```
 
 ## Auto-Receipting
 
-Wrap any agent so every public method call automatically produces a receipt — zero changes to the agent class.
-
-### Basic Usage (2 lines)
+Wrap any agent so every public method call automatically produces a receipt.
 
 ```python
-from notaryos import NotaryClient
+from notaryos import NotaryClient, AutoReceiptConfig
 
 notary = NotaryClient(api_key="notary_live_xxx")
 
@@ -80,14 +135,10 @@ class MyAgent:
     def place_order(self, symbol, qty):
         return {"order_id": "123", "symbol": symbol, "qty": qty}
 
-    def analyze(self, data, api_key="sk_xxx"):
-        return {"trend": "bullish"}
-
 agent = MyAgent()
 notary.wrap(agent)  # Every public method now auto-receipts
 
 agent.place_order("BTC", 10)    # Receipt issued automatically
-agent.analyze(data, api_key="secret")  # api_key redacted in receipt
 ```
 
 ### Class Decorator
@@ -102,15 +153,13 @@ class TradingBot:
     def trade(self, symbol, amount):
         return execute_trade(symbol, amount)
 
-bot = TradingBot()  # Auto-wrapped at __init__
+bot = TradingBot()
 bot.trade("ETH", 5)  # Receipt issued
 ```
 
 ### Configuration
 
 ```python
-from notaryos import NotaryClient, AutoReceiptConfig
-
 config = AutoReceiptConfig(
     mode="all",          # "all", "errors_only", or "sample"
     sample_rate=0.5,     # Sample 50% of calls (for "sample" mode)
@@ -118,56 +167,112 @@ config = AutoReceiptConfig(
     dry_run=False,       # Set True to log without issuing
     redact_secrets=True, # Redact args matching secret patterns
 )
-
-notary = NotaryClient(api_key="notary_live_xxx")
 notary.wrap(agent, config=config)
 ```
 
-### Features
+## History & Provenance
 
-- **Secret redaction**: Args named `api_key`, `password`, `token`, `secret`, `credential`, `auth` are automatically replaced with `[REDACTED]`
-- **Async support**: Detects `async def` methods and creates matching async wrappers
-- **Error capture**: Failed calls produce receipts with `status: "error"` and `error_type`
-- **Fire-and-forget**: Background daemon thread — receipt issuance never blocks your agent
-- **Chain linking**: Receipts reference the previous receipt hash for tamper-evident ordering
-- **Unwrap**: `notary.unwrap(agent)` restores original methods
-- **Stats**: `notary.receipt_stats` returns `{"issued": N, "failed": N, "dropped": N, "pending": N}`
+```python
+# Paginated receipt history (requires Clerk JWT)
+history = notary.history(clerk_token="clerk_jwt_xxx", page=1, page_size=20)
 
-## API Reference
+# Provenance DAG report
+report = notary.provenance("receipt_hash_abc123")
+```
 
-### `NotaryClient(api_key, base_url=None, timeout=30, max_retries=2)`
+## Offline Verification
 
-| Method | Auth | Description |
-|--------|------|-------------|
-| `issue(action_type, payload, ...)` | API Key | Issue a signed receipt |
-| `verify(receipt)` | API Key | Verify a receipt |
-| `verify_by_id(receipt_id)` | API Key | Verify by receipt ID |
-| `status()` | API Key | Service health check |
-| `public_key()` | API Key | Get Ed25519 public key |
-| `lookup(receipt_hash)` | Public | Look up receipt by hash |
-| `me()` | API Key | Authenticated agent info |
-| `wrap(obj, config=None)` | — | Auto-receipt all public methods |
-| `unwrap(obj)` | — | Restore original methods |
-| `receipt_stats` | — | Get queue stats (property) |
+Verify receipts locally without API calls using Ed25519 public keys from JWKS.
 
-### `verify_receipt(receipt_dict, base_url=None) -> bool`
+```python
+from notary_offline import OfflineVerifier
 
-Public verification without API key.
+verifier = OfflineVerifier.from_jwks()
+result = verifier.verify(receipt_dict)
+print(result["valid"])   # True
+print(result["key_id"])  # Key ID used for verification
+```
 
-## CLI
+Requires `cryptography` library: `pip install cryptography`
 
-```bash
-# Check service status
-notaryos status
+## Framework Integrations
 
-# Issue a receipt
-notaryos issue notary_live_xxx my_action
+### LangChain
 
-# Verify a receipt
-notaryos verify '{"receipt_id": "...", ...}'
+```python
+from notaryos.integrations.langchain import NotaryCallbackHandler
 
-# Look up by hash
-notaryos lookup abc123def456
+handler = NotaryCallbackHandler(notary)
+chain.invoke(input, config={"callbacks": [handler]})
+```
+
+### CrewAI
+
+```python
+from notaryos.integrations.crewai import notary_task_callback
+
+@notary_task_callback(notary)
+def my_task(agent, task):
+    return agent.execute(task)
+```
+
+### OpenAI Agents
+
+```python
+from notaryos.integrations.openai_agents import NotaryGuardrail
+
+guardrail = NotaryGuardrail(notary)
+agent = Agent(guardrails=[guardrail])
+```
+
+### PydanticAI
+
+```python
+from notaryos.integrations.pydantic_ai import notary_tool
+
+@notary_tool(notary)
+def my_tool(ctx, query: str) -> str:
+    return process(query)
+```
+
+### Anthropic Claude
+
+```python
+from notaryos.integrations.anthropic_claude import NotaryToolUseHook
+
+hook = NotaryToolUseHook(notary)
+```
+
+### Google ADK
+
+```python
+from notaryos.integrations.google_adk import NotaryADKCallback
+
+callback = NotaryADKCallback(notary)
+```
+
+### LlamaIndex
+
+```python
+from notaryos.integrations.llamaindex import NotaryCallbackHandler
+
+handler = NotaryCallbackHandler(notary)
+```
+
+### AWS Bedrock
+
+```python
+from notaryos.integrations.aws_bedrock import NotaryBedrockHook
+
+hook = NotaryBedrockHook(notary)
+```
+
+### SmolAgents
+
+```python
+from notaryos.integrations.smolagents import NotarySmolCallback
+
+callback = NotarySmolCallback(notary)
 ```
 
 ## Error Handling
@@ -188,25 +293,25 @@ except ValidationError:
     pass
 ```
 
-## Context Manager
+## Configuration
 
 ```python
-with NotaryClient(api_key="notary_live_xxx") as notary:
-    receipt = notary.issue("action", {"key": "value"})
-# Connection automatically closed
+notary = NotaryClient(
+    api_key="notary_live_xxx",           # Required
+    base_url="https://...",              # Default: https://api.agenttownsquare.com
+    timeout=30,                          # Default: 30s
+    max_retries=2,                       # Default: 2
+)
 ```
 
-## Get an API Key
+## CLI
 
-1. Sign up at [notaryos.org](https://notaryos.org)
-2. Generate an API key from the dashboard
-3. Keys start with `notary_live_` (production) or `notary_test_` (sandbox)
-
-## Links
-
-- [NotaryOS Documentation](https://notaryos.org/docs)
-- [API Reference](https://api.agenttownsquare.com/v1/notary/status)
-- [Public Verification](https://notaryos.org/verify)
+```bash
+notaryos status                          # Check service status
+notaryos issue notary_live_xxx my_action # Issue a receipt
+notaryos verify '{"receipt_id": "..."}' # Verify a receipt
+notaryos lookup abc123def456             # Look up by hash
+```
 
 ## License
 
