@@ -317,6 +317,31 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen">
       {/* ================================================================ */}
+      {/*  BETA LAUNCH BANNER                                              */}
+      {/* ================================================================ */}
+      <div className="w-full bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-center text-sm text-amber-200">
+        <span className="font-semibold text-amber-300">🚀 Beta Launch</span>
+        {' — '}
+        NotaryOS just launched. You may encounter bugs or rough edges.{' '}
+        <a
+          href="https://github.com/hellothere012/notaryos/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:text-amber-100 transition-colors"
+        >
+          Submit an issue on GitHub
+        </a>
+        {' or '}
+        <a
+          href="mailto:hello@notaryos.org"
+          className="underline underline-offset-2 hover:text-amber-100 transition-colors"
+        >
+          contact us directly
+        </a>
+        .
+      </div>
+
+      {/* ================================================================ */}
       {/*  1. HERO                                                         */}
       {/* ================================================================ */}
       <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">

@@ -1,5 +1,8 @@
 # NotaryOS
 
+> [!NOTE]
+> **🚀 Beta Launch** — NotaryOS is freshly launched and in active development. You may encounter bugs or rough edges. If something's broken, please [open a GitHub issue](https://github.com/hellothere012/notaryos/issues) or contact us directly at [hello@notaryos.org](mailto:hello@notaryos.org). We read every message.
+
 **Cryptographic receipts for AI agent accountability.**
 
 Every action your AI agent takes — API calls, data processing, fund transfers — gets a tamper-evident, Ed25519-signed receipt. If anyone modifies a receipt, verification fails instantly. No logs to edit. No timestamps to backdate.
