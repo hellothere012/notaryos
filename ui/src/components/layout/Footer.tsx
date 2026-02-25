@@ -37,7 +37,7 @@ export const Footer: React.FC = () => {
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
-              href="https://agenttownsquare.com/privacy"
+              href="https://notaryos.org/privacy"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors"
@@ -45,7 +45,7 @@ export const Footer: React.FC = () => {
               Privacy
             </a>
             <a
-              href="https://agenttownsquare.com/terms"
+              href="https://notaryos.org/terms"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors"

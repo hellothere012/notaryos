@@ -125,10 +125,10 @@ export const Sidebar: React.FC = () => {
       {/* Footer */}
       <div className="mt-auto pt-4 border-t border-gray-800">
         <div className="px-3 py-2 text-xs text-gray-500">
-          <p>NotaryOS v1.0</p>
+          <p>NotaryOS v2.0</p>
           <p className="mt-1">
             <a
-              href="https://docs.agenttownsquare.com"
+              href="https://notaryos.org/docs"
               target="_blank"
               rel="noopener noreferrer"
               className="text-purple-400 hover:text-purple-300"

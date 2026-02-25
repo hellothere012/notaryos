@@ -58,7 +58,7 @@ The core primitive is the **Stamp** -- an immutable, cryptographically signed re
 # Python SDK
 from notaryos import NotaryClient
 notary = NotaryClient(api_key="notary_live_xxx")
-receipt = notary.issue("my_action", {"message": "hello"})
+receipt = notary.seal("my_action", {"message": "hello"})
 print(receipt.badge)  # seal:a1b2...c3d4
 ```
 
@@ -70,7 +70,7 @@ const receipt = await notary.issue('my_action', { message: "hello" });
 console.log(receipt.badge); // seal:a1b2...c3d4
 ```
 
-The `issue()` method (or `seal()` on the Python SDK) handles payload hashing, chain linkage, and signing automatically, returning an immutable receipt in a single call.
+The `seal()` method (Python SDK) or `issue()` method (TypeScript SDK) handles payload hashing, chain linkage, and signing automatically, returning an immutable receipt in a single call.
 
 ### 1.3 Architecture: Razor and Blade
 
@@ -89,7 +89,7 @@ NotaryOS follows a **razor-and-blade** model. The open-source components (React 
    - HistoryPage, PricingPage                    - JWKS key management
 
  TypeScript SDK                                Provenance & Integrity
-   - seal() / verify()                           - Provenance DAG
+   - issue() / verify()                          - Provenance DAG
    - Web Crypto API hashing                      - Counterfactual receipts
    - Offline fallback                            - Chain validation
 
@@ -105,7 +105,7 @@ NotaryOS follows a **razor-and-blade** model. The open-source components (React 
 | Term | Definition |
 |------|-----------|
 | **Stamp / Receipt** | Immutable cryptographic receipt with identity, integrity, authenticity, and provenance fields. The atomic unit of accountability. |
-| **Seal / Issue** | The verb/action of creating a Receipt. The `issue()` method on the SDK client is the primary API surface. |
+| **Seal / Issue** | The verb/action of creating a Receipt. Use `seal()` on the Python SDK or `issue()` on the TypeScript SDK. Both produce identical signed receipts. |
 | **Badge** | Compact display format: `seal:a1b2...c3d4`. First 4 + last 4 hex chars of receipt ID. |
 | **Hash Chain** | Per-agent linked list where each receipt's `previous_hash` references the preceding receipt's `payload_hash`. |
 | **Genesis Hash** | `"0" * 64` -- the `previous_hash` for the first receipt in any agent's chain. |
