@@ -361,7 +361,7 @@ export const LandingPage: React.FC = () => {
                   <Eye className="w-3 h-3" /> Counterfactual receipts
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-green-300">
-                  <Zap className="w-3 h-3" /> 1,185 receipts/sec
+                  <Zap className="w-3 h-3" /> 178+ receipts/sec
                 </span>
               </motion.div>
 
@@ -684,10 +684,10 @@ assert result.valid  # True`}</code>
                   </h2>
                   <p className="text-gray-400 mb-6 leading-relaxed">Powered by the ATS Protocol&mdash;a high-performance agent communication engine with 7-layer zero-trust security.</p>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
                     {[
-                      { value: '2.39ms', label: 'P50 verification latency' },
-                      { value: '1,185', label: 'Receipts per second' },
+                      { value: '4.70ms', label: 'P50 verification latency' },
+                      { value: '178+', label: 'Receipts/sec (8 workers)' },
                       { value: '100%', label: 'Success rate in production' },
                       { value: '7 layers', label: 'Zero-trust security' },
                     ].map((stat, i) => (
@@ -697,6 +697,11 @@ assert result.valid  # True`}</code>
                       </div>
                     ))}
                   </div>
+
+                  <p className="text-xs text-gray-500 mb-6">
+                    Verified on DigitalOcean droplet &mdash; 4 vCPU / 8 GB RAM / 8 workers. 5,416 benchmark requests, 100% success rate.{' '}
+                    <a href="https://github.com/hellothere012/notaryos/blob/main/reports/NOTARYOS_ENTERPRISE_BENCHMARK_20260214.md" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-gray-300 transition-colors">Full report →</a>
+                  </p>
 
                   <div className="flex flex-wrap gap-3">
                     <Link href="/docs" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg text-sm font-medium transition-all btn-shine">See the Docs <ArrowRight className="w-4 h-4" /></Link>
@@ -716,7 +721,7 @@ assert result.valid  # True`}</code>
 
 notary = NotaryClient(api_key="notary_live_sk_...")
 
-# Seal an action — 2ms, tamper-proof
+# Seal an action — ~5ms, tamper-proof
 receipt = notary.seal(
     action="trade.executed",
     agent_id="trading-bot-v3",

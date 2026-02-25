@@ -63,7 +63,7 @@ NotaryOS uses Ed25519 -- the same algorithm that secures SSH, Signal, and Tor. E
 
 ### Enterprise-Grade Performance
 
-Under the hood, NotaryOS runs a high-performance signing engine with 7-layer zero-trust security, sub-3ms latency, and 1,000+ RPS throughput. The architecture is purpose-built to make receipts fast, reliable, and scalable.
+Under the hood, NotaryOS runs a high-performance signing engine with 7-layer zero-trust security, 4.70ms P50 verification latency, and 178+ receipts/sec throughput. Benchmarked on a 4 vCPU / 8 GB RAM DigitalOcean droplet running 8 workers — 5,416 requests, 100% success rate. The architecture is purpose-built to make receipts fast, reliable, and scalable.
 
 ### Provenance Tracking
 
@@ -108,8 +108,8 @@ You can read every line of the cryptographic code. You can verify every receipt 
 | Capability | Detail |
 |-----------|--------|
 | Signing Algorithm | Ed25519 (primary), HMAC-SHA256 (legacy) |
-| Receipt Latency | P50: <15ms, P99: <100ms |
-| Verification Latency | P50: <5ms, P99: <50ms |
+| Receipt Latency | P50: 3.56ms, P99: 6.33ms (verified) |
+| Verification Latency | P50: 4.70ms, P99: 9.56ms (verified) |
 | Uptime Target | 99.9% |
 | Key Rotation | Automatic (90 days, configurable) |
 | SDKs | Python, TypeScript, Go |
@@ -198,7 +198,7 @@ receipt = notary.issue("my_action", {"message": "hello"})
 
 AI agents are proliferating across every industry. Autonomous systems are making real decisions with real consequences. The gap between what agents do and what can be proven grows wider every day.
 
-NotaryOS closes that gap with battle-tested cryptography, sub-15ms latency, and a verification model that requires zero trust in any central authority.
+NotaryOS closes that gap with battle-tested cryptography, 4.70ms P50 verification latency, and a verification model that requires zero trust in any central authority.
 
 **Your agents are already making decisions. Now you can prove it.**
 

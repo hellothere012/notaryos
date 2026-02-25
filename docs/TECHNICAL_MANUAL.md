@@ -710,11 +710,16 @@ The SDKs are configured via constructor parameters:
 
 ### 12.3 Service Level Objectives
 
-| Metric | Target |
-|--------|--------|
-| Uptime | 99.9% |
-| Issue P50 latency | <15ms |
-| Verify P50 latency | <5ms |
+| Metric | Target | Verified (Production) |
+|--------|--------|-----------------------|
+| Uptime | 99.9% | 29 days continuous |
+| Issue P50 latency | <15ms | **3.56ms** |
+| Verify P50 latency | <5ms | **4.70ms** |
+| Verify P99 latency | <50ms | **9.56ms** |
+| Throughput (single-thread) | >100 RPS | **178+ receipts/sec** |
+| Success Rate | 100% | **100%** (5,416 requests) |
+
+> **Benchmark environment:** DigitalOcean droplet — 4 vCPU, 8 GB RAM, 8 Uvicorn workers. Full report: `reports/NOTARYOS_ENTERPRISE_BENCHMARK_20260214.md`.
 
 Backend configuration, key management, and infrastructure details are managed internally. For enterprise self-hosting configuration, contact support@notaryos.org.
 
@@ -815,7 +820,7 @@ This is the economic engine: signing is paid, verification is free and unlimited
 
 **Overage:** Soft limit at 120% (warning), hard limit at 200% (blocked). 7-day grace period for new accounts.
 
-**SLOs:** 99.9% uptime, seal P50 <15ms, verify P50 <5ms.
+**SLOs:** 99.9% uptime, seal P50 3.56ms (verified), verify P50 4.70ms (verified). Benchmarked on 4 vCPU / 8 GB RAM / 8 workers — see `reports/NOTARYOS_ENTERPRISE_BENCHMARK_20260214.md`.
 
 ---
 
