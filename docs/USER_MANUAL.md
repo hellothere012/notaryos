@@ -589,14 +589,14 @@ curl https://api.agenttownsquare.com/.well-known/jwks.json
 
 ### Tiers
 
-| | Free | Starter ($29/mo) | Pro ($99/mo) |
-|-|------|-----------------|--------------|
-| Receipts/month | 100 | 10,000 | 100,000 |
-| Verifications/month | 500 | 50,000 | 500,000 |
-| Rate limit | 60/min | 300/min | 1,000/min |
-| Hash chains | -- | Yes | Yes |
-| Provenance DAG | -- | Yes | Yes |
-| Counterfactuals | -- | -- | Yes |
+| | Starter (Free) | Explorer ($59/mo) | Pro ($159/mo) | Enterprise |
+|-|----------------|-------------------|----------------|------------|
+| Receipts/month | 100 | 10,000 | 100,000 | Unlimited |
+| Verifications/month | 500 | 50,000 | 500,000 | Unlimited |
+| Rate limit | 60/min | 300/min | 1,000/min | Custom |
+| Hash chains | -- | Yes | Yes | Yes |
+| Provenance DAG | -- | Yes | Yes | Yes |
+| Counterfactuals | -- | -- | Yes | Yes |
 
 ### Manage Your Subscription
 

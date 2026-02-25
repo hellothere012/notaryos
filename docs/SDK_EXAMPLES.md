@@ -586,7 +586,7 @@ If any receipt is modified, the chain breaks at that point. Each agent maintains
 {
   "error": {
     "code": "ERR_INSUFFICIENT_SCOPE",
-    "message": "Scope issue:write required. Upgrade to Starter or Pro tier."
+    "message": "Scope issue:write required. Upgrade to Explorer or Pro tier."
   }
 }
 ```
@@ -634,19 +634,19 @@ Ed25519 is the default for all new receipts. HMAC-SHA256 is supported for backwa
 
 ## Pricing
 
-| | Free ($0/mo) | Starter ($29/mo) | Pro ($99/mo) |
-|-|:---:|:---:|:---:|
-| **Receipts/month** | 100 | 10,000 | 100,000 |
-| **Verifications/month** | 500 | 50,000 | 500,000 |
-| **Rate limit** | 60/min | 300/min | 1,000/min |
-| **Scopes** | `verify:read` | `verify:read`, `issue:write` | All scopes |
-| **Hash chains** | -- | Yes | Yes |
-| **Provenance DAG** | -- | Yes | Yes |
-| **Counterfactuals** | -- | -- | Yes |
-| **Key rotation** | Manual | Auto (90d) | Auto (custom) |
-| **Priority support** | -- | -- | Yes |
+| | Starter (Free) | Explorer ($59/mo) | Pro ($159/mo) | Enterprise |
+|-|:---:|:---:|:---:|:---:|
+| **Receipts/month** | 100 | 10,000 | 100,000 | Unlimited |
+| **Verifications/month** | 500 | 50,000 | 500,000 | Unlimited |
+| **Rate limit** | 60/min | 300/min | 1,000/min | Custom |
+| **Scopes** | `verify:read` | `verify:read`, `issue:write` | All scopes | All scopes |
+| **Hash chains** | -- | Yes | Yes | Yes |
+| **Provenance DAG** | -- | Yes | Yes | Yes |
+| **Counterfactuals** | -- | -- | Yes | Yes |
+| **Key rotation** | Manual | Auto (90d) | Auto (custom) | Auto (custom) |
+| **Priority support** | -- | -- | Yes | Yes |
 
-**Start free. Scale when ready. Enterprise pricing available.**
+**Start free with Starter. Scale to Explorer, Pro, or Enterprise when ready.**
 
 ---
 

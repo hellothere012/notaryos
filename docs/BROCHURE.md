@@ -126,19 +126,19 @@ You can read every line of the cryptographic code. You can verify every receipt 
 
 ## Pricing
 
-| | Free | Starter | Pro |
-|-|------|---------|-----|
-| **Price** | $0/mo | $29/mo | $99/mo |
-| **Receipts** | 100/mo | 10,000/mo | 100,000/mo |
-| **Verifications** | 500/mo | 50,000/mo | 500,000/mo |
-| **Rate Limit** | 60/min | 300/min | 1,000/min |
-| **Hash Chains** | -- | Yes | Yes |
-| **Provenance** | -- | Yes | Yes |
-| **Counterfactuals** | -- | -- | Yes |
-| **Key Rotation** | Manual | Auto | Auto (custom) |
-| **Priority Support** | -- | -- | Yes |
+| | Starter | Explorer | Pro | Enterprise |
+|-|---------|----------|-----|------------|
+| **Price** | Free | $59/mo | $159/mo | Contact us |
+| **Receipts** | 100/mo | 10,000/mo | 100,000/mo | Unlimited |
+| **Verifications** | 500/mo | 50,000/mo | 500,000/mo | Unlimited |
+| **Rate Limit** | 60/min | 300/min | 1,000/min | Custom |
+| **Hash Chains** | -- | Yes | Yes | Yes |
+| **Provenance** | -- | Yes | Yes | Yes |
+| **Counterfactuals** | -- | -- | Yes | Yes |
+| **Key Rotation** | Manual | Auto (90d) | Auto (custom) | Auto (custom) |
+| **Priority Support** | -- | -- | Yes | Yes |
 
-**Start free. Scale when ready. Enterprise pricing available.**
+**Start free with Starter. Scale to Explorer, Pro, or Enterprise when ready.**
 
 ---
 

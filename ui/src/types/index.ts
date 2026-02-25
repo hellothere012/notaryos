@@ -4,7 +4,7 @@ export interface User {
   email: string;
   username?: string;
   role: 'user' | 'admin' | 'agent_operator';
-  tier: 'free' | 'basic' | 'pro' | 'enterprise';
+  tier: 'free' | 'starter' | 'explorer' | 'pro' | 'enterprise';
   createdAt: string;
   emailVerified: boolean;
 }

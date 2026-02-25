@@ -179,20 +179,20 @@ export const ProfilePage: React.FC = () => {
       case 'pro':
         return {
           gradient: 'from-purple-500 to-pink-500',
-          label: 'Professional',
-          features: ['50,000 verifications/mo', 'Email support', 'API access'],
+          label: 'Pro',
+          features: ['500,000 verifications/mo', 'Priority support', '1,000 req/min'],
         };
-      case 'basic':
+      case 'explorer':
         return {
           gradient: 'from-blue-500 to-purple-500',
-          label: 'Basic',
-          features: ['5,000 verifications/mo', 'Community support', 'Basic API'],
+          label: 'Explorer',
+          features: ['50,000 verifications/mo', 'Email support', '300 req/min'],
         };
       default:
         return {
           gradient: 'from-gray-500 to-gray-600',
-          label: 'Free',
-          features: ['500 verifications/mo', 'Documentation access', 'Public API'],
+          label: 'Starter',
+          features: ['500 verifications/mo', 'Documentation access', '60 req/min'],
         };
     }
   };

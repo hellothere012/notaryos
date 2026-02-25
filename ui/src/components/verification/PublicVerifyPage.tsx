@@ -80,7 +80,7 @@ interface ReceiptMeta {
   receipt_hash: string;
   agent_id?: string;
   action_type?: string;
-  tier?: 'free' | 'starter' | 'pro' | 'enterprise';
+  tier?: 'free' | 'starter' | 'explorer' | 'pro' | 'enterprise';
 }
 
 /** Complete API response from GET /v1/notary/r/{hash} */
@@ -108,7 +108,7 @@ interface TierTheme {
 
 const TIER_THEMES: Record<string, TierTheme> = {
   free: {
-    label: 'Free',
+    label: 'Starter',
     sealGradient: 'from-slate-400 to-slate-600',
     badgeBg: 'bg-slate-500/20 border-slate-500/30',
     badgeText: 'text-slate-300',
@@ -120,6 +120,13 @@ const TIER_THEMES: Record<string, TierTheme> = {
     badgeBg: 'bg-cyan-500/20 border-cyan-500/30',
     badgeText: 'text-cyan-300',
     ringColor: 'rgba(34, 211, 238, 0.3)',
+  },
+  explorer: {
+    label: 'Explorer',
+    sealGradient: 'from-emerald-400 to-emerald-600',
+    badgeBg: 'bg-emerald-500/20 border-emerald-500/30',
+    badgeText: 'text-emerald-300',
+    ringColor: 'rgba(52, 211, 153, 0.3)',
   },
   pro: {
     label: 'Pro',

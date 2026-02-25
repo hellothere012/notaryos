@@ -69,7 +69,7 @@ export const UserMenu: React.FC = () => {
         return 'from-purple-500 to-cyan-500';
       case 'pro':
         return 'from-purple-500 to-pink-500';
-      case 'basic':
+      case 'explorer':
         return 'from-blue-500 to-purple-500';
       default:
         return 'from-gray-500 to-gray-600';
