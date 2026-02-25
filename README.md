@@ -3,9 +3,11 @@
 > [!NOTE]
 > **🚀 Beta Launch** — NotaryOS is freshly launched and in active development. You may encounter bugs or rough edges. If something's broken, please [open a GitHub issue](https://github.com/hellothere012/notaryos/issues) or contact us directly at [hello@notaryos.org](mailto:hello@notaryos.org). We read every message.
 
-**Cryptographic receipts for AI agent accountability.**
+**Cryptographic receipts for AI agent accountability — including proof of what your agent chose *not* to do.**
 
 Every action your AI agent takes — API calls, data processing, fund transfers — gets a tamper-evident, Ed25519-signed receipt. If anyone modifies a receipt, verification fails instantly. No logs to edit. No timestamps to backdate.
+
+And when your agent *declines* an action — blocks a trade, skips a transfer, refuses a command — that non-action gets the same cryptographic proof. This is the **counterfactual receipt**.
 
 [![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/notaryos)](https://www.npmjs.com/package/notaryos)
@@ -21,13 +23,50 @@ AI agents execute thousands of autonomous decisions daily. They transfer funds, 
 
 Log files are mutable. Databases can be edited. Timestamps can be backdated.
 
-NotaryOS gives you three properties that logs cannot:
+NotaryOS gives you four properties that logs cannot:
 
 | Property | What it means |
 |----------|---------------|
-| **Integrity** | Proof that content has not been modified since creation |
-| **Authenticity** | Proof that content was created by a specific entity |
+| **Integrity** | Proof that a receipt has not been modified since it was issued |
+| **Authenticity** | Proof that a receipt was created by a specific agent |
 | **Non-repudiation** | The creator cannot later deny having created it |
+| **Counterfactual proof** | Cryptographic evidence of what your agent *chose not to do* — and why |
+
+The fourth property is new. No other system provides it.
+
+---
+
+## Counterfactual Receipts — A New Category
+
+Traditional audit logs record what happened. **Counterfactual receipts prove what didn't happen** — with the same cryptographic guarantees as any other receipt.
+
+When your agent declines to act — blocks a trade, refuses a command, withholds a transfer — it issues a counterfactual receipt documenting:
+
+- What action it *could* have taken (and had the capability to execute)
+- Why it chose not to (the decision reason)
+- The full cryptographic chain linking this decision to prior actions
+
+**Without counterfactual receipts:**
+
+> "Our agent didn't execute the trade." ← Unverifiable claim. The log could be edited.
+
+**With counterfactual receipts:**
+
+> `receipt_id: cf_a3f8c91d` · `signature: 7QZCXN_...` · `valid: true` · `reason: risk_threshold_exceeded`
+
+That's tamper-proof evidence — signed with Ed25519, verifiable by anyone, forever.
+
+### Use cases
+
+| Scenario | What the receipt proves |
+|----------|------------------------|
+| Trading bot declines a $2M sell order | Agent had authority. Chose not to act. Risk threshold exceeded. |
+| Compliance agent blocks a cross-border transfer | Agent evaluated the transaction. OFAC screening triggered. |
+| Medical AI refuses to prescribe a drug | Agent saw the request. Contraindication detected. Decision recorded. |
+| Autonomous vehicle overrides a route | Agent assessed the path. Safety constraint triggered. Route logged. |
+| LLM refuses a user instruction | Agent received the prompt. Policy violated. Refusal recorded. |
+
+Every one of these non-actions is now as auditable as an action.
 
 ---
 
@@ -45,24 +84,39 @@ pip install notaryos
 from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
+
+# Standard action receipt
 receipt = notary.seal("fund_transfer", "agent-47", {"amount": 500, "to": "vendor-12"})
+
+# Counterfactual receipt — proof your agent chose NOT to act
+cf_receipt = notary.seal("trade.declined", "trading-bot-alpha", {
+    "counterfactual": True,
+    "capability_confirmed": True,
+    "reason": "risk_threshold_exceeded",
+    "would_have": {"action": "sell", "symbol": "BTC", "value_usd": 150000},
+})
 ```
 
-### 3. Verify
+### 3. Verify (no API key needed)
 
 ```python
-result = notary.verify(receipt)
+# Anyone can verify — no API key required
+result = notary.verify(cf_receipt)
 print(result.valid)        # True
 print(result.signature_ok) # True
+
+# Or use the standalone function — no client needed at all
+from notaryos import verify_receipt
+is_valid = verify_receipt(cf_receipt.to_dict())  # True
 ```
 
-That's it. Every `seal()` call returns a cryptographically signed receipt with a SHA-256 hash chain linking it to previous receipts.
+That's it. Both standard and counterfactual receipts get the same Ed25519 signature and SHA-256 hash chain. Verification is always free and works offline.
 
 ---
 
-## Try It Now (Terminal Only — No Install)
+## Try It Now — No Signup Required
 
-Everything below works with just `curl` and a terminal. No SDK, no dependencies, no account needed for verification.
+**Verification is always free.** Anyone can verify any receipt with no account, no API key, no install.
 
 ### 1. Check service status
 
@@ -70,47 +124,157 @@ Everything below works with just `curl` and a terminal. No SDK, no dependencies,
 curl -s https://api.agenttownsquare.com/v1/notary/status | python3 -m json.tool
 ```
 
-You'll see `"status": "active"`, the signing algorithm (`ed25519`), and available capabilities.
+You'll see `"status": "active"`, `"signature_type": "ed25519"`, and available capabilities.
 
-### 2. Get a signed sample receipt
-
-```bash
-curl -s https://api.agenttownsquare.com/v1/notary/sample-receipt | python3 -m json.tool
-```
-
-This returns a real Ed25519-signed receipt — no API key needed. Save the output, you'll use it next.
-
-### 3. Verify the receipt
+### 2. Fetch and verify a signed receipt (2 commands)
 
 ```bash
-# Paste the full receipt JSON from step 2 into the "receipt" field:
+# Fetch a real signed receipt
+RECEIPT=$(curl -s https://api.agenttownsquare.com/v1/notary/sample-receipt \
+  | python3 -c "import json,sys; print(json.dumps(json.load(sys.stdin)['receipt']))")
+
+# Verify it — no account needed
 curl -s -X POST https://api.agenttownsquare.com/v1/notary/verify \
   -H "Content-Type: application/json" \
-  -d '{
-    "receipt": {
-      "receipt_id": "PASTE_RECEIPT_ID",
-      "payload_hash": "PASTE_PAYLOAD_HASH",
-      "signature": "PASTE_SIGNATURE",
-      "signature_type": "ed25519",
-      "timestamp": "PASTE_TIMESTAMP"
-    }
-  }' | python3 -m json.tool
+  -d "{\"receipt\": $RECEIPT}" | python3 -m json.tool
 ```
 
-You'll see `"valid": true` and `"signature_ok": true`. Now try changing one character in the `payload_hash` and run it again — verification will fail instantly.
+You'll see:
 
-### 4. Issue your own receipt (requires free API key)
+```json
+{
+  "valid": true,
+  "signature_ok": true,
+  "structure_ok": true,
+  "chain_ok": true,
+  "reason": "Receipt verified successfully"
+}
+```
 
-Sign up at [notaryos.org](https://notaryos.org), create an API key, then:
+Now change any character in `$RECEIPT` and run verify again. You'll see `"valid": false` — tamper detected instantly.
+
+**Counterfactual receipts have this exact same structure.** The `payload` field contains `"counterfactual": true` and documents the decision. The signature, chain, and verification are identical to any other receipt.
+
+### 3. Inspect what's inside a receipt
 
 ```bash
-curl -s -X POST https://api.agenttownsquare.com/v1/notary/issue \
+echo $RECEIPT | python3 -m json.tool
+```
+
+Fields of note:
+- **`signature`** — Base64url Ed25519 signature over the payload hash (never the raw payload)
+- **`payload_hash`** — SHA-256 of the original payload. The payload itself is never stored.
+- **`previous_receipt_hash`** — links this receipt to the prior one (hash chain)
+- **`verify_url`** — public URL anyone can open to verify this receipt, forever
+
+### 4. Get the public key (offline verification)
+
+```bash
+curl -s https://api.agenttownsquare.com/v1/notary/public-key | python3 -m json.tool
+```
+
+Returns the Ed25519 public key in PEM + JWK. Verify any receipt signature locally — no API calls, no trust assumptions, no dependency on NotaryOS being online.
+
+---
+
+## Issuing Counterfactual Receipts (Free API Key)
+
+Sign up at [notaryos.org](https://notaryos.org) → API Keys. Free tier includes 100 receipts/month.
+
+```bash
+export NOTARY_KEY="notary_live_your_key_here"
+```
+
+### Healthcare — AI refuses a prescription
+
+A medical AI agent evaluates a prescription request and refuses it due to a contraindication. That refusal needs to be as auditable as a filled prescription.
+
+```bash
+CF_HEALTH=$(curl -s -X POST https://api.agenttownsquare.com/v1/notary/seal \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: notary_live_your_key_here" \
+  -H "Authorization: Bearer $NOTARY_KEY" \
+  -d '{
+    "action_type": "prescription.refused",
+    "agent_id": "medical-ai-v2",
+    "payload": {
+      "counterfactual": true,
+      "capability_confirmed": true,
+      "reason": "contraindication_detected",
+      "drug_requested": "warfarin",
+      "conflict_with": "aspirin",
+      "patient_ref": "anon-8821",
+      "would_have": "issued prescription #RX-4492"
+    }
+  }')
+
+# Verify it — no API key needed, share with anyone
+curl -s -X POST https://api.agenttownsquare.com/v1/notary/verify \
+  -H "Content-Type: application/json" \
+  -d "{\"receipt\": $CF_HEALTH}" | python3 -m json.tool
+```
+
+`capability_confirmed: true` is critical — it documents the agent *had authority* to act, not merely that it lacked permission. That distinction matters in audits and litigation.
+
+### Finance — Trading bot declines a high-risk trade
+
+A trading agent has authority to execute a $150k BTC sell. Risk thresholds are exceeded. The agent declines. Without a counterfactual receipt, there is no tamper-proof evidence it ever evaluated the trade.
+
+```bash
+CF_TRADE=$(curl -s -X POST https://api.agenttownsquare.com/v1/notary/seal \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NOTARY_KEY" \
+  -d '{
+    "action_type": "trade.declined",
+    "agent_id": "trading-bot-alpha",
+    "payload": {
+      "counterfactual": true,
+      "capability_confirmed": true,
+      "reason": "risk_threshold_exceeded",
+      "market": "BTC-USD",
+      "would_have": { "action": "sell", "qty": 50, "value_usd": 150000 },
+      "risk_score": 0.94,
+      "threshold": 0.80
+    }
+  }')
+
+curl -s -X POST https://api.agenttownsquare.com/v1/notary/verify \
+  -H "Content-Type: application/json" \
+  -d "{\"receipt\": $CF_TRADE}" | python3 -m json.tool
+```
+
+### Chaining decisions
+
+Real workflows are chains. Link receipts so tampering with any step breaks the whole chain:
+
+```bash
+PREV_HASH=$(echo $CF_TRADE | python3 -c "import json,sys; print(json.load(sys.stdin).get('receipt_hash',''))")
+
+curl -s -X POST https://api.agenttownsquare.com/v1/notary/seal \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NOTARY_KEY" \
+  -d "{
+    \"action_type\": \"risk.alert_sent\",
+    \"agent_id\": \"trading-bot-alpha\",
+    \"payload\": {
+      \"alert_type\": \"risk_threshold_breach\",
+      \"notified\": \"compliance-team\"
+    },
+    \"previous_receipt_hash\": \"$PREV_HASH\"
+  }" | python3 -m json.tool
+```
+
+Modify the trade receipt and this alert receipt's chain verification fails — proving the alert was generated in response to that exact decision.
+
+### Standard action receipt (non-counterfactual)
+
+```bash
+curl -s -X POST https://api.agenttownsquare.com/v1/notary/seal \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $NOTARY_KEY" \
   -d '{
     "action_type": "fund_transfer",
+    "agent_id": "payment-agent-1",
     "payload": {
-      "from": "agent-47",
       "to": "vendor-12",
       "amount": 500,
       "currency": "USD"
@@ -118,71 +282,12 @@ curl -s -X POST https://api.agenttownsquare.com/v1/notary/issue \
   }' | python3 -m json.tool
 ```
 
-The response includes `receipt_id`, `signature`, `payload_hash`, `receipt_hash`, and a `verify_url` you can share with anyone.
-
-### 5. Chain receipts together
-
-Pass the `receipt_hash` from the previous receipt to link them:
+### Look up any receipt by hash (no API key)
 
 ```bash
-curl -s -X POST https://api.agenttownsquare.com/v1/notary/issue \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: notary_live_your_key_here" \
-  -d '{
-    "action_type": "compliance.check",
-    "payload": {
-      "regulation": "MiCA",
-      "passed": true
-    },
-    "previous_receipt_hash": "PASTE_RECEIPT_HASH_FROM_STEP_4"
-  }' | python3 -m json.tool
-```
-
-Now these two receipts are cryptographically linked. Tamper with the first one and the chain breaks.
-
-### 6. Issue a counterfactual receipt (proof of non-action)
-
-This is the differentiator. Prove what your agent *chose not to do*:
-
-```bash
-curl -s -X POST https://api.agenttownsquare.com/v1/notary/issue \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: notary_live_your_key_here" \
-  -d '{
-    "action_type": "trade.declined",
-    "payload": {
-      "counterfactual": true,
-      "reason": "risk_threshold_exceeded",
-      "would_have": {
-        "action": "sell",
-        "symbol": "BTC",
-        "qty": 50,
-        "value": 150000
-      },
-      "agent": "trading-bot-1"
-    }
-  }' | python3 -m json.tool
-```
-
-This receipt is cryptographic proof that your agent *could* have executed a $150k trade but declined. Same Ed25519 signature, same hash chain, same public verifiability.
-
-### 7. Look up any receipt publicly (no API key)
-
-Anyone can verify a receipt by its hash — no account needed:
-
-```bash
+# Anyone can verify a receipt forever using just its hash
 curl -s https://api.agenttownsquare.com/v1/notary/r/PASTE_RECEIPT_HASH | python3 -m json.tool
 ```
-
-### 8. Get the public key for offline verification
-
-```bash
-curl -s https://api.agenttownsquare.com/v1/notary/public-key | python3 -m json.tool
-```
-
-Returns the Ed25519 public key in PEM format. You can verify any receipt signature offline using any Ed25519 library — no API calls, no trust assumptions.
-
-Or use the [live verification UI](https://notaryos.org/verify) to paste and verify any receipt visually.
 
 ---
 
@@ -277,16 +382,6 @@ python examples/demo_25_receipts.py
   Public lookup:    working
 ======================================================================
 ```
-
-### Why counterfactual receipts matter
-
-Traditional audit logs only record what happened. Counterfactual receipts prove what *didn't* happen — and why:
-
-- An agent **declined a $150,000 trade** because risk thresholds were exceeded
-- A deployment was **halted** because health checks failed
-- A bulk email was **not sent** because rate limits were hit
-
-Each of these non-actions gets the same cryptographic guarantees as a real action: Ed25519 signature, SHA-256 hash, chain linking, and public verifiability. When a regulator asks "why didn't your agent act?", you have tamper-proof evidence.
 
 ### After running the demo
 
@@ -401,13 +496,16 @@ pip install notaryos[all-frameworks] # All of the above
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/v1/notary/status` | GET | None | Service health and uptime |
-| `/v1/notary/sample-receipt` | GET | None | Generate a signed demo receipt |
-| `/v1/notary/verify` | POST | None | Verify any receipt |
-| `/v1/notary/issue` | POST | API Key | Create a signed receipt |
-| `/v1/notary/public-key` | GET | None | Ed25519 public key for offline verification |
+| `/v1/notary/status` | GET | None | Service health and signing key info |
+| `/v1/notary/public-key` | GET | None | Ed25519 public key (PEM + JWK) for offline verification |
+| `/v1/notary/sample-receipt` | GET | None | Synthetic signed demo receipt |
+| `/v1/notary/verify` | POST | None | Verify any receipt — signature, structure, chain |
+| `/v1/notary/r/{hash}` | GET | None | Look up a receipt by SHA-256 hash |
+| `/v1/notary/seal` | POST | API Key | Issue a signed receipt |
+| `/v1/notary/history` | GET | Clerk JWT | Paginated receipt history |
+| `/v1/api-keys` | GET/POST | Clerk JWT | List and create API keys |
 
-Verification is always free and requires no authentication.
+Verification is always free and requires no authentication. Full spec: **[docs/openapi.yaml](docs/openapi.yaml)**
 
 ---
 
@@ -454,6 +552,7 @@ Verification is free and works offline. Receipt creation requires an API key.
 | [User Manual](docs/USER_MANUAL.md) | Complete usage guide |
 | [Technical Manual](docs/TECHNICAL_MANUAL.md) | Architecture and specification |
 | [SDK Examples](docs/SDK_EXAMPLES.md) | Code examples for all SDKs |
+| [OpenAPI Spec](docs/openapi.yaml) | OpenAPI 3.0.3 — import into Postman, Insomnia, etc. |
 | [Independent Verification](docs/INDEPENDENT_VERIFICATION.md) | Offline chain verification |
 
 ---
