@@ -13,13 +13,19 @@
 # 1. Check service status
 curl https://api.agenttownsquare.com/v1/notary/status
 
-# 2. Get a live demo receipt
+# 2. Get a live demo receipt (response has { receipt: {...}, verification_hint, demo_note })
 curl https://api.agenttownsquare.com/v1/notary/sample-receipt | python3 -m json.tool
 
-# 3. Verify the receipt
+# 3. Verify the receipt (extract the "receipt" object from step 2)
 curl -X POST https://api.agenttownsquare.com/v1/notary/verify \
   -H "Content-Type: application/json" \
-  -d '{"receipt": <paste receipt from step 2>}'
+  -d '{"receipt": <paste the "receipt" object from step 2>}'
+
+# Or pipe it in one shot:
+curl -s https://api.agenttownsquare.com/v1/notary/sample-receipt \
+  | python3 -c "import sys,json; r=json.load(sys.stdin); print(json.dumps({'receipt':r['receipt']}))" \
+  | curl -X POST https://api.agenttownsquare.com/v1/notary/verify \
+      -H "Content-Type: application/json" -d @-
 ```
 
 ---

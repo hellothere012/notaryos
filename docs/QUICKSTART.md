@@ -24,12 +24,21 @@ You'll get a live, cryptographically signed receipt. This is a real stamp -- sig
 
 ## Step 2: Verify It
 
-Take the receipt from Step 1 and verify it:
+Take the `receipt` object from Step 1 (the value inside the `"receipt"` key -- not the whole response) and verify it:
 
 ```bash
 curl -X POST https://api.agenttownsquare.com/v1/notary/verify \
   -H "Content-Type: application/json" \
-  -d '{"receipt": <paste the receipt object here>}'
+  -d '{"receipt": <paste the receipt object from the "receipt" field>}'
+```
+
+Or pipe it in one shot:
+
+```bash
+curl -s https://api.agenttownsquare.com/v1/notary/sample-receipt \
+  | python3 -c "import sys,json; r=json.load(sys.stdin); print(json.dumps({'receipt':r['receipt']}))" \
+  | curl -X POST https://api.agenttownsquare.com/v1/notary/verify \
+      -H "Content-Type: application/json" -d @-
 ```
 
 Response:
@@ -38,7 +47,14 @@ Response:
   "valid": true,
   "signature_ok": true,
   "structure_ok": true,
-  "reason": "Receipt signature and structure verified successfully"
+  "chain_ok": true,
+  "reason": "Receipt verified successfully",
+  "details": {
+    "receipt_id": "receipt_demo_...",
+    "signature_type": "ed25519",
+    "key_id": "ed25519-key-v1",
+    "verification_method": "local_signer"
+  }
 }
 ```
 

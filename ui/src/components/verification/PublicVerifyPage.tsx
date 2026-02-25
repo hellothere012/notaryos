@@ -606,13 +606,28 @@ const PublicVerifyPage: React.FC = () => {
   const tierTheme = TIER_THEMES[tier] ?? DEFAULT_TIER_THEME;
 
   // ---- Extract display fields from the receipt ----
-  const fromAgent = (receipt?.from_agent as string) ?? (receipt?.signer_id as string) ?? 'N/A';
-  const toAgent = (receipt?.to_agent as string) ?? 'N/A';
-  const capability = (receipt?.capability as string) ?? (meta?.action_type as string) ?? 'N/A';
+  // The /r/{hash} API returns receipts in two possible formats:
+  //   - Internal format: from_agent, to_agent, capability, message_hash (sample/demo)
+  //   - SDK format:      agent_id, action_type, payload_hash (real DB receipts from /issue)
+  // We attempt both with appropriate fallbacks.
+  const fromAgent =
+    (receipt?.from_agent as string) ??
+    (receipt?.agent_id as string) ??
+    (meta?.agent_id as string) ??
+    'N/A';
+  const toAgent =
+    (receipt?.to_agent as string) ??
+    'notary';
+  const capability =
+    (receipt?.capability as string) ??
+    (receipt?.action_type as string) ??
+    (meta?.action_type as string) ??
+    'N/A';
   const timestamp =
     (receipt?.signed_at as string) ??
     (receipt?.timestamp as string) ??
     (receipt?.created_at as string) ??
+    (verification?.signed_at as string) ??
     '';
   const chainPosition =
     verification?.chain_position ??
@@ -621,6 +636,7 @@ const PublicVerifyPage: React.FC = () => {
     null;
   const algorithm =
     verification?.algorithm ??
+    verification?.signature_type ??
     (receipt?.algorithm as string) ??
     'HMAC-SHA256';
   const keyId =

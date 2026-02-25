@@ -481,7 +481,7 @@ const CryptoDetailsTab: React.FC<CryptoDetailsTabProps> = ({ result, truncateHas
         <div className="space-y-2">
           <VerificationCheckRow
             label="Signature Verification"
-            description="HMAC-SHA256 signature matches the receipt content"
+            description={`${result.details?.algorithm || 'Cryptographic'} signature matches the receipt content`}
             valid={result.signature_valid}
           />
           <VerificationCheckRow

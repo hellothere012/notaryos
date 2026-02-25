@@ -23,22 +23,32 @@ import { ChainVisualization } from './ChainVisualization';
 
 /**
  * Map the raw API verify response to the VerificationResult shape the UI expects.
- * The API uses field names like signature_ok / chain_ok / reason / details.key_id,
- * while the UI components expect signature_valid / chain_valid / message / details.signer_id.
+ *
+ * The /v1/notary/verify endpoint returns:
+ *   { valid, signature_ok, structure_ok, chain_ok, reason, details: { receipt_id,
+ *     agent_id, action_type, from_agent, to_agent, receipt_format, signature_type,
+ *     key_id, kid, alg, key_status, verification_method, timestamp, schema_version } }
+ *
+ * The UI expects VerificationResult:
+ *   { valid, message, signature_valid, chain_valid, timestamp_valid,
+ *     details: { receipt_hash, algorithm, signed_at, signer_id, chain_position } }
  */
 function mapApiResponse(raw: any): VerificationResult {
   const details = raw.details || {};
 
-  // Derive timestamp validity: valid if timestamp parses to a real date
+  // Derive timestamp validity: prefer server-side timestamp_ok (returned by /r/{hash}),
+  // then fall back to parsing the timestamp string to check if it's a real date.
   const ts = details.timestamp || details.signed_at;
-  const timestampValid = ts ? !isNaN(new Date(ts).getTime()) : false;
+  const parsedTimestampValid = ts ? !isNaN(new Date(ts).getTime()) : false;
+  const timestampValid =
+    raw.timestamp_ok ?? raw.timestamp_valid ?? parsedTimestampValid;
 
   return {
     valid: raw.valid ?? false,
     message: raw.reason || raw.message || '',
     signature_valid: raw.signature_ok ?? raw.signature_valid ?? false,
     chain_valid: raw.chain_ok ?? raw.chain_valid ?? false,
-    timestamp_valid: raw.timestamp_valid ?? timestampValid,
+    timestamp_valid: timestampValid,
     details: {
       receipt_hash: details.receipt_hash || details.receipt_id || '',
       algorithm: details.algorithm || details.alg || details.signature_type || '',
@@ -116,7 +126,9 @@ export const VerifyPanel: React.FC = () => {
       // Load sample and remove the query param
       publicClient.get(API_ENDPOINTS.sampleReceipt)
         .then(response => {
-          const formatted = JSON.stringify(response.data, null, 2);
+          // Extract just the receipt object from the SampleReceiptResponse wrapper
+          const receiptObj = response.data?.receipt ?? response.data;
+          const formatted = JSON.stringify(receiptObj, null, 2);
           setReceipt(formatted);
           router.replace(pathname);
         })
@@ -170,11 +182,18 @@ export const VerifyPanel: React.FC = () => {
         setResult(COUNTERFACTUAL_RESULT);
       } else {
         // Normalize to the shape /verify expects: {"receipt": {...}} or {"receipt_id": "..."}
-        // If the pasted JSON already has a top-level "receipt" key (e.g. from /issue or
-        // /sample-receipt responses) or a "receipt_id" key, pass it through unchanged.
-        // Otherwise the user pasted a raw receipt object — wrap it so Pydantic does
-        // inline verification instead of a DB lookup that would fail for /seal receipts.
-        const hasReceiptWrapper = 'receipt' in parsed || 'receipt_id' in parsed;
+        //
+        // Detection logic:
+        //   - If the pasted JSON has a top-level "receipt" key whose value is an object,
+        //     it is already a VerifyReceiptRequest wrapper -- pass through unchanged.
+        //   - Otherwise the user pasted a raw receipt object (with fields like receipt_id,
+        //     timestamp, signature, etc.) -- wrap it as { receipt: <parsed> }.
+        //
+        // We do NOT check for a bare "receipt_id" key because raw receipts also contain
+        // "receipt_id" as a field. That would cause the API to attempt a DB lookup
+        // (VerifyReceiptRequest.receipt_id path) instead of inline verification.
+        const hasReceiptWrapper =
+          'receipt' in parsed && typeof parsed.receipt === 'object' && parsed.receipt !== null;
         const body = hasReceiptWrapper ? parsed : { receipt: parsed };
         const response = await publicClient.post(API_ENDPOINTS.verify, body);
         setResult(mapApiResponse(response.data));
@@ -197,7 +216,11 @@ export const VerifyPanel: React.FC = () => {
   const handleLoadSample = async () => {
     try {
       const response = await publicClient.get(API_ENDPOINTS.sampleReceipt);
-      const formatted = JSON.stringify(response.data, null, 2);
+      // The /sample-receipt endpoint returns { receipt: {...}, verification_hint, demo_note }.
+      // Extract just the receipt object so the textarea shows a clean receipt
+      // and the verify flow sends the correct shape: { receipt: {...} }.
+      const receiptObj = response.data?.receipt ?? response.data;
+      const formatted = JSON.stringify(receiptObj, null, 2);
       setReceipt(formatted);
       setDemoType('valid');
       setTamperInfo(null);
@@ -214,23 +237,23 @@ export const VerifyPanel: React.FC = () => {
   const handleLoadTampered = async () => {
     try {
       const response = await publicClient.get(API_ENDPOINTS.sampleReceipt);
-      const original = response.data;
-      setOriginalReceipt(JSON.stringify(original, null, 2));
+      // Extract just the receipt object (same as handleLoadSample)
+      const receiptObj = response.data?.receipt ?? response.data;
+      setOriginalReceipt(JSON.stringify(receiptObj, null, 2));
 
       // Deep copy to avoid mutating the original
-      const tampered = JSON.parse(JSON.stringify(original));
+      const tampered = JSON.parse(JSON.stringify(receiptObj));
 
-      // Tamper the timestamp — could be nested inside receipt or at top level
-      const target = tampered.receipt || tampered;
-      const origTimestamp = target.timestamp;
-      target.timestamp = '2025-01-01T00:00:00.000Z';
+      // Tamper the timestamp on the raw receipt object
+      const origTimestamp = tampered.timestamp;
+      tampered.timestamp = '2025-01-01T00:00:00.000Z';
 
       setReceipt(JSON.stringify(tampered, null, 2));
       setDemoType('tampered');
       setTamperInfo({
         field: 'timestamp',
         originalValue: origTimestamp,
-        tamperedValue: target.timestamp,
+        tamperedValue: tampered.timestamp,
       });
       setError(null);
       setResult(null);
