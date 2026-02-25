@@ -134,7 +134,7 @@ export const API_ENDPOINTS = {
   // Agent registration
   registerAgent: '/v1/notary/agents/register',
 
-  // User settings (placeholder — backend endpoint TBD)
+  // User settings
   settings: '/v1/auth/clerk/settings',
 } as const;
 

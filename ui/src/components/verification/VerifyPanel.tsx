@@ -169,7 +169,14 @@ export const VerifyPanel: React.FC = () => {
         await new Promise((r) => setTimeout(r, 800));
         setResult(COUNTERFACTUAL_RESULT);
       } else {
-        const response = await publicClient.post(API_ENDPOINTS.verify, parsed);
+        // Normalize to the shape /verify expects: {"receipt": {...}} or {"receipt_id": "..."}
+        // If the pasted JSON already has a top-level "receipt" key (e.g. from /issue or
+        // /sample-receipt responses) or a "receipt_id" key, pass it through unchanged.
+        // Otherwise the user pasted a raw receipt object — wrap it so Pydantic does
+        // inline verification instead of a DB lookup that would fail for /seal receipts.
+        const hasReceiptWrapper = 'receipt' in parsed || 'receipt_id' in parsed;
+        const body = hasReceiptWrapper ? parsed : { receipt: parsed };
+        const response = await publicClient.post(API_ENDPOINTS.verify, body);
         setResult(mapApiResponse(response.data));
       }
     } catch (err: any) {
