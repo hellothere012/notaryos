@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Shield, ExternalLink } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -25,15 +25,12 @@ export const Footer: React.FC = () => {
             >
               Docs
             </Link>
-            <a
-              href="https://api.agenttownsquare.com/docs"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/api-docs"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
             >
               API
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            </Link>
             <Link
               href="/privacy"
               className="text-gray-400 hover:text-white transition-colors"

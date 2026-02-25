@@ -1,0 +1,955 @@
+openapi: 3.0.3
+
+info:
+  title: NotaryOS API
+  version: 2.1.0
+  description: |
+    Cryptographic receipt verification for AI agent actions.
+
+    Issue, verify, and audit agent behaviour with Ed25519 signatures.
+    Every receipt is tamper-evident, chained, and publicly verifiable.
+
+    **Base URL:** `https://api.agenttownsquare.com`
+
+    ## Authentication
+
+    Two auth schemes are supported:
+
+    | Scheme | Format | Used for |
+    |--------|--------|----------|
+    | API Key | `Authorization: Bearer notary_live_xxx` | Issuing receipts, agent registration |
+    | Clerk JWT | `Authorization: Bearer <clerk_session_jwt>` | User profile, history, billing, API key management |
+
+    Public endpoints (`/v1/notary/status`, `/v1/notary/verify`, `/v1/notary/sample-receipt`,
+    `/v1/notary/public-key`, `/v1/notary/r/{hash}`) require **no authentication**.
+
+  contact:
+    name: NotaryOS
+    url: https://notaryos.org
+    email: hello@notaryos.org
+  license:
+    name: BUSL-1.1
+    url: https://github.com/hellothere012/notaryos/blob/main/LICENSE
+
+servers:
+  - url: https://api.agenttownsquare.com
+    description: Production
+
+tags:
+  - name: Status
+    description: Service health and public key
+  - name: Receipts
+    description: Issue and verify cryptographic receipts
+  - name: History
+    description: Receipt history and provenance (Clerk JWT required)
+  - name: API Keys
+    description: Manage API keys (Clerk JWT required)
+  - name: Auth
+    description: Clerk user sync and profile
+  - name: Billing
+    description: Subscription management (Clerk JWT required)
+
+# ---------------------------------------------------------------------------
+# Security Schemes
+# ---------------------------------------------------------------------------
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: notary_live_xxx
+      description: API key starting with `notary_live_` or `notary_test_`
+    ClerkJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk session JWT obtained via the Clerk SDK
+
+  schemas:
+    Receipt:
+      type: object
+      description: A signed cryptographic receipt
+      required:
+        - receipt_id
+        - timestamp
+        - agent_id
+        - action_type
+        - payload_hash
+        - signature
+        - signature_type
+        - key_id
+      properties:
+        receipt_id:
+          type: string
+          example: "receipt_abc123def456"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-02-25T17:25:38.948038+00:00"
+        agent_id:
+          type: string
+          example: "my-agent-v1"
+        action_type:
+          type: string
+          example: "data_processing"
+        payload_hash:
+          type: string
+          description: SHA-256 of the payload
+          example: "a1c59ab8e55b71212ec330e484c444876bedae353bb8a9f4ca741d8087342836"
+        signature:
+          type: string
+          description: Base64url-encoded Ed25519 signature
+          example: "7QZCXN_DNVWbrC7Sc7PydYQesYW8gAS0K6UzDLq0OTA-UEPZhvl1aYczkr-DHpqx-d61H6KSJI2xWhzdpr9bAg"
+        signature_type:
+          type: string
+          enum: [ed25519]
+          example: "ed25519"
+        key_id:
+          type: string
+          example: "ed25519-key-v1"
+        kid:
+          type: string
+          example: "ed25519-key-v1"
+        alg:
+          type: string
+          example: "EdDSA"
+        schema_version:
+          type: string
+          example: "1.0"
+        chain_sequence:
+          type: integer
+          nullable: true
+          example: 42
+        previous_receipt_hash:
+          type: string
+          nullable: true
+          example: "8533bfaa8f072d33906e9629c17ab8ab1da28e703a0f6ad3da33bc2da6d4131b"
+        receipt_hash:
+          type: string
+          nullable: true
+          example: "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8"
+        verify_url:
+          type: string
+          nullable: true
+          example: "https://api.agenttownsquare.com/v1/notary/r/c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8"
+        public_key_ref:
+          type: string
+          nullable: true
+          description: PEM-encoded public key at time of signing
+
+    VerificationResult:
+      type: object
+      description: Result of receipt verification
+      required:
+        - valid
+        - signature_ok
+        - structure_ok
+        - reason
+      properties:
+        valid:
+          type: boolean
+          description: True only if all checks pass
+        signature_ok:
+          type: boolean
+          description: Ed25519 signature verified against public key
+        structure_ok:
+          type: boolean
+          description: Required fields present and well-formed
+        chain_ok:
+          type: boolean
+          nullable: true
+          description: Chain continuity check (null if receipt has no previous hash)
+        timestamp_ok:
+          type: boolean
+          nullable: true
+          description: Timestamp within acceptable clock skew
+        reason:
+          type: string
+          example: "Signature verified successfully"
+        details:
+          type: object
+          description: Detailed verification metadata
+          properties:
+            receipt_id:
+              type: string
+            agent_id:
+              type: string
+            action_type:
+              type: string
+            signature_type:
+              type: string
+            key_id:
+              type: string
+            algorithm:
+              type: string
+            verification_method:
+              type: string
+            timestamp:
+              type: string
+
+    ServiceStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, degraded, maintenance]
+          example: "active"
+        signature_type:
+          type: string
+          example: "ed25519"
+        key_id:
+          type: string
+          example: "ed25519-key-v1"
+        has_public_key:
+          type: boolean
+          example: true
+        capabilities:
+          type: array
+          items:
+            type: string
+          example: ["create_receipt", "verify_receipt", "export_chain", "third_party_verification"]
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "key_abc123"
+        name:
+          type: string
+          example: "Production agent key"
+        prefix:
+          type: string
+          example: "notary_live_"
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Missing Authorization header"
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+
+paths:
+
+  # ── Status ──────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [Status]
+      summary: Service health check
+      description: Basic liveness probe. No authentication required.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  /v1/notary/status:
+    get:
+      tags: [Status]
+      summary: Notary service status
+      description: Returns signing key metadata and available capabilities. No authentication required.
+      operationId: notaryStatus
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceStatus"
+              example:
+                status: active
+                signature_type: ed25519
+                key_id: ed25519-key-v1
+                has_public_key: true
+                capabilities:
+                  - create_receipt
+                  - verify_receipt
+                  - export_chain
+                  - third_party_verification
+                timestamp: "2026-02-25T17:25:40.083052+00:00"
+
+  /v1/notary/public-key:
+    get:
+      tags: [Status]
+      summary: Get Ed25519 public key
+      description: |
+        Returns the current Ed25519 public key in PEM format and as a JWK.
+        Use this key to verify receipt signatures offline without an API call.
+        No authentication required.
+      operationId: getPublicKey
+      responses:
+        "200":
+          description: Public key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key_id:
+                    type: string
+                    example: "ed25519-key-v1"
+                  algorithm:
+                    type: string
+                    example: "EdDSA"
+                  public_key_pem:
+                    type: string
+                    example: "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA...\n-----END PUBLIC KEY-----\n"
+                  jwk:
+                    type: object
+
+  # ── Receipts ─────────────────────────────────────────────────────────────
+
+  /v1/notary/sample-receipt:
+    get:
+      tags: [Receipts]
+      summary: Get a sample receipt
+      description: |
+        Returns a synthetic demo receipt for testing verification flows.
+        No authentication required.
+      operationId: getSampleReceipt
+      responses:
+        "200":
+          description: Sample receipt with verification hint
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipt:
+                    $ref: "#/components/schemas/Receipt"
+                  verification_hint:
+                    type: string
+                    example: "Copy this receipt JSON and paste it into the verification form, or use POST /v1/notary/verify"
+                  demo_note:
+                    type: string
+                    example: "This is a synthetic receipt for demonstration."
+
+  /v1/notary/verify:
+    post:
+      tags: [Receipts]
+      summary: Verify a receipt
+      description: |
+        Verifies a receipt's Ed25519 signature, structure, and optional chain continuity.
+        **No authentication required** — anyone can verify a receipt.
+
+        Pass the full receipt object (as returned by `seal()` or `GET /v1/notary/r/{hash}`).
+      operationId: verifyReceipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receipt]
+              properties:
+                receipt:
+                  $ref: "#/components/schemas/Receipt"
+            example:
+              receipt:
+                receipt_id: "receipt_demo_e25a338370f1"
+                agent_id: "my-agent-v1"
+                action_type: "data_processing"
+                payload_hash: "a1c59ab8e55b712..."
+                signature: "7QZCXN_DNVWbrC7Sc7PydYQesY..."
+                signature_type: "ed25519"
+                key_id: "ed25519-key-v1"
+                timestamp: "2026-02-25T17:25:38.948038+00:00"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+              example:
+                valid: true
+                signature_ok: true
+                structure_ok: true
+                chain_ok: true
+                timestamp_ok: true
+                reason: "Signature verified successfully"
+                details:
+                  receipt_id: "receipt_demo_e25a338370f1"
+                  algorithm: "EdDSA"
+                  verification_method: "local_signer"
+        "422":
+          description: Validation error — missing or malformed receipt fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/notary/r/{hash}:
+    get:
+      tags: [Receipts]
+      summary: Look up a receipt by hash
+      description: |
+        Publicly accessible receipt lookup by receipt hash (SHA-256).
+        Used by `verify_url` links embedded in every receipt.
+        No authentication required.
+      operationId: lookupReceipt
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          description: Receipt hash (SHA-256, hex-encoded)
+          schema:
+            type: string
+            example: "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8"
+      responses:
+        "200":
+          description: Receipt with verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipt:
+                    $ref: "#/components/schemas/Receipt"
+                  verification:
+                    $ref: "#/components/schemas/VerificationResult"
+        "400":
+          description: Invalid hash format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Receipt not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/notary/seal:
+    post:
+      tags: [Receipts]
+      summary: Seal (issue) a receipt
+      description: |
+        Creates a signed Ed25519 receipt for an agent action.
+        This is the primary endpoint for recording agent behaviour.
+
+        **Requires API Key authentication.**
+
+        ```python
+        # Python SDK
+        from notaryos import NotaryClient
+        notary = NotaryClient(api_key="notary_live_xxx")
+        receipt = notary.seal("data_processing", "my-agent-v1", {"key": "value"})
+        ```
+
+        ```bash
+        curl -X POST https://api.agenttownsquare.com/v1/notary/seal \
+          -H "Authorization: Bearer notary_live_xxx" \
+          -H "Content-Type: application/json" \
+          -d '{"action_type": "data_processing", "agent_id": "my-agent-v1", "payload": {"key": "value"}}'
+        ```
+      operationId: sealReceipt
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action_type, agent_id, payload]
+              properties:
+                action_type:
+                  type: string
+                  description: Short snake_case identifier for the action
+                  example: "data_processing"
+                agent_id:
+                  type: string
+                  description: Identifier for the agent performing the action
+                  example: "my-agent-v1"
+                payload:
+                  type: object
+                  description: Action metadata to include in the receipt (max 8 KB)
+                  example:
+                    input_tokens: 1024
+                    model: "claude-sonnet-4-6"
+                previous_receipt_hash:
+                  type: string
+                  nullable: true
+                  description: Hash of the prior receipt for chain continuity
+      responses:
+        "200":
+          description: Signed receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── History ───────────────────────────────────────────────────────────────
+
+  /v1/notary/history:
+    get:
+      tags: [History]
+      summary: Receipt history
+      description: |
+        Returns paginated receipt history for the authenticated user.
+        **Requires Clerk JWT authentication.**
+      operationId: getHistory
+      security:
+        - ClerkJWT: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+          description: Filter by agent ID
+        - name: action_type
+          in: query
+          schema:
+            type: string
+          description: Filter by action type
+      responses:
+        "200":
+          description: Paginated receipt history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Receipt"
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── API Keys ──────────────────────────────────────────────────────────────
+
+  /v1/api-keys:
+    get:
+      tags: [API Keys]
+      summary: List API keys
+      description: Returns all API keys for the authenticated user. **Requires Clerk JWT.**
+      operationId: listApiKeys
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApiKey"
+        "401":
+          description: Authentication required
+
+    post:
+      tags: [API Keys]
+      summary: Create an API key
+      description: Creates a new API key. **Requires Clerk JWT.** The raw key is only returned once — store it securely.
+      operationId: createApiKey
+      security:
+        - ClerkJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: "Production agent"
+      responses:
+        "200":
+          description: New API key (raw key returned once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    $ref: "#/components/schemas/ApiKey"
+                  raw_key:
+                    type: string
+                    example: "notary_live_abc123def456..."
+                    description: The full API key — only shown on creation
+        "401":
+          description: Authentication required
+
+  /v1/api-keys/{id}:
+    delete:
+      tags: [API Keys]
+      summary: Revoke an API key
+      description: Permanently revokes an API key. **Requires Clerk JWT.**
+      operationId: revokeApiKey
+      security:
+        - ClerkJWT: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Key revoked
+        "401":
+          description: Authentication required
+        "404":
+          description: Key not found
+
+  /v1/api-keys/{id}/rotate:
+    post:
+      tags: [API Keys]
+      summary: Rotate an API key
+      description: Revokes the existing key and issues a new one with the same name. **Requires Clerk JWT.**
+      operationId: rotateApiKey
+      security:
+        - ClerkJWT: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: New rotated API key
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_key:
+                    $ref: "#/components/schemas/ApiKey"
+                  raw_key:
+                    type: string
+        "401":
+          description: Authentication required
+
+  # ── Auth ─────────────────────────────────────────────────────────────────
+
+  /v1/auth/clerk/sync:
+    post:
+      tags: [Auth]
+      summary: Sync Clerk user
+      description: Syncs Clerk session data to the NotaryOS user database. Called automatically on sign-in. **Requires Clerk JWT.**
+      operationId: clerkSync
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: User synced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  clerk_user_id:
+                    type: string
+                  email:
+                    type: string
+                  tier:
+                    type: string
+                    enum: [starter, explorer, pro, enterprise]
+        "401":
+          description: Authentication required
+
+  /v1/auth/clerk/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      description: Returns the authenticated user's profile. **Requires Clerk JWT.**
+      operationId: clerkMe
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  clerk_user_id:
+                    type: string
+                  email:
+                    type: string
+                  tier:
+                    type: string
+                    enum: [starter, explorer, pro, enterprise]
+                  role:
+                    type: string
+                    enum: [user, admin]
+        "401":
+          description: Authentication required
+
+  /v1/auth/clerk/stats:
+    get:
+      tags: [Auth]
+      summary: Get user stats
+      description: Returns receipt counts, usage, and tier limits for the authenticated user. **Requires Clerk JWT.**
+      operationId: clerkStats
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipts_issued:
+                    type: integer
+                  receipts_this_month:
+                    type: integer
+                  monthly_limit:
+                    type: integer
+                  tier:
+                    type: string
+        "401":
+          description: Authentication required
+
+  /v1/auth/clerk/settings:
+    get:
+      tags: [Auth]
+      summary: Get user settings
+      description: Returns persisted user preferences. **Requires Clerk JWT.**
+      operationId: getSettings
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: Settings object
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Free-form settings JSON
+        "401":
+          description: Authentication required
+
+    put:
+      tags: [Auth]
+      summary: Update user settings
+      description: Persists user preferences. **Requires Clerk JWT.**
+      operationId: updateSettings
+      security:
+        - ClerkJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Settings key-value pairs to save
+      responses:
+        "200":
+          description: Settings saved
+        "401":
+          description: Authentication required
+
+  # ── Billing ───────────────────────────────────────────────────────────────
+
+  /v1/billing/status:
+    get:
+      tags: [Billing]
+      summary: Get billing status
+      description: Returns the user's current subscription status. **Requires Clerk JWT.**
+      operationId: billingStatus
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: Billing status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tier:
+                    type: string
+                    enum: [starter, explorer, pro, enterprise]
+                  status:
+                    type: string
+                    enum: [active, past_due, cancelled, trialing]
+        "401":
+          description: Authentication required
+
+  /v1/billing/subscription:
+    get:
+      tags: [Billing]
+      summary: Get subscription details
+      description: Returns detailed Stripe subscription information. **Requires Clerk JWT.**
+      operationId: getSubscription
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: Subscription details
+        "401":
+          description: Authentication required
+
+  /v1/billing/create-checkout-session:
+    post:
+      tags: [Billing]
+      summary: Create Stripe checkout session
+      description: Creates a Stripe checkout session for upgrading to a paid tier. **Requires Clerk JWT.**
+      operationId: createCheckout
+      security:
+        - ClerkJWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tier]
+              properties:
+                tier:
+                  type: string
+                  enum: [explorer, pro, enterprise]
+                success_url:
+                  type: string
+                cancel_url:
+                  type: string
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkout_url:
+                    type: string
+                    format: uri
+        "401":
+          description: Authentication required
+
+  /v1/billing/portal:
+    get:
+      tags: [Billing]
+      summary: Get billing portal URL
+      description: Returns a Stripe billing portal URL for managing the subscription. **Requires Clerk JWT.**
+      operationId: billingPortal
+      security:
+        - ClerkJWT: []
+      responses:
+        "200":
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portal_url:
+                    type: string
+                    format: uri
+        "401":
+          description: Authentication required
+
+  # ── Agent Registration ────────────────────────────────────────────────────
+
+  /v1/notary/agents/register:
+    post:
+      tags: [Receipts]
+      summary: Register an agent
+      description: Registers an agent identifier with the NotaryOS service. **Requires API Key.**
+      operationId: registerAgent
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agent_id]
+              properties:
+                agent_id:
+                  type: string
+                  example: "my-trading-bot-v2"
+                description:
+                  type: string
+                  example: "Production trading agent"
+                version:
+                  type: string
+                  example: "2.0.0"
+      responses:
+        "200":
+          description: Agent registered
+        "401":
+          description: Authentication required
