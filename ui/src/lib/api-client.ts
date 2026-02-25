@@ -106,6 +106,7 @@ export const API_ENDPOINTS = {
   clerkSync: '/v1/auth/clerk/sync',
   clerkMe: '/v1/auth/clerk/me',
   clerkAgents: '/v1/auth/clerk/agents',
+  clerkStats: '/v1/auth/clerk/stats',
 
   // Notary
   verify: '/v1/notary/verify',

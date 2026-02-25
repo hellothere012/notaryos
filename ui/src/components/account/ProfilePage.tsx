@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUser as useClerkUser } from '@clerk/nextjs';
+import { authClient, API_ENDPOINTS } from '../../lib/api-client';
 
 interface UsageStats {
   totalVerifications: number;
@@ -54,24 +55,29 @@ export const ProfilePage: React.FC = () => {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
-  // Fetch usage statistics
+  // Fetch usage statistics from real API
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Simulated stats - replace with actual API call
-        // const response = await authClient.get(API_ENDPOINTS.profile + '/stats');
-        // setUsageStats(response.data);
-
-        // Mock data for demonstration
+        const response = await authClient.get(API_ENDPOINTS.clerkStats);
+        const data = response.data;
         setUsageStats({
-          totalVerifications: 247,
-          validCount: 231,
-          invalidCount: 16,
-          apiKeysCount: 3,
-          memberSince: user?.createdAt || new Date().toISOString(),
+          totalVerifications: data.total_verifications ?? 0,
+          validCount: data.valid_count ?? 0,
+          invalidCount: data.invalid_count ?? 0,
+          apiKeysCount: data.api_keys_count ?? 0,
+          memberSince: data.member_since || user?.createdAt || new Date().toISOString(),
         });
       } catch (error) {
         console.error('Failed to fetch usage stats:', error);
+        // Fallback: honest zeros — never show fake data to new users
+        setUsageStats({
+          totalVerifications: 0,
+          validCount: 0,
+          invalidCount: 0,
+          apiKeysCount: 0,
+          memberSince: user?.createdAt || new Date().toISOString(),
+        });
       } finally {
         setIsLoadingStats(false);
       }

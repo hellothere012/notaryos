@@ -84,22 +84,32 @@ export const SettingsPage: React.FC = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Track changes
+  // Guard: prevent change-tracking from firing during initial API load
+  const isLoadingFromApi = React.useRef(true);
+
+  // Track changes (skip during initial API load)
   useEffect(() => {
+    if (isLoadingFromApi.current) return;
     setHasChanges(true);
     setSaveSuccess(false);
   }, [notifications, verification, exportSettings, theme]);
 
-  // Load settings on mount
+  // Load settings on mount from real API
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // Replace with actual API call
-        // const response = await authClient.get(API_ENDPOINTS.settings);
-        // Apply loaded settings...
-        setHasChanges(false);
+        const response = await authClient.get(API_ENDPOINTS.settings);
+        const saved = response.data;
+        if (saved.notifications) setNotifications(saved.notifications);
+        if (saved.verification) setVerification(saved.verification);
+        if (saved.export) setExportSettings(saved.export);
+        if (saved.theme) setTheme(saved.theme);
       } catch (error) {
         console.error('Failed to load settings:', error);
+        // If load fails (new user or network error), keep defaults — no action needed
+      } finally {
+        isLoadingFromApi.current = false;
+        setHasChanges(false);
       }
     };
 
