@@ -165,7 +165,7 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
 
     // Enterprise tier → email contact
     if (tier.name === 'Enterprise') {
-      window.location.href = 'mailto:hello@agenttownsquare.com?subject=NotaryOS Enterprise Inquiry';
+      window.location.href = 'mailto:hello@notaryos.org?subject=NotaryOS Enterprise Inquiry';
       return;
     }
 

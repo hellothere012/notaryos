@@ -171,29 +171,32 @@ export const HistoryPage: React.FC = () => {
   const invalidCount = history.filter((h) => !h.isValid).length;
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Verification History</h1>
-          <p className="text-gray-400">
-            View and search your past verification attempts
-          </p>
-        </div>
+    <div className="max-w-5xl mx-auto w-full overflow-x-hidden">
+      {/* Gradient Hero Header */}
+      <div className="relative mb-8 px-6 py-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold mb-1 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
+              Verification History
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base">
+              View and search your past verification attempts
+            </p>
+          </div>
 
-        {/* Export Dropdown */}
-        <div className="relative group">
-          <button
-            disabled={isExporting || history.length === 0}
-            className="btn-secondary flex items-center gap-2 disabled:opacity-50"
-          >
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            Export
-          </button>
+          {/* Export Dropdown */}
+          <div className="relative group flex-shrink-0">
+            <button
+              disabled={isExporting || history.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/80 border border-gray-700/50 text-gray-300 hover:text-white hover:border-violet-500/50 text-sm font-medium transition-all disabled:opacity-50"
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Export
+            </button>
           <div className="absolute right-0 top-full mt-1 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
             <button
               onClick={() => handleExport('csv')}
@@ -211,6 +214,7 @@ export const HistoryPage: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Filters Bar */}

@@ -384,8 +384,8 @@ export const DocsPage: React.FC = () => {
   // --------------------------------------------------------------------------
   const quickstartInstall = useMemo(() => [
     { label: 'Python', language: 'bash' as Language, code: 'pip install notaryos' },
-    { label: 'TypeScript', language: 'bash' as Language, code: 'npm install @notaryos/sdk' },
-    { label: 'Go', language: 'bash' as Language, code: 'go get github.com/notaryos/notaryos-go' },
+    { label: 'TypeScript', language: 'bash' as Language, code: 'npm install notaryos' },
+    { label: 'Go', language: 'bash' as Language, code: 'go get github.com/hellothere012/notaryos-go' },
   ], []);
 
   const quickstartInit = useMemo(() => [
@@ -400,7 +400,7 @@ notary = NotaryClient(api_key="notary_live_sk_...")`,
     {
       label: 'TypeScript',
       language: 'typescript' as Language,
-      code: `import { NotaryClient } from '@notaryos/sdk';
+      code: `import { NotaryClient } from 'notaryos';
 
 const notary = new NotaryClient({ apiKey: 'notary_live_sk_...' });`,
       filename: 'index.ts',
@@ -519,7 +519,7 @@ console.log(result.chainPosition);  // 42`,
             {/* CTA */}
             <div className="flex items-center gap-3">
               <a
-                href="https://github.com/notaryos/notaryos"
+                href="https://github.com/hellothere012/notaryos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden sm:flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
@@ -619,7 +619,7 @@ console.log(result.chainPosition);  // 42`,
               {/* Quick links at the bottom of the drawer */}
               <div className="px-4 py-4 border-t border-gray-800/50 space-y-2 flex-shrink-0">
                 <a
-                  href="https://github.com/notaryos/notaryos"
+                  href="https://github.com/hellothere012/notaryos"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
@@ -719,7 +719,7 @@ console.log(result.chainPosition);  // 42`,
               {/* Quick links */}
               <div className="pt-6 mt-6 border-t border-gray-800/50 space-y-2">
                 <a
-                  href="https://github.com/notaryos/notaryos"
+                  href="https://github.com/hellothere012/notaryos"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
@@ -1553,12 +1553,12 @@ for r in history:
                   <CodeBlock
                     language="bash"
                     filename="terminal"
-                    code="npm install @notaryos/sdk"
+                    code="npm install notaryos"
                   />
                   <CodeBlock
                     language="typescript"
                     filename="example.ts"
-                    code={`import { NotaryClient } from '@notaryos/sdk';
+                    code={`import { NotaryClient } from 'notaryos';
 
 const notary = new NotaryClient({ apiKey: 'notary_live_sk_...' });
 
@@ -1590,7 +1590,7 @@ console.log(result.checks); // { signature: 'pass', ... }`}
                   <CodeBlock
                     language="bash"
                     filename="terminal"
-                    code="go get github.com/notaryos/notaryos-go"
+                    code="go get github.com/hellothere012/notaryos-go"
                   />
                   <CodeBlock
                     language="go"
@@ -1602,7 +1602,7 @@ import (
     "fmt"
     "log"
 
-    notary "github.com/notaryos/notaryos-go"
+    notary "github.com/hellothere012/notaryos-go"
 )
 
 func main() {
@@ -1847,7 +1847,7 @@ curl http://localhost:8000/v1/notary/status
                 <Link href="/about" className="hover:text-gray-400 transition-colors">About</Link>
                 <Link href="/pricing" className="hover:text-gray-400 transition-colors">Pricing</Link>
                 <a
-                  href="https://github.com/notaryos/notaryos"
+                  href="https://github.com/hellothere012/notaryos"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gray-400 transition-colors flex items-center gap-1"

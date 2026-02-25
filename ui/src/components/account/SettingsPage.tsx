@@ -140,29 +140,34 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-gray-400">Customize your Notary experience</p>
+    <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
+      {/* Gradient Hero Header */}
+      <div className="relative mb-8 px-6 py-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold mb-1 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
+              Settings
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base">Customize your Notary experience</p>
+          </div>
+          {/* Save Button */}
+          <button
+            onClick={handleSave}
+            disabled={isSaving || !hasChanges}
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : saveSuccess ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">
+              {isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}
+            </span>
+          </button>
         </div>
-
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={isSaving || !hasChanges}
-          className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSaving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : saveSuccess ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          {isSaving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}
-        </button>
       </div>
 
       {/* Error Message */}

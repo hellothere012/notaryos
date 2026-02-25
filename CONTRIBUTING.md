@@ -115,7 +115,7 @@ When updating documentation:
 
 ## Security
 
-If you discover a security vulnerability, please **do not** open a public issue. Instead, email security@agenttownsquare.com with details.
+If you discover a security vulnerability, please **do not** open a public issue. Instead, email security@notaryos.org with details.
 
 ## License
 

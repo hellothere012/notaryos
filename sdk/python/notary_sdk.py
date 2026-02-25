@@ -19,6 +19,7 @@ __all__ = [
     "AutoReceiptConfig",
     "CounterfactualClient",
     "receipted",
+    "seal",
 ]
 
 import asyncio
@@ -374,6 +375,41 @@ class NotaryClient:
         receipt.chain_sequence = response.get("chain_position")
 
         return receipt
+
+    def seal(
+        self,
+        action: str,
+        agent_id: str,
+        payload: Dict[str, Any],
+        previous_receipt_hash: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Receipt:
+        """
+        Seal an agent action as a signed receipt.
+
+        This is the primary high-level API for agent accountability.
+        Alias for issue() with a cleaner, agent-centric signature.
+
+        Args:
+            action: Action type (e.g., "data_processing", "api_call")
+            agent_id: ID of the agent performing the action
+            payload: Action payload to be receipted
+            previous_receipt_hash: Hash of previous receipt for chaining
+            metadata: Additional metadata
+
+        Returns:
+            A signed Receipt object
+
+        Example:
+            receipt = notary.seal("trade.execute", "TradeBot-v1", {"symbol": "AAPL"})
+        """
+        merged_payload = {"agent_id": agent_id, **payload}
+        return self.issue(
+            action_type=action,
+            payload=merged_payload,
+            previous_receipt_hash=previous_receipt_hash,
+            metadata=metadata,
+        )
 
     def verify(self, receipt: "Receipt | Dict[str, Any]") -> VerificationResult:
         """

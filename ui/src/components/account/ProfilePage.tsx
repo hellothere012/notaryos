@@ -221,11 +221,13 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
-        <p className="text-gray-400">Manage your account information and preferences</p>
+    <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
+      {/* Gradient Hero Header */}
+      <div className="mb-8 px-6 py-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20">
+        <h1 className="text-2xl md:text-3xl font-bold mb-1 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
+          Profile
+        </h1>
+        <p className="text-gray-400 text-sm md:text-base">Manage your account information and preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -75,7 +75,7 @@ Keys rotate automatically. Active keys are published via the `/v1/notary/public-
 
 ## Responsible Disclosure
 
-Report security issues to: security@agenttownsquare.com
+Report security issues to: security@notaryos.org
 
 ---
 

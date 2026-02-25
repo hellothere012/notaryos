@@ -681,7 +681,7 @@ The NotaryOS backend uses a relational database to store receipts, chain state, 
 - Provenance edges link receipts in a directed acyclic graph (DAG)
 - Counterfactual records store proof-of-non-action with the same signature guarantees
 
-For schema details relevant to self-hosting or enterprise deployments, contact support@agenttownsquare.com.
+For schema details relevant to self-hosting or enterprise deployments, contact support@notaryos.org.
 
 ---
 
@@ -716,7 +716,7 @@ The SDKs are configured via constructor parameters:
 | Issue P50 latency | <15ms |
 | Verify P50 latency | <5ms |
 
-Backend configuration, key management, and infrastructure details are managed internally. For enterprise self-hosting configuration, contact support@agenttownsquare.com.
+Backend configuration, key management, and infrastructure details are managed internally. For enterprise self-hosting configuration, contact support@notaryos.org.
 
 ---
 
@@ -888,7 +888,7 @@ go get -u github.com/hellothere012/notaryos-go  # Go
 
 Existing code works unchanged. New features (provenance references, counterfactual receipts, auto-receipting) become available after the update.
 
-For managed service migrations and self-hosting upgrades, contact support@agenttownsquare.com.
+For managed service migrations and self-hosting upgrades, contact support@notaryos.org.
 
 ---
 

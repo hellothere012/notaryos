@@ -38,10 +38,10 @@
   ],
   "author": {
     "name": "Agent Town Square",
-    "email": "hello@agenttownsquare.com",
-    "url": "https://agenttownsquare.com"
+    "email": "hello@notaryos.org",
+    "url": "https://notaryos.org"
   },
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/hellothere012/notaryos"

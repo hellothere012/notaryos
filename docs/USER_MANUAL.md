@@ -682,7 +682,7 @@ If seal latency averages over 200ms, the circuit breaker trips and skips sealing
 | `timeout` | `30` | Request timeout in seconds |
 | `max_retries` | `2` | Retry attempts on transient failures |
 
-For managed service configuration (signing keys, middleware, notifications), contact support@agenttownsquare.com.
+For managed service configuration (signing keys, middleware, notifications), contact support@notaryos.org.
 
 ### Getting Help
 

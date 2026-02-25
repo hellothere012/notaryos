@@ -54,10 +54,9 @@ class StressTestAgent:
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 PROPRIETARY_FIELDS = [
-    "seal", "grounding", "dag", "abuse", "signer",
-    "private_key", "ed25519_private", "rate_limit_tier",
-    "sql", "migration", "agentlayer", "middleware",
-    "receipt_signer", "abuse_detector", "grounding_dag",
+    "private_key", "secret_key", "ed25519_private",
+    "sql", "migration", "rate_limit_tier",
+    "internal_id", "backend_service",
 ]
 
 

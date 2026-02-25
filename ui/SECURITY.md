@@ -23,7 +23,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 ### How to Report
 
-**Email:** security@agenttownsquare.com
+**Email:** security@notaryos.org
 
 **Include in your report:**
 1. Description of the vulnerability
@@ -259,7 +259,7 @@ pip-audit --format cyclonedx
 
 | Role | Contact |
 |------|---------|
-| Security Reports | security@agenttownsquare.com |
+| Security Reports | security@notaryos.org |
 | PGP Key | [keys.openpgp.org/...](https://keys.openpgp.org) |
 | Bug Bounty | Coming soon |
 

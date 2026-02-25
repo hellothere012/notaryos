@@ -93,22 +93,27 @@ export const ApiKeysPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">API Keys</h1>
-          <p className="text-gray-400">
-            Manage your API keys for programmatic access to the verification system
-          </p>
+    <div className="max-w-4xl mx-auto w-full overflow-x-hidden">
+      {/* Gradient Hero Header */}
+      <div className="relative mb-8 px-6 py-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border border-violet-500/20">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
+              API Keys
+            </h1>
+            <p className="text-gray-400 text-sm md:text-base">
+              Manage your API keys for programmatic access to the verification system
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-medium text-sm transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Create Key</span>
+            <span className="sm:hidden">New</span>
+          </button>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Key
-        </button>
       </div>
 
       {/* Security Note */}
@@ -176,7 +181,7 @@ export const ApiKeysPage: React.FC = () => {
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="btn-primary inline-flex items-center gap-2"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-medium transition-all"
           >
             <Plus className="w-4 h-4" />
             Create Your First Key
