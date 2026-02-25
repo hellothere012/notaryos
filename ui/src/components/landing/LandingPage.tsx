@@ -719,7 +719,7 @@ assert result.valid  # True`}</code>
                   <pre className="p-4 text-xs text-gray-300 font-mono overflow-x-auto leading-relaxed">
                     <code>{`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 
 # Seal an action — ~5ms, tamper-proof
 receipt = notary.seal(
@@ -729,13 +729,14 @@ receipt = notary.seal(
 )
 
 # Or prove what DIDN'T happen
-counterfactual = notary.seal_counterfactual(
-    action_declined="trade.executed",
-    reason="risk_threshold_exceeded"
-)
+counterfactual = notary.issue("trade.declined", {
+    "counterfactual": True,
+    "reason": "risk_threshold_exceeded",
+    "would_have": {"action": "sell", "symbol": "BTC"}
+})
 
 # Anyone can verify — no trust required
-result = notary.verify(receipt.hash)
+result = notary.verify(receipt)
 print(result.valid)  # True`}</code>
                   </pre>
                 </div>
@@ -841,9 +842,9 @@ print(result.valid)  # True`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Security</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors">Security Practices</Link></li>
-                <li><Link href="/security#disclosure" className="text-gray-400 hover:text-white transition-colors">Responsible Disclosure</Link></li>
-                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link href="/docs#security" className="text-gray-400 hover:text-white transition-colors">Security Practices</Link></li>
+                <li><a href="mailto:security@notaryos.org" className="text-gray-400 hover:text-white transition-colors">Responsible Disclosure</a></li>
+                <li><Link href="/docs#privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
               </ul>
             </div>
             <div>

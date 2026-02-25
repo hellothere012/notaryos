@@ -394,7 +394,7 @@ export const DocsPage: React.FC = () => {
       language: 'python' as Language,
       code: `from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_sk_...")`,
+notary = NotaryClient(api_key="notary_live_...")`,
       filename: 'main.py',
     },
     {
@@ -402,7 +402,7 @@ notary = NotaryClient(api_key="notary_live_sk_...")`,
       language: 'typescript' as Language,
       code: `import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_live_sk_...' });`,
+const notary = new NotaryClient({ apiKey: 'notary_live_...' });`,
       filename: 'index.ts',
     },
   ], []);
@@ -1030,9 +1030,9 @@ console.log(result.chainPosition);  // 42`,
                   <div>
                     <p className="text-yellow-300 font-medium text-sm mb-1">Authentication</p>
                     <p className="text-xs text-gray-400">
-                      Authenticated endpoints require a Bearer token:{' '}
+                      Authenticated endpoints require an API key header:{' '}
                       <code className="text-purple-300 bg-purple-500/10 px-1 py-0.5 rounded">
-                        Authorization: Bearer notary_live_sk_...
+                        X-API-Key: notary_live_...
                       </code>
                       . Generate keys from the{' '}
                       <Link href="/api-keys" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
@@ -1264,7 +1264,7 @@ print(receipt.proofs)          # All three proofs attached`}
                     filename="skills/notary_seal.py"
                     code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 
 async def notary_seal(action: str, payload: dict) -> dict:
     """OpenClaw AgentSkill: Seal every agent action with a cryptographic receipt."""
@@ -1382,7 +1382,7 @@ print(result.checks)          # {"signature": "pass", "chain": "pass", "timestam
                     filename="agent.py"
                     code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 notary.wrap(my_agent)  # Every public method now auto-receipts
 
 my_agent.place_order("BTC", 10)    # Receipt issued automatically
@@ -1405,7 +1405,7 @@ my_agent.analyze(api_key="secret") # api_key redacted in receipt`}
                     filename="trading_bot.py"
                     code={`from notaryos import NotaryClient, receipted
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 
 @receipted(notary)
 class TradingBot:
@@ -1439,7 +1439,7 @@ config = AutoReceiptConfig(
     redact_secrets=True,  # Redact args matching secret patterns
 )
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 notary.wrap(agent, config=config)`}
                   />
                 </motion.div>
@@ -1521,7 +1521,7 @@ notary.wrap(agent, config=config)`}
                     filename="example.py"
                     code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_sk_...")
+notary = NotaryClient(api_key="notary_live_...")
 
 # Seal an action
 receipt = notary.seal(
@@ -1560,7 +1560,7 @@ for r in history:
                     filename="example.ts"
                     code={`import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_live_sk_...' });
+const notary = new NotaryClient({ apiKey: 'notary_live_...' });
 
 // Seal an action
 const receipt = await notary.seal({
@@ -1606,7 +1606,7 @@ import (
 )
 
 func main() {
-    client, err := notary.NewClient("notary_live_sk_...", nil)
+    client, err := notary.NewClient("notary_live_...", nil)
     if err != nil {
         log.Fatal(err)
     }
