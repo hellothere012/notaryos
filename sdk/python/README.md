@@ -12,13 +12,13 @@ pip install notaryos
 
 ## Quick Start
 
-### Issue a Receipt (3 lines)
+### Seal an Action (3 lines)
 
 ```python
 from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
-receipt = notary.issue("data_processing", {"key": "value"})
+receipt = notary.seal("data_processing", {"key": "value"})
 print(receipt.verify_url)  # https://api.agenttownsquare.com/v1/notary/r/abc123
 ```
 
@@ -37,7 +37,8 @@ is_valid = verify_receipt(receipt_dict)
 
 | Method | Auth | Description |
 |--------|------|-------------|
-| `issue(action_type, payload, ...)` | API Key | Issue a signed receipt |
+| `seal(action_type, payload, ...)` | API Key | Seal an action — create a signed receipt (recommended) |
+| `issue(action_type, payload, ...)` | API Key | Alias for `seal()` |
 | `verify(receipt)` | API Key | Verify a receipt |
 | `verify_by_id(receipt_id)` | API Key | Verify by receipt ID |
 | `status()` | API Key | Service health check |
@@ -216,7 +217,45 @@ def my_task(agent, task):
     return agent.execute(task)
 ```
 
-### OpenAI Agents
+### OpenAI API
+
+Receipt every `chat.completions.create()` call — model, token usage, and finish reason:
+
+```python
+import openai
+from notaryos import NotaryClient
+
+notary = NotaryClient(api_key="notary_live_xxx")
+client = openai.OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Analyze this contract..."}],
+)
+
+receipt = notary.seal("llm.inference", "my-agent", {
+    "model": response.model,
+    "prompt_tokens": response.usage.prompt_tokens,
+    "completion_tokens": response.usage.completion_tokens,
+    "finish_reason": response.choices[0].finish_reason,
+})
+
+print(f"Receipted: {receipt.verify_url}")
+```
+
+Or use `notary.wrap()` to auto-receipt all calls on a client wrapper:
+
+```python
+class AuditedLLM:
+    def chat(self, messages, model="gpt-4o"):
+        return client.chat.completions.create(model=model, messages=messages)
+
+llm = AuditedLLM()
+notary.wrap(llm)          # every llm.chat() now issues a receipt automatically
+result = llm.chat([...])
+```
+
+### OpenAI Agents SDK
 
 ```python
 from notaryos.integrations.openai_agents import NotaryGuardrail
@@ -281,7 +320,7 @@ callback = NotarySmolCallback(notary)
 from notaryos import NotaryClient, AuthenticationError, RateLimitError, ValidationError
 
 try:
-    receipt = notary.issue("action", payload)
+    receipt = notary.seal("action", payload)
 except AuthenticationError:
     # Invalid API key
     pass
