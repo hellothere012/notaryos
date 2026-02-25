@@ -1,0 +1,92 @@
+name: Framework Integration Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6am UTC
+
+env:
+  NOTARY_API_KEY: ${{ secrets.NOTARY_API_KEY }}
+
+jobs:
+  # Gate job — if SDK can't talk to the API, skip framework tests
+  sdk-baseline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install SDK + test deps
+        run: pip install -e "sdk/python[dev]"
+      - name: Run baseline tests
+        run: pytest tests/test_sdk_baseline.py -v --timeout=60
+
+  # One job per framework — fail-fast disabled so one failure doesn't block others
+  framework-tests:
+    needs: sdk-baseline
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - framework: langchain
+            test_file: test_langchain.py
+          - framework: crewai
+            test_file: test_crewai.py
+          - framework: openai-agents
+            test_file: test_openai_agents.py
+          - framework: pydantic-ai
+            test_file: test_pydantic_ai.py
+          - framework: autogen
+            test_file: test_autogen.py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install SDK + ${{ matrix.framework }}
+        run: pip install -e "sdk/python[${{ matrix.framework }},dev]"
+      - name: Run ${{ matrix.framework }} tests
+        run: pytest tests/frameworks/${{ matrix.test_file }} -v --timeout=120
+
+  # Stress + counterfactual tests (no framework deps needed)
+  stress-tests:
+    needs: sdk-baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install SDK + test deps
+        run: pip install -e "sdk/python[dev]"
+      - name: Run concurrency and counterfactual tests
+        run: >
+          pytest
+          tests/frameworks/test_concurrency.py
+          tests/frameworks/test_counterfactual_crewai.py
+          -v --timeout=120
+
+  # TypeScript SDK — Vercel AI SDK example
+  vercel-ai-sdk:
+    needs: sdk-baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: examples/vercel-ai-sdk
+        run: npm ci
+      - name: Run tests
+        working-directory: examples/vercel-ai-sdk
+        run: npm test
+        env:
+          NOTARY_API_KEY: ${{ secrets.NOTARY_API_KEY }}

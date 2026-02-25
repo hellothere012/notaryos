@@ -70,7 +70,7 @@ const receipt = await notary.issue('my_action', { message: "hello" });
 console.log(receipt.badge); // seal:a1b2...c3d4
 ```
 
-The `seal()` function handles payload hashing, chain linkage, and signing automatically, returning an immutable receipt in a single call.
+The `issue()` method (or `seal()` on the Python SDK) handles payload hashing, chain linkage, and signing automatically, returning an immutable receipt in a single call.
 
 ### 1.3 Architecture: Razor and Blade
 
@@ -514,9 +514,9 @@ result, _ := client.Verify(receipt)
 fmt.Printf("Valid: %v, Agent: %s\n", result.Valid, receipt.AgentID)
 ```
 
-### 8.4 High-Level seal() API
+### 8.4 High-Level issue() / seal() API
 
-The TypeScript SDK also provides a convenience `seal()` / `verify()` API for quick integration:
+The SDKs provide a single-call API for issuing and verifying receipts:
 
 ```typescript
 import { NotaryClient } from 'notaryos';

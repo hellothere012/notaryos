@@ -1,6 +1,6 @@
 {
   "name": "notaryos",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "NotaryOS SDK - Cryptographic receipts for AI agent actions. Issue, verify, and audit agent behavior with Ed25519 signatures.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

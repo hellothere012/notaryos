@@ -19,7 +19,7 @@ __all__ = [
     "AutoReceiptConfig",
     "CounterfactualClient",
     "receipted",
-    "seal",
+    "verify_receipt",
 ]
 
 import asyncio

@@ -4,7 +4,7 @@
 
 ![Notary Verifier Screenshot](docs/images/verifier-screenshot.png)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![License: BUSL-1.1](https://img.shields.io/badge/License-BUSL--1.1-purple.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
 
@@ -340,9 +340,7 @@ npm test -- VerifyPanel.test.tsx
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-Open source verification core. Hosted demo provided as-is.
+Business Source License 1.1 (BUSL-1.1) — free to use except for competing commercial receipt services. Converts to Apache 2.0 on 2029-02-25. See [LICENSE](LICENSE) for details.
 
 ---
 

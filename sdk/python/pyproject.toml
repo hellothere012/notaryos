@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "notaryos"
-version = "1.0.0"
+version = "2.0.0"
 description = "NotaryOS SDK - Cryptographic receipts for AI agent actions. Issue, verify, and audit with Ed25519 signatures."
 readme = "README.md"
 requires-python = ">=3.8"
