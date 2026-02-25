@@ -18,7 +18,7 @@ pip install notaryos
 from notaryos import NotaryClient
 
 notary = NotaryClient(api_key="notary_live_xxx")
-receipt = notary.seal("data_processing", {"key": "value"})
+receipt = notary.seal("data_processing", "MyAgent-v1", {"key": "value"})
 print(receipt.verify_url)  # https://api.agenttownsquare.com/v1/notary/r/abc123
 ```
 
@@ -31,25 +31,90 @@ is_valid = verify_receipt(receipt_dict)
 # True
 ```
 
+### Detailed Verification (no API key needed)
+
+```python
+from notaryos import verify_receipt_detailed
+
+result = verify_receipt_detailed(receipt_dict)
+if result.valid:
+    print("Signature OK:", result.signature_ok)
+    print("Structure OK:", result.structure_ok)
+else:
+    print("Failed:", result.reason)
+```
+
+### Public-Only Client (no API key)
+
+```python
+from notaryos import NotaryClient
+
+# Create client without API key for public operations only
+notary = NotaryClient()
+
+# These all work without authentication:
+result = notary.verify(receipt_dict)       # VerificationResult
+status = notary.status()                   # ServiceStatus
+key_info = notary.public_key()             # Dict with PEM key
+lookup = notary.lookup("abc123def456...")   # Receipt lookup by hash
+
+# These will raise AuthenticationError (require API key):
+# notary.issue(...)   -> AuthenticationError
+# notary.seal(...)    -> AuthenticationError
+# notary.me()         -> AuthenticationError
+```
+
+## Module Structure
+
+The `notaryos` package wraps the core `notary_sdk` module:
+
+```
+sdk/python/
+  notary_sdk.py           # Core implementation (all logic lives here)
+  notaryos/
+    __init__.py           # Re-exports everything from notary_sdk
+    integrations/         # Framework-specific adapters
+      langchain.py
+      crewai.py
+      openai_agents.py
+      pydantic_ai.py
+      anthropic_claude.py
+      google_adk.py
+      llamaindex.py
+      aws_bedrock.py
+      smolagents.py
+```
+
+Both import styles work:
+
+```python
+from notaryos import NotaryClient      # Recommended (package import)
+from notary_sdk import NotaryClient    # Also works (direct module import)
+```
+
 ## API Reference
 
-### `NotaryClient(api_key, base_url=None, timeout=30, max_retries=2)`
+### `NotaryClient(api_key=None, base_url=None, timeout=30, max_retries=2)`
+
+The `api_key` parameter is optional. When omitted, only public operations
+(verify, lookup, status, public_key) are available. Auth-required methods
+raise `AuthenticationError` at call time.
 
 | Method | Auth | Description |
 |--------|------|-------------|
-| `seal(action_type, payload, ...)` | API Key | Seal an action — create a signed receipt (recommended) |
-| `issue(action_type, payload, ...)` | API Key | Alias for `seal()` |
-| `verify(receipt)` | API Key | Verify a receipt |
+| `seal(action, agent_id, payload, ...)` | API Key | Seal an action -- create a signed receipt (recommended) |
+| `issue(action_type, payload, ...)` | API Key | Issue a signed receipt |
+| `verify(receipt)` | Public | Verify a receipt (works with or without API key) |
 | `verify_by_id(receipt_id)` | API Key | Verify by receipt ID |
-| `status()` | API Key | Service health check |
-| `public_key()` | API Key | Get Ed25519 public key |
+| `status()` | Public | Service health check (works with or without API key) |
+| `public_key()` | Public | Get Ed25519 public key (works with or without API key) |
 | `me()` | API Key | Authenticated agent info |
 | `lookup(receipt_hash)` | Public | Look up receipt by hash |
 | `history(options)` | Clerk JWT | Paginated receipt history |
 | `provenance(receipt_hash)` | Public | Provenance DAG report |
-| `wrap(obj, config=None)` | — | Auto-receipt all public methods |
-| `unwrap(obj)` | — | Restore original methods |
-| `receipt_stats` | — | Get queue stats (property) |
+| `wrap(obj, config=None)` | API Key | Auto-receipt all public methods |
+| `unwrap(obj)` | -- | Restore original methods |
+| `receipt_stats` | -- | Get queue stats (property) |
 
 ### `notary.counterfactual.*`
 
@@ -71,12 +136,46 @@ is_valid = verify_receipt(receipt_dict)
 |--------|------|-------------|
 | `invalidate(receipt_hash, reason)` | Admin | Invalidate a receipt |
 
-### Standalone Functions
+### Standalone Functions (no client needed)
 
 | Function | Description |
 |----------|-------------|
-| `verify_receipt(receipt, base_url)` | Public verification (returns bool) |
+| `verify_receipt(receipt, base_url)` | Public verification -- returns `bool` |
+| `verify_receipt_detailed(receipt, base_url)` | Public verification -- returns `VerificationResult` |
 | `NotaryClient.compute_hash(payload)` | SHA-256 matching server-side hashing |
+
+### Exported Names
+
+All of the following are available from `from notaryos import ...`:
+
+```python
+# Core
+NotaryClient
+__version__
+
+# Exceptions
+NotaryError
+AuthenticationError
+RateLimitError
+ValidationError
+
+# Constants
+NotaryErrorCode          # Error code constants (ERR_INVALID_SIGNATURE, etc.)
+
+# Data classes
+Receipt
+VerificationResult
+ServiceStatus
+
+# Auto-receipting
+AutoReceiptConfig
+CounterfactualClient
+receipted                # Class decorator
+
+# Standalone functions
+verify_receipt           # Quick bool check (no auth)
+verify_receipt_detailed  # Full VerificationResult (no auth)
+```
 
 ### Error Code Constants
 
@@ -87,12 +186,15 @@ NotaryErrorCode.ERR_RECEIPT_NOT_FOUND     # 404
 NotaryErrorCode.ERR_INVALID_API_KEY       # 401
 NotaryErrorCode.ERR_RATE_LIMIT_EXCEEDED   # 429
 NotaryErrorCode.ERR_CHAIN_BROKEN          # 400
+NotaryErrorCode.ERR_INVALID_SIGNATURE     # 400
+NotaryErrorCode.ERR_INVALID_STRUCTURE     # 400
+NotaryErrorCode.ERR_PAYLOAD_TOO_LARGE     # 400
 # ... 16 total error codes
 ```
 
 ## Counterfactual Receipts
 
-Proof that an agent *chose not to act* — critical for compliance and audit trails.
+Proof that an agent *chose not to act* -- critical for compliance and audit trails.
 
 ```python
 cf = notary.counterfactual
@@ -219,7 +321,7 @@ def my_task(agent, task):
 
 ### OpenAI API
 
-Receipt every `chat.completions.create()` call — model, token usage, and finish reason:
+Receipt every `chat.completions.create()` call -- model, token usage, and finish reason:
 
 ```python
 import openai
@@ -320,9 +422,9 @@ callback = NotarySmolCallback(notary)
 from notaryos import NotaryClient, AuthenticationError, RateLimitError, ValidationError
 
 try:
-    receipt = notary.seal("action", payload)
+    receipt = notary.seal("action", "agent-id", payload)
 except AuthenticationError:
-    # Invalid API key
+    # Invalid or missing API key
     pass
 except RateLimitError as e:
     # Wait e.retry_after seconds
@@ -336,7 +438,7 @@ except ValidationError:
 
 ```python
 notary = NotaryClient(
-    api_key="notary_live_xxx",           # Required
+    api_key="notary_live_xxx",           # Optional (None for public-only mode)
     base_url="https://...",              # Default: https://api.agenttownsquare.com
     timeout=30,                          # Default: 30s
     max_retries=2,                       # Default: 2
@@ -354,4 +456,4 @@ notaryos lookup abc123def456             # Look up by hash
 
 ## License
 
-MIT
+BUSL-1.1

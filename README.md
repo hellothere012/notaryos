@@ -467,11 +467,7 @@ console.log(result.valid); // true
 
 ### Go
 
-```bash
-go get github.com/hellothere012/notaryos-go
-```
-
-> Go SDK is in development. See [notaryos-go](https://github.com/hellothere012/notaryos-go) for progress.
+> **Coming soon.** Go SDK is on the roadmap. [Star the repo](https://github.com/hellothere012/notaryos) to get notified when it ships.
 
 ---
 

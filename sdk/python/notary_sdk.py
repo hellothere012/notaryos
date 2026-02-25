@@ -9,17 +9,28 @@ Usage:
 Zero external dependencies beyond `requests` (or uses urllib as fallback).
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __all__ = [
+    # Core client
     "NotaryClient",
+    # Exceptions
     "NotaryError",
+    "AuthenticationError",
+    "RateLimitError",
+    "ValidationError",
+    # Constants
     "NotaryErrorCode",
+    # Data classes
     "Receipt",
     "VerificationResult",
+    "ServiceStatus",
+    # Auto-receipting
     "AutoReceiptConfig",
     "CounterfactualClient",
     "receipted",
+    # Standalone public functions (no API key required)
     "verify_receipt",
+    "verify_receipt_detailed",
 ]
 
 import asyncio
@@ -231,7 +242,7 @@ class NotaryClient:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
         max_retries: int = 2,
@@ -240,12 +251,17 @@ class NotaryClient:
         Initialize the Notary client.
 
         Args:
-            api_key: Your Notary API key (notary_live_xxx or notary_test_xxx)
+            api_key: Your Notary API key (notary_live_xxx or notary_test_xxx).
+                     Optional -- omit for public-only operations (verify, lookup,
+                     public_key, status). Auth-required methods (issue, seal, me,
+                     history, wrap) will raise AuthenticationError at call time.
             base_url: API base URL (default: https://api.agenttownsquare.com)
             timeout: Request timeout in seconds
             max_retries: Max retry attempts on transient failures
         """
-        if not api_key or not (api_key.startswith("notary_live_") or api_key.startswith("notary_test_")):
+        if api_key is not None and not (
+            api_key.startswith("notary_live_") or api_key.startswith("notary_test_")
+        ):
             raise AuthenticationError(
                 "Invalid API key format. Keys must start with notary_live_ or notary_test_",
                 code="ERR_INVALID_API_KEY",
@@ -273,11 +289,23 @@ class NotaryClient:
             self._admin = _AdminClient(self)
         return self._admin
 
+    def _require_api_key(self) -> str:
+        """Raise AuthenticationError if no API key was provided."""
+        if self._api_key is None:
+            raise AuthenticationError(
+                "This operation requires an API key. Create the client with "
+                "NotaryClient(api_key='notary_live_xxx') or use public methods "
+                "(verify, lookup, status, public_key) which work without auth.",
+                code="ERR_INVALID_API_KEY",
+            )
+        return self._api_key
+
     def _request(self, method: str, path: str, body: Optional[Dict] = None) -> Dict[str, Any]:
-        """Make an HTTP request to the Notary API."""
+        """Make an authenticated HTTP request to the Notary API."""
+        api_key = self._require_api_key()
         url = f"{self._base_url}/v1/notary{path}"
         headers = {
-            "X-API-Key": self._api_key,
+            "X-API-Key": api_key,
             "Content-Type": "application/json",
             "User-Agent": f"notary-python-sdk/{__version__}",
         }
@@ -330,6 +358,38 @@ class NotaryClient:
         if last_error:
             raise NotaryError(f"Max retries exceeded: {last_error}", code="ERR_MAX_RETRIES")
         raise NotaryError("Request failed", code="ERR_UNKNOWN")
+
+    def _public_request(
+        self, method: str, url: str, body: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
+        """Make an unauthenticated HTTP request (no API key header)."""
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": f"notary-python-sdk/{__version__}",
+        }
+        data = json.dumps(body).encode("utf-8") if body else None
+
+        try:
+            req = Request(url, data=data, headers=headers, method=method)
+            with urlopen(req, timeout=self._timeout) as resp:
+                response_body = resp.read().decode("utf-8")
+                return json.loads(response_body) if response_body else {}
+        except HTTPError as e:
+            response_body = e.read().decode("utf-8") if e.fp else ""
+            try:
+                error_data = json.loads(response_body)
+            except (json.JSONDecodeError, ValueError):
+                error_data = {}
+            if e.code == 404:
+                return {"found": False, "receipt": None, "verification": None, "meta": None}
+            error_info = error_data.get("error", error_data)
+            raise NotaryError(
+                error_info.get("message", str(e)),
+                code=error_info.get("code", "ERR_REQUEST"),
+                status=e.code,
+            )
+        except URLError as e:
+            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
 
     # =========================================================================
     # Public API
@@ -415,6 +475,9 @@ class NotaryClient:
         """
         Verify a receipt's signature and integrity.
 
+        Works with or without an API key. When no API key is configured,
+        uses the public /v1/notary/verify endpoint automatically.
+
         Args:
             receipt: A Receipt object or raw receipt dict
 
@@ -430,7 +493,11 @@ class NotaryClient:
         else:
             receipt_dict = receipt
 
-        response = self._request("POST", "/verify", {"receipt": receipt_dict})
+        if self._api_key is not None:
+            response = self._request("POST", "/verify", {"receipt": receipt_dict})
+        else:
+            url = f"{self._base_url}/v1/notary/verify"
+            response = self._public_request("POST", url, {"receipt": receipt_dict})
         return VerificationResult.from_dict(response)
 
     def verify_by_id(self, receipt_id: str) -> VerificationResult:
@@ -448,7 +515,7 @@ class NotaryClient:
 
     def status(self) -> ServiceStatus:
         """
-        Get Notary service status.
+        Get Notary service status. Works with or without an API key.
 
         Returns:
             ServiceStatus with health info
@@ -457,12 +524,16 @@ class NotaryClient:
             status = notary.status()
             print(status.status)  # "active"
         """
-        response = self._request("GET", "/status")
+        if self._api_key is not None:
+            response = self._request("GET", "/status")
+        else:
+            url = f"{self._base_url}/v1/notary/status"
+            response = self._public_request("GET", url)
         return ServiceStatus.from_dict(response)
 
     def public_key(self) -> Dict[str, str]:
         """
-        Get the public key for offline verification.
+        Get the public key for offline verification. Works with or without an API key.
 
         Returns:
             Dict with key_id, signature_type, public_key_pem
@@ -471,7 +542,10 @@ class NotaryClient:
             key_info = notary.public_key()
             pem = key_info["public_key_pem"]
         """
-        return self._request("GET", "/public-key")
+        if self._api_key is not None:
+            return self._request("GET", "/public-key")
+        url = f"{self._base_url}/v1/notary/public-key"
+        return self._public_request("GET", url)
 
     def lookup(self, receipt_hash: str) -> Dict[str, Any]:
         """
@@ -1603,6 +1677,65 @@ def verify_receipt(
             return result.get("valid", False)
     except Exception:
         return False
+
+
+def verify_receipt_detailed(
+    receipt: Dict[str, Any],
+    base_url: str = NotaryClient.DEFAULT_BASE_URL,
+) -> VerificationResult:
+    """
+    Detailed verification without API key (public endpoint).
+
+    Like verify_receipt() but returns a full VerificationResult instead of
+    just a boolean. Useful when you need signature_ok, structure_ok, chain_ok,
+    and the reason string.
+
+    Args:
+        receipt: Receipt dict to verify
+        base_url: API base URL
+
+    Returns:
+        VerificationResult with full verification details
+
+    Example:
+        result = verify_receipt_detailed(receipt_dict)
+        if result.valid:
+            print("Signature OK:", result.signature_ok)
+        else:
+            print("Failed:", result.reason)
+    """
+    url = f"{base_url.rstrip('/')}/v1/notary/verify"
+    data = json.dumps({"receipt": receipt}).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        req = Request(url, data=data, headers=headers, method="POST")
+        with urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            return VerificationResult.from_dict(result)
+    except HTTPError as e:
+        body = e.read().decode("utf-8") if e.fp else ""
+        try:
+            error_data = json.loads(body)
+        except (json.JSONDecodeError, ValueError):
+            error_data = {}
+        return VerificationResult(
+            valid=False,
+            signature_ok=False,
+            structure_ok=False,
+            chain_ok=None,
+            reason=error_data.get("detail", str(e)),
+            details=error_data,
+        )
+    except Exception as e:
+        return VerificationResult(
+            valid=False,
+            signature_ok=False,
+            structure_ok=False,
+            chain_ok=None,
+            reason=f"Connection error: {e}",
+            details={},
+        )
 
 
 # =============================================================================
