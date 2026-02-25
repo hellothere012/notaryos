@@ -57,4 +57,4 @@ notaryos = "notary_sdk:main"
 
 [tool.setuptools]
 py-modules = ["notary_sdk"]
-packages = ["notaryos"]
+packages = ["notaryos", "notaryos.integrations"]

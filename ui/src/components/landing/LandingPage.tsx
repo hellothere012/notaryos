@@ -102,7 +102,7 @@ const pricingTiers = [
     period: '/month',
     highlight: false,
     badge: null as string | null,
-    stats: { receipts: '100/mo', verifications: '500/mo', rateLimit: '10/min', keyRotation: 'Manual' },
+    stats: { receipts: '100/mo', verifications: '500/mo', rateLimit: '60/min', keyRotation: 'Manual' },
     features: ['Single agent', 'Community support', 'Public API', 'Basic dashboard'],
     cta: 'Start Free',
   },
@@ -112,7 +112,7 @@ const pricingTiers = [
     period: '/month',
     highlight: true,
     badge: 'Most Popular',
-    stats: { receipts: '10,000/mo', verifications: '50,000/mo', rateLimit: '100/min', keyRotation: '30 days' },
+    stats: { receipts: '10,000/mo', verifications: '50,000/mo', rateLimit: '300/min', keyRotation: '30 days' },
     features: ['Up to 10 agents', 'Email support', 'Counterfactual receipts', 'Webhook notifications'],
     cta: 'Get Started',
   },
@@ -844,7 +844,8 @@ print(result.valid)  # True`}</code>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/docs#security" className="text-gray-400 hover:text-white transition-colors">Security Practices</Link></li>
                 <li><a href="mailto:security@notaryos.org" className="text-gray-400 hover:text-white transition-colors">Responsible Disclosure</a></li>
-                <li><Link href="/docs#privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
             <div>

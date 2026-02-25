@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "NotaryOS integration with Vercel AI SDK",
   "main": "index.ts",
+  "license": "BUSL-1.1",
   "scripts": {
     "start": "npx tsx index.ts",
     "test": "npx tsx test.ts"

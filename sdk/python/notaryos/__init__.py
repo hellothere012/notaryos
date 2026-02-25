@@ -19,6 +19,7 @@ from notary_sdk import (
     verify_receipt,
     receipted,
     CounterfactualClient,
+    AutoReceiptConfig,
     __version__,
 )
 
@@ -34,5 +35,6 @@ __all__ = [
     "verify_receipt",
     "receipted",
     "CounterfactualClient",
+    "AutoReceiptConfig",
     "__version__",
 ]

@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Shield, ExternalLink } from 'lucide-react';
 
 export const Footer: React.FC = () => {
@@ -18,15 +19,12 @@ export const Footer: React.FC = () => {
 
           {/* Center - Links */}
           <div className="flex items-center gap-6 text-sm">
-            <a
-              href="https://notaryos.org/docs"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/docs"
               className="text-gray-400 hover:text-white transition-colors flex items-center gap-1"
             >
               Docs
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            </Link>
             <a
               href="https://api.agenttownsquare.com/docs"
               target="_blank"
@@ -36,27 +34,23 @@ export const Footer: React.FC = () => {
               API
               <ExternalLink className="w-3 h-3" />
             </a>
-            <a
-              href="https://notaryos.org/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/privacy"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Privacy
-            </a>
-            <a
-              href="https://notaryos.org/terms"
-              target="_blank"
-              rel="noopener noreferrer"
+            </Link>
+            <Link
+              href="/terms"
               className="text-gray-400 hover:text-white transition-colors"
             >
               Terms
-            </a>
+            </Link>
           </div>
 
           {/* Right - Copyright */}
           <div className="text-sm text-gray-500">
-            &copy; {currentYear} Agent Town Square. All rights reserved.
+            &copy; {currentYear} NotaryOS. All rights reserved.
           </div>
         </div>
       </div>
