@@ -407,7 +407,7 @@ export const LandingPage: React.FC = () => {
                 <pre className="p-5 text-sm text-gray-300 font-mono leading-relaxed overflow-x-auto">
                   <code>{`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="sk_live_...")
+notary = NotaryClient(api_key="notary_live_...")
 
 # Seal an action — tamper-proof receipt
 receipt = notary.seal(
