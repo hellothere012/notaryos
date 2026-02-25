@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Courier_Prime, IBM_Plex_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
 import { Providers } from './providers';
@@ -24,6 +24,24 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-mono',
+});
+
+/**
+ * FOIA-aesthetic fonts for the LiveAttestationDemo component.
+ * Courier Prime for bold document headers, IBM Plex Mono for body text.
+ */
+const courierPrime = Courier_Prime({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-courier',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ['400', '500', '600'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-ibm',
 });
 
 /** Static metadata exported for the entire application. */
@@ -73,7 +91,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${courierPrime.variable} ${ibmPlexMono.variable}`}
     >
       <body className={`${inter.className} bg-gray-900 text-white antialiased`}>
         <ClerkProvider

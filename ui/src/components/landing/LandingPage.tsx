@@ -36,6 +36,7 @@ import {
   ExternalLink,
   ChevronRight,
 } from 'lucide-react';
+import LiveAttestationDemo from './LiveAttestationDemo';
 
 /* ====================================================================== */
 /*  Animation variants                                                    */
@@ -449,51 +450,9 @@ assert result.valid  # True`}</code>
       </section>
 
       {/* ================================================================ */}
-      {/*  3. COUNTERFACTUAL RECEIPTS                                      */}
+      {/*  3. LIVE ATTESTATION DEMO (FOIA aesthetic)                        */}
       {/* ================================================================ */}
-      <section className="py-16 sm:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
-            <motion.div variants={fadeInUp} className="text-center mb-12">
-              <span className="inline-flex items-center gap-2 px-3 py-1 glass-card rounded-full text-sm text-violet-300 mb-4">
-                <Sparkles className="w-3.5 h-3.5" /> What makes NotaryOS different
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-                Proof of what your AI chose <span className="gradient-text">not</span> to do
-              </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                Counterfactual Receipts&mdash;cryptographic proof that your AI considered an action and deliberately declined it.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-gray-500" /> Without NotaryOS
-                </h3>
-                <ul className="space-y-3 text-sm text-gray-500">
-                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> No record when an agent <em>doesn&apos;t</em> act</li>
-                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> &ldquo;It chose not to trade&rdquo; is just a claim</li>
-                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> Compliance gaps for regulated industries</li>
-                  <li className="flex items-start gap-2"><span className="text-gray-600">&mdash;</span> Disputes devolve into trust arguments</li>
-                </ul>
-              </motion.div>
-
-              <motion.div variants={fadeInUp} className="pricing-highlight rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-green-400 icon-glow" /> With NotaryOS
-                </h3>
-                <ul className="space-y-3 text-sm text-gray-300">
-                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Sealed receipt proves the agent saw an opportunity</li>
-                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Cryptographic proof it declined deliberately</li>
-                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Third-party verifiable without trust</li>
-                  <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Exportable evidence for compliance</li>
-                </ul>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <LiveAttestationDemo />
 
       {/* ================================================================ */}
       {/*  4. FEATURES (4 cards)                                           */}

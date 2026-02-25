@@ -109,6 +109,7 @@ export const API_ENDPOINTS = {
   clerkStats: '/v1/auth/clerk/stats',
 
   // Notary
+  demo: '/v1/notary/demo',
   verify: '/v1/notary/verify',
   history: '/v1/notary/history',
   sampleReceipt: '/v1/notary/sample-receipt',

@@ -30,7 +30,7 @@ const endpoints: Endpoint[] = [
   { method: 'GET', path: '/v1/notary/status', description: 'Signing key metadata and service capabilities', auth: 'none', tag: 'Status' },
   { method: 'GET', path: '/v1/notary/public-key', description: 'Ed25519 public key (PEM + JWK) for offline verification', auth: 'none', tag: 'Status' },
   { method: 'GET', path: '/v1/notary/sample-receipt', description: 'Synthetic demo receipt for testing', auth: 'none', tag: 'Receipts' },
-  { method: 'POST', path: '/v1/notary/verify', description: 'Verify a receipt's signature, structure, and chain', auth: 'none', tag: 'Receipts' },
+  { method: 'POST', path: '/v1/notary/verify', description: "Verify a receipt's signature, structure, and chain", auth: 'none', tag: 'Receipts' },
   { method: 'GET', path: '/v1/notary/r/{hash}', description: 'Public receipt lookup by SHA-256 hash', auth: 'none', tag: 'Receipts' },
   // API Key
   { method: 'POST', path: '/v1/notary/seal', description: 'Issue a signed receipt for an agent action', auth: 'api-key', tag: 'Receipts' },
