@@ -830,7 +830,7 @@ print(result.valid)  # True`}</code>
                 <li><Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Docs</Link></li>
                 <li><Link href="/docs#receipt-spec" className="text-gray-400 hover:text-white transition-colors">Receipt Spec</Link></li>
                 <li><Link href="/docs#changelog" className="text-gray-400 hover:text-white transition-colors">Changelog</Link></li>
-                <li><Link href="/status" className="text-gray-400 hover:text-white transition-colors">Status</Link></li>
+                <li><a href="https://api.agenttownsquare.com/v1/notary/status" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
               </ul>
             </div>
             <div>

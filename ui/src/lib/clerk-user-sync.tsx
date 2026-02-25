@@ -41,7 +41,10 @@ export function ClerkUserSync() {
 
         syncedRef.current = user.id;
       } catch (err) {
-        console.error('[ClerkUserSync] failed:', err);
+        // Non-blocking — user session is unaffected if sync fails
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[ClerkUserSync] failed:', err);
+        }
       }
     };
 
