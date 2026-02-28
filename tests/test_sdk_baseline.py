@@ -21,8 +21,11 @@ def test_status(notary_public):
 def test_public_key(notary_public):
     """Verify public key endpoint returns PEM (no auth needed)."""
     key = notary_public.public_key()
-    pem = key.public_key_pem or key.public_key or ""
-    assert "BEGIN PUBLIC KEY" in pem, f"No PEM found. Keys: {vars(key)}"
+    if isinstance(key, dict):
+        pem = key.get("public_key_pem", "") or key.get("public_key", "")
+    else:
+        pem = getattr(key, "public_key_pem", "") or getattr(key, "public_key", "")
+    assert "BEGIN PUBLIC KEY" in pem, f"No PEM found. Got: {key}"
 
 
 def test_issue_and_verify(notary):
