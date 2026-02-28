@@ -162,10 +162,11 @@ echo $RECEIPT | python3 -m json.tool
 ```
 
 Fields of note:
-- **`signature`** — Base64url Ed25519 signature over the payload hash (never the raw payload)
-- **`payload_hash`** — SHA-256 of the original payload. The payload itself is never stored.
+- **`signature`** — Base64url Ed25519 signature (never over the raw payload — always over a canonical hash)
+- **`message_hash`** — SHA-256 of the original payload. The payload itself is never stored.
 - **`previous_receipt_hash`** — links this receipt to the prior one (hash chain)
-- **`verify_url`** — public URL anyone can open to verify this receipt, forever
+- **`receipt_id`** — unique identifier for this receipt
+- **`public_key_ref`** — embedded PEM public key for independent verification
 
 ### 4. Get the public key (offline verification)
 
@@ -173,7 +174,7 @@ Fields of note:
 curl -s https://api.agenttownsquare.com/v1/notary/public-key | python3 -m json.tool
 ```
 
-Returns the Ed25519 public key in PEM + JWK. Verify any receipt signature locally — no API calls, no trust assumptions, no dependency on NotaryOS being online.
+Returns the Ed25519 public key in PEM format. The key is also available via JWKS at `/.well-known/jwks.json` and embedded in every receipt's `public_key_ref` field. Verify any receipt signature locally — no API calls, no trust assumptions, no dependency on NotaryOS being online.
 
 ---
 
