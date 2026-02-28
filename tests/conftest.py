@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "sdk", "python"
 
 from notary_sdk import AutoReceiptConfig, NotaryClient  # noqa: E402
 
-NOTARY_API_KEY = os.environ.get("NOTARY_API_KEY", "notary_test_integration_ci")
+NOTARY_API_KEY = os.environ.get("NOTARY_API_KEY", "") or "notary_test_integration_ci"
 NOTARY_API_URL = os.environ.get(
     "NOTARY_API_URL", "https://api.agenttownsquare.com"
 )
