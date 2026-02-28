@@ -189,7 +189,7 @@ receipt = notary.issue("my_action", {"message": "hello"})
 - **Quick Start Guide**: 5-minute integration walkthrough
 - **User Manual**: Complete developer documentation
 - **Technical Manual**: Deep cryptographic reference
-- **API Docs**: `https://api.agenttownsquare.com/api/docs`
+- **API Docs**: [notaryos.org/api-docs](https://notaryos.org/api-docs)
 - **Public Key**: `https://api.agenttownsquare.com/v1/notary/public-key`
 
 ---

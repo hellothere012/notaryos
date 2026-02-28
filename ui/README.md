@@ -192,7 +192,7 @@ curl https://api.agenttownsquare.com/v1/notary/sample-receipt
 
 ### API Documentation
 
-Full API documentation available at [/api/docs](https://api.agenttownsquare.com/api/docs) (OpenAPI/Swagger).
+Full API documentation available at [/api-docs](https://notaryos.org/api-docs) (OpenAPI reference).
 
 ---
 

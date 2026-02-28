@@ -8,7 +8,7 @@ Official SDKs for [NotaryOS](https://notaryos.org) — cryptographic receipts fo
 |----------|---------|---------|------|
 | **TypeScript** | [`notaryos`](typescript/) | `npm install notaryos` | Zero (native fetch + Web Crypto) |
 | **Python** | [`notaryos`](python/) | `pip install notaryos` | Zero (stdlib urllib + hashlib) |
-| **Go** | [`notaryos-go`](go/) | `go get github.com/hellothere012/notaryos-go/notary` | Zero (stdlib net/http) |
+| **Go** | `notaryos-go` | Coming soon | Zero (stdlib net/http) |
 
 ## 3-Line Quick Start
 
@@ -112,4 +112,4 @@ receipt, _ := client.Issue("my_action", map[string]any{"key": "value"})
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
+BUSL-1.1 - See [LICENSE](LICENSE)

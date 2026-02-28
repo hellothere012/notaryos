@@ -39,3 +39,7 @@ htmlcov/
 *.log
 ui/tsconfig.tsbuildinfo
 .vercel
+
+# Session files (may contain secrets)
+SESSION_HANDOFF*
+CLAUDE.md

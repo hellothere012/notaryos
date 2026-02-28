@@ -119,10 +119,10 @@ If you discover a security vulnerability, please **do not** open a public issue.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the BUSL-1.1 license.
 
 ## Questions?
 
 - Open a [discussion](https://github.com/hellothere012/notaryos/discussions)
 - Check the [documentation](docs/)
-- Visit [agenttownsquare.com](https://agenttownsquare.com)
+- Visit [notaryos.org](https://notaryos.org)

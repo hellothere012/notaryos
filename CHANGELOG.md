@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Typed error hierarchy: `NotaryError`, `AuthenticationError`, `RateLimitError`, `ValidationError`
   - Node 18+, Deno, Bun, and modern browser support
 
-- **Go SDK** (`github.com/hellothere012/notaryos-go`)
+- **Go SDK** (coming soon)
   - `Client` with `Issue()`, `Verify()`, `Status()`, `SampleReceipt()` methods
   - Zero external dependencies (Go 1.21+ stdlib only)
   - Context-aware API with configurable timeouts

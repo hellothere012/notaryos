@@ -658,8 +658,7 @@ assert result.valid  # True`}</code>
                   </div>
 
                   <p className="text-xs text-gray-500 mb-6">
-                    Verified on DigitalOcean droplet &mdash; 4 vCPU / 8 GB RAM / 8 workers. 5,416 benchmark requests, 100% success rate.{' '}
-                    <a href="https://github.com/hellothere012/notaryos/blob/main/reports/NOTARYOS_ENTERPRISE_BENCHMARK_20260214.md" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-gray-300 transition-colors">Full report →</a>
+                    Verified on DigitalOcean droplet &mdash; 4 vCPU / 8 GB RAM / 8 workers. 5,416 benchmark requests, 100% success rate.
                   </p>
 
                   <div className="flex flex-wrap gap-3">

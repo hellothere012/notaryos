@@ -686,7 +686,7 @@ For managed service configuration (signing keys, middleware, notifications), con
 
 ### Getting Help
 
-- **API Docs:** `https://api.agenttownsquare.com/api/docs`
+- **API Docs:** [notaryos.org/api-docs](https://notaryos.org/api-docs)
 - **Public Key:** `https://api.agenttownsquare.com/v1/notary/public-key`
 - **Service Status:** `https://api.agenttownsquare.com/v1/notary/status`
 - **GitHub Issues:** Report bugs and feature requests

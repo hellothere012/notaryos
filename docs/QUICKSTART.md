@@ -215,7 +215,7 @@ Start free with the Starter tier. Upgrade when you're ready.
 - **User Manual**: `docs/USER_MANUAL.md` -- complete integration guide
 - **Technical Manual**: `docs/TECHNICAL_MANUAL.md` -- deep dive into cryptography and architecture
 - **Examples**: `examples/` -- runnable Python examples for verification, chain audit, and third-party audit
-- **API Docs**: `https://api.agenttownsquare.com/api/docs`
+- **API Docs**: [notaryos.org/api-docs](https://notaryos.org/api-docs)
 
 ---
 

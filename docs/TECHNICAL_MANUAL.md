@@ -888,7 +888,7 @@ SDK updates are backward-compatible. Update your SDK to the latest version:
 ```bash
 pip install --upgrade notaryos    # Python
 npm update notaryos               # TypeScript
-go get -u github.com/hellothere012/notaryos-go  # Go
+# go get -u github.com/hellothere012/notaryos-go  # Go (coming soon)
 ```
 
 Existing code works unchanged. New features (provenance references, counterfactual receipts, auto-receipting) become available after the update.

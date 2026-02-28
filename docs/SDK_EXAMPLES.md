@@ -373,7 +373,7 @@ import (
     "fmt"
     "os"
 
-    "github.com/hellothere012/notaryos-go/notary"
+    "github.com/hellothere012/notaryos-go/notary" // Coming soon
 )
 
 func main() {

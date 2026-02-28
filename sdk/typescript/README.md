@@ -38,10 +38,10 @@ const isValid = await verifyReceipt(receiptJson);
 | Method | Auth | Description |
 |--------|------|-------------|
 | `issue(actionType, payload, options?)` | API Key | Issue a signed receipt |
-| `verify(receipt)` | API Key | Verify a receipt |
+| `verify(receipt)` | Public | Verify a receipt |
 | `verifyById(receiptId)` | API Key | Verify by receipt ID |
-| `status()` | API Key | Service health check |
-| `publicKey()` | API Key | Get Ed25519 public key |
+| `status()` | Public | Service health check |
+| `publicKey()` | Public | Get Ed25519 public key |
 | `me()` | API Key | Authenticated agent info |
 | `lookup(receiptHash)` | Public | Look up receipt by hash |
 | `history(options?)` | Clerk JWT | Paginated receipt history |
@@ -169,4 +169,4 @@ const notary = new NotaryClient({
 
 ## License
 
-MIT
+BUSL-1.1

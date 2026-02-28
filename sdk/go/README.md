@@ -190,4 +190,4 @@ client, err := notary.NewClient("notary_live_xxx", &notary.Config{
 
 ## License
 
-MIT
+BUSL-1.1

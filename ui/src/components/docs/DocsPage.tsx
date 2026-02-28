@@ -385,7 +385,7 @@ export const DocsPage: React.FC = () => {
   const quickstartInstall = useMemo(() => [
     { label: 'Python', language: 'bash' as Language, code: 'pip install notaryos' },
     { label: 'TypeScript', language: 'bash' as Language, code: 'npm install notaryos' },
-    { label: 'Go', language: 'bash' as Language, code: 'go get github.com/hellothere012/notaryos-go' },
+    { label: 'Go', language: 'bash' as Language, code: '# Coming soon — star the repo to get notified' },
   ], []);
 
   const quickstartInit = useMemo(() => [
@@ -1583,54 +1583,12 @@ console.log(result.checks); // { signature: 'pass', ... }`}
                   <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-cyan-400" />
                     Go
+                    <span className="text-xs font-normal text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">Coming soon</span>
                   </h3>
                   <p className="text-sm text-gray-400 mb-3">
-                    Requires Go 1.21+. Context-aware with built-in retries.
+                    Go SDK is on the roadmap. Zero-dependency, context-aware with built-in retries.{' '}
+                    <a href="https://github.com/hellothere012/notaryos" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">Star the repo</a> to get notified when it ships.
                   </p>
-                  <CodeBlock
-                    language="bash"
-                    filename="terminal"
-                    code="go get github.com/hellothere012/notaryos-go"
-                  />
-                  <CodeBlock
-                    language="go"
-                    filename="main.go"
-                    code={`package main
-
-import (
-    "context"
-    "fmt"
-    "log"
-
-    notary "github.com/hellothere012/notaryos-go"
-)
-
-func main() {
-    client, err := notary.NewClient("notary_live_...", nil)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Seal an action
-    receipt, err := client.Seal(context.Background(), &notary.SealRequest{
-        Action:  "deployment.completed",
-        AgentID: "deploy-agent",
-        Payload: map[string]any{
-            "version": "2.1.0",
-            "env":     "production",
-        },
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Printf("Receipt: %s\\n", receipt.Hash)
-
-    // Verify (no auth required)
-    result, _ := client.Verify(context.Background(), receipt.Hash)
-    fmt.Printf("Valid: %v\\n", result.Valid)
-}`}
-                  />
                 </motion.div>
               </motion.div>
             </section>
@@ -1660,150 +1618,36 @@ func main() {
                   environments, or data residency requirements.
                 </motion.p>
 
-                {/* Docker Compose */}
-                <motion.div variants={fadeInUp} className="mb-8">
-                  <h3 className="text-lg font-semibold text-white mb-3">Docker Compose</h3>
-                  <p className="text-sm text-gray-400 mb-3">
-                    The fastest way to self-host. Requires Docker and Docker Compose.
-                  </p>
-                  <CodeBlock
-                    language="yaml"
-                    filename="docker-compose.yml"
-                    code={`version: "3.8"
-
-services:
-  notary-api:
-    image: notaryos/notary-api:latest
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://notary:secret@postgres:5432/notary
-      - REDIS_URL=redis://redis:6379/0
-      - NOTARY_SIGNING_KEY=\${NOTARY_SIGNING_KEY}
-      - JWT_SECRET_KEY=\${JWT_SECRET_KEY}
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: notary
-      POSTGRES_USER: notary
-      POSTGRES_PASSWORD: secret
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redisdata:/data
-
-volumes:
-  pgdata:
-  redisdata:`}
-                  />
-                </motion.div>
-
-                {/* Environment variables */}
-                <motion.div variants={fadeInUp} className="mb-8">
-                  <h3 className="text-lg font-semibold text-white mb-3">Environment Variables</h3>
-                  <div className="rounded-xl bg-gray-900/60 border border-gray-800 overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left">
-                        <thead>
-                          <tr className="border-b border-gray-800">
-                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Variable</th>
-                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
-                            <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-sm">
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">DATABASE_URL</code></td>
-                            <td className="py-2.5 px-4 text-green-400 text-xs">Yes</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">PostgreSQL connection string</td>
-                          </tr>
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">REDIS_URL</code></td>
-                            <td className="py-2.5 px-4 text-green-400 text-xs">Yes</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Redis connection string for caching and rate limiting</td>
-                          </tr>
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">NOTARY_SIGNING_KEY</code></td>
-                            <td className="py-2.5 px-4 text-green-400 text-xs">Yes</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Ed25519 private key (base64-encoded) for receipt signing</td>
-                          </tr>
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">JWT_SECRET_KEY</code></td>
-                            <td className="py-2.5 px-4 text-green-400 text-xs">Yes</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Secret key for JWT token signing (min 32 chars)</td>
-                          </tr>
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">CORS_ORIGINS</code></td>
-                            <td className="py-2.5 px-4 text-gray-500 text-xs">No</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Comma-separated allowed origins (default: none)</td>
-                          </tr>
-                          <tr className="border-b border-gray-800/50">
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">LOG_LEVEL</code></td>
-                            <td className="py-2.5 px-4 text-gray-500 text-xs">No</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Logging verbosity: debug, info, warning, error (default: info)</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2.5 px-4"><code className="text-purple-300 text-xs font-mono">KEY_ROTATION_DAYS</code></td>
-                            <td className="py-2.5 px-4 text-gray-500 text-xs">No</td>
-                            <td className="py-2.5 px-4 text-gray-400 text-xs">Auto-rotate signing key every N days (default: disabled)</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Quick start commands */}
-                <motion.div variants={fadeInUp} className="mb-8">
-                  <h3 className="text-lg font-semibold text-white mb-3">Running</h3>
-                  <CodeBlock
-                    language="bash"
-                    filename="terminal"
-                    code={`# Generate a signing key
-openssl genpkey -algorithm ed25519 | base64 -w0 > signing_key.txt
-export NOTARY_SIGNING_KEY=$(cat signing_key.txt)
-
-# Generate JWT secret
-export JWT_SECRET_KEY=$(openssl rand -hex 32)
-
-# Start services
-docker compose up -d
-
-# Verify it's running
-curl http://localhost:8000/v1/notary/status
-# {"status":"healthy","signer_id":"notary-v1-ed25519","version":"1.0.0"}`}
-                  />
-                </motion.div>
-
-                {/* Hosted alternative */}
+                {/* Self-hosting beta notice */}
                 <motion.div
                   variants={fadeInUp}
-                  className="p-5 rounded-xl bg-gradient-to-r from-purple-900/20 to-cyan-900/10 border border-purple-500/20 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                  className="p-6 rounded-xl bg-gradient-to-r from-orange-900/15 to-amber-900/10 border border-orange-500/20"
                 >
-                  <div className="flex-1">
-                    <p className="text-white font-medium text-sm mb-1">
-                      Prefer not to self-host?
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Use our managed service at{' '}
-                      <code className="text-purple-300 bg-purple-500/10 px-1 py-0.5 rounded">{API_BASE}</code>{' '}
-                      with a free tier of 100 receipts/month. No infrastructure to manage.
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <Server className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-medium text-sm mb-2">
+                        Self-hosting is on the roadmap
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                        We are working on a self-hosted Docker image for air-gapped environments and
+                        data residency requirements. Interested in early access?{' '}
+                        <a href="mailto:hello@notaryos.org" className="text-purple-400 hover:text-purple-300 underline underline-offset-2">
+                          Contact us
+                        </a>{' '}
+                        to discuss enterprise self-hosting.
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <Link
+                          href="/sign-up"
+                          className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap"
+                        >
+                          Use Managed Service (Free Tier)
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                  <Link
-                    href="/sign-up"
-                    className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap"
-                  >
-                    Get Started Free
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
                 </motion.div>
               </motion.div>
             </section>
