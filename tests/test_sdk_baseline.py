@@ -10,12 +10,19 @@ import time
 from notary_sdk import AutoReceiptConfig
 
 
-def test_status(notary):
-    """Verify NotaryOS API is reachable and active."""
-    status = notary.status()
+def test_status(notary_public):
+    """Verify NotaryOS API is reachable and active (no auth needed)."""
+    status = notary_public.status()
     assert status.status == "active", f"Expected active, got {status.status}"
     assert status.signature_type == "ed25519"
     assert status.has_public_key
+
+
+def test_public_key(notary_public):
+    """Verify public key endpoint returns PEM (no auth needed)."""
+    key = notary_public.public_key()
+    pem = key.public_key_pem or key.public_key or ""
+    assert "BEGIN PUBLIC KEY" in pem, f"No PEM found. Keys: {vars(key)}"
 
 
 def test_issue_and_verify(notary):
