@@ -3,7 +3,6 @@
   "regions": ["iad1"],
   "functions": {
     "src/app/r/[hash]/page.tsx": {
-      "memory": 1024,
       "maxDuration": 10
     }
   },
