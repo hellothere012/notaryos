@@ -174,13 +174,36 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
     }
   }, []);
 
+  const handleAssessmentsEvent = useCallback((data: any) => {
+    const items: Assessment[] = (data.items || []).map((a: any) => ({
+      id: a.id || `assess-${Date.now()}`,
+      time: a.time || new Date().toISOString().slice(11, 16) + ' UTC',
+      level: a.level || 'LOW',
+      title: a.title || 'Assessment',
+      summary: a.summary || '',
+      sources: a.sources || [],
+      confidence: a.confidence ?? 50,
+      aiConsensus: a.aiConsensus || a.ai_consensus || '',
+      dagHash: a.dagHash || a.dag_hash || '',
+    }));
+
+    if (items.length > 0) {
+      setLiveAssessments(items);
+      setAgentStatuses(prev => ({
+        ...prev,
+        fusion: { name: 'FUSION', status: 'ACTIVE', lastUpdate: Date.now(), itemCount: items.length },
+      }));
+    }
+  }, []);
+
   const handleSnapshotEvent = useCallback((data: any) => {
     // Initial state snapshot from server
     if (data.flights?.length) handleFlightsEvent({ items: data.flights });
     if (data.news?.length) handleNewsEvent({ items: data.news });
     if (data.official?.length) handleOfficialEvent({ items: data.official });
     if (data.vessels?.length) handleVesselsEvent({ items: data.vessels });
-  }, [handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent]);
+    if (data.assessments?.length) handleAssessmentsEvent({ items: data.assessments });
+  }, [handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent, handleAssessmentsEvent]);
 
   // ─── SSE Connection Manager ──────────────────────────
 
@@ -258,6 +281,15 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
         } catch (err) { /* ignore */ }
       });
 
+      es.addEventListener('assessments', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          handleAssessmentsEvent(data);
+          messagesReceived.current++;
+          lastEventTime.current = Date.now();
+        } catch (err) { /* ignore */ }
+      });
+
       es.addEventListener('heartbeat', () => {
         lastEventTime.current = Date.now();
       });
@@ -280,7 +312,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
     } catch {
       setStreamStatus('disconnected');
     }
-  }, [handleSnapshotEvent, handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent]);
+  }, [handleSnapshotEvent, handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent, handleAssessmentsEvent]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimer.current) return;
