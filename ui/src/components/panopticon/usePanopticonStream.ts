@@ -46,11 +46,28 @@ interface PanopticonStreamData {
   };
 }
 
+// ─── Helpers ─────────────────────────────────────────────
+
+/** Map backend vessel types to frontend VesselTrack types */
+function mapVesselType(
+  raw: string
+): 'carrier' | 'escort' | 'commercial' | 'adversary' | 'tanker' {
+  switch (raw) {
+    case 'naval':     return 'escort';
+    case 'tanker':    return 'tanker';
+    case 'cargo':     return 'commercial';
+    case 'fishing':   return 'commercial';
+    case 'adversary': return 'adversary';
+    default:          return 'commercial';
+  }
+}
+
 // ─── Main Hook ───────────────────────────────────────────
 
 export function usePanopticonStream(tick: number): PanopticonStreamData {
   // Live data state
   const [liveFlights, setLiveFlights] = useState<FlightTrack[]>([]);
+  const [liveVessels, setLiveVessels] = useState<VesselTrack[]>([]);
   const [liveNews, setLiveNews] = useState<NewsItem[]>([]);
   const [liveAssessments, setLiveAssessments] = useState<Assessment[]>([]);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('connecting');
@@ -136,12 +153,37 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
     }
   }, []);
 
+  const handleVesselsEvent = useCallback((data: any) => {
+    const items: VesselTrack[] = (data.items || []).map((v: any) => ({
+      id: v.id || v.name || 'UNK',
+      name: v.name || 'Unknown Vessel',
+      type: mapVesselType(v.type),
+      lat: v.lat,
+      lon: v.lon,
+      classification: v.classification || '',
+      flag: v.flag,
+      speed: v.speed,
+      heading: v.heading,
+      source: v.source === 'aisstream' ? 'ais' : (v.source || 'simulated'),
+      trustScore: v.trustScore || v.trust_score || 70,
+    }));
+
+    if (items.length > 0) {
+      setLiveVessels(items);
+      setAgentStatuses(prev => ({
+        ...prev,
+        neptune: { name: 'NEPTUNE', status: 'ACTIVE', lastUpdate: Date.now(), itemCount: items.length },
+      }));
+    }
+  }, []);
+
   const handleSnapshotEvent = useCallback((data: any) => {
     // Initial state snapshot from server
     if (data.flights?.length) handleFlightsEvent({ items: data.flights });
     if (data.news?.length) handleNewsEvent({ items: data.news });
     if (data.official?.length) handleOfficialEvent({ items: data.official });
-  }, [handleFlightsEvent, handleNewsEvent, handleOfficialEvent]);
+    if (data.vessels?.length) handleVesselsEvent({ items: data.vessels });
+  }, [handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent]);
 
   // ─── SSE Connection Manager ──────────────────────────
 
@@ -210,6 +252,15 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
         } catch (err) { /* ignore */ }
       });
 
+      es.addEventListener('vessels', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          handleVesselsEvent(data);
+          messagesReceived.current++;
+          lastEventTime.current = Date.now();
+        } catch (err) { /* ignore */ }
+      });
+
       es.addEventListener('heartbeat', () => {
         lastEventTime.current = Date.now();
       });
@@ -232,7 +283,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
     } catch {
       setStreamStatus('fallback');
     }
-  }, [handleSnapshotEvent, handleFlightsEvent, handleNewsEvent, handleOfficialEvent]);
+  }, [handleSnapshotEvent, handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent]);
 
   const scheduleReconnect = useCallback(() => {
     if (reconnectTimer.current) return;
@@ -279,8 +330,8 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
   // For flights: use live data if available, otherwise animate simulated
   const flights = isLive ? liveFlights : createFlights(tick * 100);
 
-  // For vessels: always use simulated for now (NEPTUNE agent not built yet)
-  const vessels = createVessels(tick * 100);
+  // For vessels: use live NEPTUNE data if available, otherwise simulated
+  const vessels = liveVessels.length > 0 ? liveVessels : createVessels(tick * 100);
 
   // For news: merge live + static, preferring live
   const news = liveNews.length > 0 ? liveNews : NEWS_FEED;
