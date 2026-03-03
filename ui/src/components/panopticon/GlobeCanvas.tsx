@@ -660,17 +660,32 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
   }, [rotation, flights, vessels, layers, size, tick, zoom, drawPolygon]);
 
   // ----------------------------------------------------------
-  // Click handler for entity hit-testing
+  // Entity hit-testing via mousedown/mouseup tracking
+  // We track mousedown position and compare with mouseup to
+  // distinguish clicks from drags (parent handles rotation).
   // ----------------------------------------------------------
-  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (!onEntitySelect) return;
+  const mouseDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  const handleEntityMouseDown = useCallback((e: React.MouseEvent) => {
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const handleEntityMouseUp = useCallback((e: React.MouseEvent) => {
+    if (!onEntitySelect || !mouseDownPos.current) return;
+
+    // Only treat as click if mouse moved less than 5px (not a drag)
+    const dx = Math.abs(e.clientX - mouseDownPos.current.x);
+    const dy = Math.abs(e.clientY - mouseDownPos.current.y);
+    mouseDownPos.current = null;
+    if (dx > 5 || dy > 5) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
-    const HIT_RADIUS = 18; // pixels
+    const HIT_RADIUS = 20; // pixels
 
     // Find closest entity within hit radius
     let closest: (typeof entityPositionsRef.current)[0] | null = null;
@@ -685,7 +700,6 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     }
 
     if (closest) {
-      e.stopPropagation();
       onEntitySelect(closest.type, closest.data, e.clientX, e.clientY);
     }
   }, [onEntitySelect]);
@@ -725,7 +739,8 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     <div
       ref={containerRef}
       onWheel={handleWheel}
-      onClick={handleCanvasClick}
+      onMouseDown={handleEntityMouseDown}
+      onMouseUp={handleEntityMouseUp}
       style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', cursor: 'crosshair' }}
     >
       <canvas
