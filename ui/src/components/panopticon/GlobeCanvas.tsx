@@ -117,6 +117,11 @@ const MISSILE_ROUTES = [
 // ----------------------------------------------------------------
 // Component
 // ----------------------------------------------------------------
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3.0;
+const ZOOM_STEP = 0.25;
+const ZOOM_WHEEL_STEP = 0.1;
+
 const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
   rotation,
   flights,
@@ -127,6 +132,23 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
+  const [zoom, setZoom] = useState(1.0);
+
+  const zoomIn = useCallback(() => {
+    setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) => {
+      const delta = e.deltaY > 0 ? -ZOOM_WHEEL_STEP : ZOOM_WHEEL_STEP;
+      return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(z + delta).toFixed(2)));
+    });
+  }, []);
 
   // ----------------------------------------------------------
   // ResizeObserver: keep canvas sized to its container
@@ -206,7 +228,7 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     // Derived values
     const cx = w / 2;
     const cy = h / 2;
-    const R = Math.min(w, h) * 0.42; // globe radius
+    const R = Math.min(w, h) * 0.42 * zoom; // globe radius (scaled by zoom)
     const cLat = rotation.lat;
     const cLon = rotation.lon;
 
@@ -552,20 +574,96 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         ctx.fill();
       }
     }
-  }, [rotation, flights, vessels, layers, size, tick, drawPolygon]);
+  }, [rotation, flights, vessels, layers, size, tick, zoom, drawPolygon]);
 
   // ----------------------------------------------------------
   // Render
   // ----------------------------------------------------------
+  const zoomBtnStyle: React.CSSProperties = {
+    width: 32,
+    height: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(8,16,28,0.85)',
+    border: '1px solid rgba(0,180,255,0.25)',
+    borderRadius: 4,
+    color: C.cyan,
+    fontSize: 18,
+    fontFamily: 'monospace',
+    fontWeight: 700,
+    cursor: 'pointer',
+    userSelect: 'none',
+    lineHeight: 1,
+    transition: 'border-color 0.15s, background 0.15s',
+  };
+
   return (
     <div
       ref={containerRef}
+      onWheel={handleWheel}
       style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
     >
       <canvas
         ref={canvasRef}
         style={{ width: '100%', height: '100%', display: 'block' }}
       />
+
+      {/* Zoom controls */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 12,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          zIndex: 10,
+        }}
+      >
+        <button
+          onClick={zoomIn}
+          style={zoomBtnStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.6)';
+            e.currentTarget.style.background = 'rgba(0,180,255,0.12)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0,180,255,0.25)';
+            e.currentTarget.style.background = 'rgba(8,16,28,0.85)';
+          }}
+          title="Zoom in"
+        >
+          +
+        </button>
+        <div
+          style={{
+            textAlign: 'center',
+            fontSize: 9,
+            color: C.dimText,
+            fontFamily: 'monospace',
+            padding: '2px 0',
+          }}
+        >
+          {zoom.toFixed(1)}x
+        </div>
+        <button
+          onClick={zoomOut}
+          style={zoomBtnStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.6)';
+            e.currentTarget.style.background = 'rgba(0,180,255,0.12)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0,180,255,0.25)';
+            e.currentTarget.style.background = 'rgba(8,16,28,0.85)';
+          }}
+          title="Zoom out"
+        >
+          −
+        </button>
+      </div>
     </div>
   );
 };
