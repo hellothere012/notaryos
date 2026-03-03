@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { AppHeader } from '@/components/layout/AppHeader';
 
 export const metadata: Metadata = {
   title: 'Panopticon -- 4D OSINT Intelligence Dashboard',

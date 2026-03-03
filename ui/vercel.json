@@ -1,14 +1,6 @@
 {
   "framework": "nextjs",
   "regions": ["iad1"],
-  "functions": {
-    "src/app/r/[hash]/page.tsx": {
-      "maxDuration": 10
-    }
-  },
-  "env": {
-    "NEXT_PUBLIC_API_URL": "https://api.agenttownsquare.com"
-  },
   "redirects": [
     {
       "source": "/index.html",

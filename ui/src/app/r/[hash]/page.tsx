@@ -21,6 +21,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ReceiptPageClient } from './receipt-page-client';
 
+export const maxDuration = 10;
+
 // ---------------------------------------------------------------------------
 // Types (mirrored from PublicVerifyPage.tsx for server-side use)
 // ---------------------------------------------------------------------------
