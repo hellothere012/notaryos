@@ -2,28 +2,31 @@
 
 // ═══════════════════════════════════════════════════════════
 // PANOPTICON — IntelPanel
-// Right-side intelligence panel with ASSESSMENTS and NEWS tabs.
-// Renders AI-fused multi-source assessments with cryptographic
-// provenance and real-time news feed with trust scoring.
-//
-// Now accepts live data as props (from usePanopticonStream)
-// with fallback to simulated data when stream is offline.
+// Right-side intelligence panel with 4 tabs:
+//   ASSESSMENTS | NEWS | FLIGHTS | VESSELS
+// Features severity filters, sort controls, news animations,
+// and live data from usePanopticonStream (no fallback).
 // ═══════════════════════════════════════════════════════════
 
-import { useState } from 'react';
-import type { Assessment, NewsItem } from './types';
+import { useState, useMemo } from 'react';
+import type { Assessment, NewsItem, FlightTrack, VesselTrack } from './types';
 import { C } from './constants';
-import { ASSESSMENTS as STATIC_ASSESSMENTS, NEWS_FEED as STATIC_NEWS } from './simulated-data';
 
 // ─── Props ───────────────────────────────────────────────
 
 interface IntelPanelProps {
   news: NewsItem[];
   assessments: Assessment[];
+  flights: FlightTrack[];
+  vessels: VesselTrack[];
   selectedAssessment: Assessment | null;
   setSelectedAssessment: (a: Assessment) => void;
   onViewDag: (a: Assessment) => void;
 }
+
+// ─── Tab Type ────────────────────────────────────────────
+
+type TabId = 'assessments' | 'news' | 'flights' | 'vessels';
 
 // ─── Style Constants ─────────────────────────────────────
 
@@ -44,20 +47,42 @@ const tabBarStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-// ─── Severity Badge ──────────────────────────────────────
+// ─── CSS Keyframes ───────────────────────────────────────
+// News entry animations for live feed items.
+
+const newsAnimKeyframes = `
+@keyframes intel-news-slide-in {
+  0% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes intel-news-glow {
+  0% { background-color: rgba(0,212,255,0.12); }
+  100% { background-color: transparent; }
+}
+`;
+
+// ─── Severity Colors ─────────────────────────────────────
+
+const SEVERITY_LEVELS: Assessment['level'][] = ['CRITICAL', 'HIGH', 'ELEVATED', 'LOW'];
 
 function severityColor(level: Assessment['level']): string {
   switch (level) {
-    case 'CRITICAL':
-      return C.red;
-    case 'HIGH':
-      return C.amber;
-    case 'ELEVATED':
-      return '#cc8844';
-    case 'LOW':
-      return C.dimText;
-    default:
-      return C.dimText;
+    case 'CRITICAL': return C.red;
+    case 'HIGH': return C.amber;
+    case 'ELEVATED': return '#cc8844';
+    case 'LOW': return C.dimText;
+    default: return C.dimText;
+  }
+}
+
+// Severity rank for sort (higher = more severe)
+function severityRank(level: Assessment['level']): number {
+  switch (level) {
+    case 'CRITICAL': return 4;
+    case 'HIGH': return 3;
+    case 'ELEVATED': return 2;
+    case 'LOW': return 1;
+    default: return 0;
   }
 }
 
@@ -65,20 +90,13 @@ function severityColor(level: Assessment['level']): string {
 
 function newsTypeColor(type: NewsItem['type']): string {
   switch (type) {
-    case 'FLASH':
-      return C.red;
-    case 'OFFICIAL':
-      return C.cyan;
-    case 'BREAKING':
-      return C.amber;
-    case 'GEOINT':
-      return C.green;
-    case 'OSINT':
-      return '#aa66ff';
-    case 'ANALYSIS':
-      return '#8866cc';
-    default:
-      return C.dimText;
+    case 'FLASH': return C.red;
+    case 'OFFICIAL': return C.cyan;
+    case 'BREAKING': return C.amber;
+    case 'GEOINT': return C.green;
+    case 'OSINT': return '#aa66ff';
+    case 'ANALYSIS': return '#8866cc';
+    default: return C.dimText;
   }
 }
 
@@ -90,9 +108,130 @@ function trustColor(score: number): string {
   return C.red;
 }
 
+// ─── Flight Type Color ───────────────────────────────────
+
+function flightTypeColor(type: FlightTrack['type']): string {
+  switch (type) {
+    case 'adversary': return C.red;
+    case 'strike': return C.amber;
+    case 'bomber': return '#ff6600';
+    case 'isr': return C.green;
+    case 'tanker': return '#8888ff';
+    case 'transport': return '#66aadd';
+    case 'civilian': return C.cyan;
+    default: return C.cyan;
+  }
+}
+
+// ─── Vessel Type Color ───────────────────────────────────
+
+function vesselTypeColor(type: VesselTrack['type']): string {
+  switch (type) {
+    case 'carrier': return C.cyan;
+    case 'escort': return '#66aadd';
+    case 'adversary': return C.red;
+    case 'commercial': return C.amber;
+    case 'tanker': return '#8888ff';
+    default: return C.cyan;
+  }
+}
+
+// ─── Type Badge Component ────────────────────────────────
+
+function TypeBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      style={{
+        fontSize: 8,
+        fontWeight: 700,
+        color: '#000',
+        background: color,
+        padding: '1px 4px',
+        borderRadius: 2,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// ─── Severity Filter Pills ───────────────────────────────
+
+function SeverityFilters({
+  activeFilters,
+  onToggle,
+  sortMode,
+  onToggleSort,
+}: {
+  activeFilters: Set<Assessment['level']>;
+  onToggle: (level: Assessment['level']) => void;
+  sortMode: 'time' | 'severity';
+  onToggleSort: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '5px 10px',
+        borderBottom: `1px solid ${C.panelBorder}`,
+        flexWrap: 'wrap',
+      }}
+    >
+      {SEVERITY_LEVELS.map((level) => {
+        const color = severityColor(level);
+        const isActive = activeFilters.has(level);
+        return (
+          <button
+            key={level}
+            onClick={() => onToggle(level)}
+            style={{
+              fontSize: 8,
+              fontWeight: 700,
+              fontFamily: 'monospace',
+              letterSpacing: 0.5,
+              padding: '2px 5px',
+              borderRadius: 2,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              border: `1px solid ${color}`,
+              background: isActive ? color : 'transparent',
+              color: isActive ? '#000' : color,
+              opacity: isActive ? 1 : 0.6,
+            }}
+          >
+            {level}
+          </button>
+        );
+      })}
+      <button
+        onClick={onToggleSort}
+        style={{
+          fontSize: 8,
+          fontWeight: 700,
+          fontFamily: 'monospace',
+          padding: '2px 6px',
+          borderRadius: 2,
+          cursor: 'pointer',
+          marginLeft: 'auto',
+          border: `1px solid ${C.panelBorder}`,
+          background: 'transparent',
+          color: C.dimText,
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = C.cyan; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = String(C.dimText); }}
+      >
+        {sortMode === 'time' ? 'TIME \u2193' : 'SEV \u2193'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Assessment Card ─────────────────────────────────────
-// Renders a single assessment. When selected, expands to show
-// full detail with AI consensus, sources breakdown, and action buttons.
 
 function AssessmentCard({
   assessment,
@@ -118,195 +257,77 @@ function AssessmentCard({
         transition: 'background 0.15s',
       }}
     >
-      {/* Clickable card header */}
       <div
         onClick={onSelect}
-        style={{
-          padding: '8px 10px',
-          cursor: 'pointer',
-        }}
-        onMouseEnter={(e) => {
-          if (!isSelected) e.currentTarget.style.background = 'rgba(0,180,255,0.04)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isSelected) e.currentTarget.style.background = 'transparent';
-        }}
+        style={{ padding: '8px 10px', cursor: 'pointer' }}
+        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(0,180,255,0.04)'; }}
+        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
-        {/* Time + Severity Badge + Collapse indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
           <span style={{ fontSize: 9, color: C.dimText }}>{assessment.time}</span>
           <span
             style={{
-              fontSize: 9,
-              fontWeight: 700,
-              color: '#000',
-              background: sevColor,
-              padding: '1px 5px',
-              borderRadius: 2,
-              letterSpacing: 0.5,
+              fontSize: 9, fontWeight: 700, color: '#000',
+              background: sevColor, padding: '1px 5px', borderRadius: 2, letterSpacing: 0.5,
             }}
           >
             {assessment.level}
           </span>
-          {/* Expand/collapse chevron */}
           <span style={{ marginLeft: 'auto', fontSize: 10, color: C.dimText, transition: 'transform 0.2s', transform: isSelected ? 'rotate(180deg)' : 'rotate(0deg)' }}>
             ▾
           </span>
         </div>
 
-        {/* Title */}
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: C.brightText,
-            lineHeight: 1.3,
-            marginBottom: 4,
-          }}
-        >
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.brightText, lineHeight: 1.3, marginBottom: 4 }}>
           {assessment.title}
         </div>
 
-        {/* Summary (truncated when collapsed, full when expanded) */}
-        <div
-          style={{
-            fontSize: 10,
-            color: C.text,
-            lineHeight: 1.4,
-            marginBottom: 6,
-            maxHeight: isSelected ? 'none' : 40,
-            overflow: isSelected ? 'visible' : 'hidden',
-          }}
-        >
+        <div style={{ fontSize: 10, color: C.text, lineHeight: 1.4, marginBottom: 6, maxHeight: isSelected ? 'none' : 40, overflow: isSelected ? 'visible' : 'hidden' }}>
           {assessment.summary}
         </div>
 
-        {/* Source Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6 }}>
           {assessment.sources.map((src) => (
-            <span
-              key={src}
-              style={{
-                fontSize: 9,
-                color: '#000',
-                background: C.cyan,
-                padding: '1px 4px',
-                borderRadius: 2,
-                fontWeight: 600,
-              }}
-            >
+            <span key={src} style={{ fontSize: 9, color: '#000', background: C.cyan, padding: '1px 4px', borderRadius: 2, fontWeight: 600 }}>
               {src}
             </span>
           ))}
         </div>
 
-        {/* Confidence Bar + DAG Hash */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 9, color: C.dimText }}>CONF</span>
-            <div
-              style={{
-                flex: 1,
-                height: 4,
-                background: 'rgba(0,180,255,0.1)',
-                borderRadius: 2,
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  width: `${confPct}%`,
-                  height: '100%',
-                  background: confPct >= 85 ? C.green : confPct >= 70 ? C.amber : C.red,
-                  borderRadius: 2,
-                  transition: 'width 0.3s',
-                }}
-              />
+            <div style={{ flex: 1, height: 4, background: 'rgba(0,180,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: `${confPct}%`, height: '100%', background: confPct >= 85 ? C.green : confPct >= 70 ? C.amber : C.red, borderRadius: 2, transition: 'width 0.3s' }} />
             </div>
-            <span style={{ fontSize: 9, color: C.dimText }}>
-              {confPct}%
-            </span>
+            <span style={{ fontSize: 9, color: C.dimText }}>{confPct}%</span>
           </div>
-          <span
-            style={{
-              fontSize: 9,
-              color: '#aa66ff',
-              fontFamily: 'monospace',
-            }}
-            title={`DAG Hash: ${assessment.dagHash}`}
-          >
+          <span style={{ fontSize: 9, color: '#aa66ff', fontFamily: 'monospace' }} title={`DAG Hash: ${assessment.dagHash}`}>
             {assessment.dagHash.slice(0, 10)}...
           </span>
         </div>
       </div>
 
-      {/* ── Expanded Detail Panel ─────────────────────────── */}
       {isSelected && (
-        <div
-          style={{
-            padding: '0 10px 10px',
-            borderTop: `1px solid ${C.panelBorder}`,
-            marginTop: 2,
-          }}
-        >
-          {/* AI Consensus */}
-          <div
-            style={{
-              background: 'rgba(0,0,0,0.3)',
-              border: `1px solid ${C.panelBorder}`,
-              borderRadius: 4,
-              padding: '8px 10px',
-              marginTop: 8,
-              marginBottom: 8,
-            }}
-          >
-            <div style={{ fontSize: 8, color: C.dimText, letterSpacing: 1, marginBottom: 3 }}>
-              AI CONSENSUS
-            </div>
-            <div style={{ fontSize: 10, color: C.brightText, lineHeight: 1.5 }}>
-              {assessment.aiConsensus}
-            </div>
+        <div style={{ padding: '0 10px 10px', borderTop: `1px solid ${C.panelBorder}`, marginTop: 2 }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${C.panelBorder}`, borderRadius: 4, padding: '8px 10px', marginTop: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 8, color: C.dimText, letterSpacing: 1, marginBottom: 3 }}>AI CONSENSUS</div>
+            <div style={{ fontSize: 10, color: C.brightText, lineHeight: 1.5 }}>{assessment.aiConsensus}</div>
           </div>
 
-          {/* Source Detail List */}
-          <div style={{ fontSize: 8, color: C.dimText, letterSpacing: 1, marginBottom: 4 }}>
-            SOURCE BREAKDOWN
-          </div>
+          <div style={{ fontSize: 8, color: C.dimText, letterSpacing: 1, marginBottom: 4 }}>SOURCE BREAKDOWN</div>
           {assessment.sources.map((src, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '3px 0',
-                fontSize: 9,
-              }}
-            >
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 9 }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.green, display: 'inline-block', boxShadow: `0 0 4px ${C.green}` }} />
               <span style={{ color: C.text, flex: 1 }}>{src}</span>
               <span style={{ color: C.green, fontSize: 8 }}>VERIFIED</span>
             </div>
           ))}
 
-          {/* Action buttons */}
           <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
             <button
               onClick={(e) => { e.stopPropagation(); onViewDag(); }}
-              style={{
-                flex: 1,
-                padding: '6px 0',
-                background: 'rgba(170,102,255,0.15)',
-                border: `1px solid rgba(170,102,255,0.4)`,
-                borderRadius: 4,
-                color: '#aa66ff',
-                fontSize: 9,
-                fontWeight: 700,
-                fontFamily: 'monospace',
-                letterSpacing: 0.5,
-                cursor: 'pointer',
-                transition: 'background 0.15s',
-              }}
+              style={{ flex: 1, padding: '6px 0', background: 'rgba(170,102,255,0.15)', border: '1px solid rgba(170,102,255,0.4)', borderRadius: 4, color: '#aa66ff', fontSize: 9, fontWeight: 700, fontFamily: 'monospace', letterSpacing: 0.5, cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(170,102,255,0.25)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(170,102,255,0.15)'; }}
             >
@@ -314,18 +335,7 @@ function AssessmentCard({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onSelect(); }}
-              style={{
-                padding: '6px 12px',
-                background: 'rgba(0,180,255,0.1)',
-                border: `1px solid ${C.panelBorder}`,
-                borderRadius: 4,
-                color: C.dimText,
-                fontSize: 9,
-                fontWeight: 700,
-                fontFamily: 'monospace',
-                cursor: 'pointer',
-                transition: 'color 0.15s',
-              }}
+              style={{ padding: '6px 12px', background: 'rgba(0,180,255,0.1)', border: `1px solid ${C.panelBorder}`, borderRadius: 4, color: C.dimText, fontSize: 9, fontWeight: 700, fontFamily: 'monospace', cursor: 'pointer', transition: 'color 0.15s' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = C.cyan; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = String(C.dimText); }}
             >
@@ -349,50 +359,128 @@ function NewsRow({ item, isNew }: { item: NewsItem; isNew?: boolean }) {
       style={{
         padding: '6px 10px',
         borderBottom: `1px solid ${C.panelBorder}`,
-        background: isNew ? 'rgba(0,212,255,0.06)' : 'transparent',
-        transition: 'background 1s ease-out',
+        background: 'transparent',
+        animation: isNew ? 'intel-news-slide-in 0.4s ease-out, intel-news-glow 2s ease-out' : 'none',
       }}
     >
-      {/* Time + Source Type Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
         <span style={{ fontSize: 9, color: C.dimText }}>{item.time}</span>
-        {item.type && (
-          <span
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              color: '#000',
-              background: typeColor,
-              padding: '1px 5px',
-              borderRadius: 2,
-              letterSpacing: 0.5,
-            }}
-          >
-            {item.type}
-          </span>
-        )}
-
-        {/* Trust Score Indicator */}
+        {item.type && <TypeBadge label={item.type} color={typeColor} />}
         <span style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
-          <span
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: tColor,
-              display: 'inline-block',
-              boxShadow: `0 0 4px ${tColor}`,
-            }}
-          />
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: tColor, display: 'inline-block', boxShadow: `0 0 4px ${tColor}` }} />
           <span style={{ fontSize: 9, color: tColor }}>{item.trust}</span>
         </span>
       </div>
 
-      {/* Source Name + Text */}
       <div style={{ fontSize: 10, color: C.text, lineHeight: 1.4 }}>
         <span style={{ fontWeight: 700, color: C.brightText }}>{item.source}</span>
         {' -- '}
         {item.text}
+      </div>
+    </div>
+  );
+}
+
+// ─── Flight Row ──────────────────────────────────────────
+
+function FlightRow({ flight }: { flight: FlightTrack }) {
+  const color = flightTypeColor(flight.type);
+  const tColor = trustColor(flight.trustScore);
+
+  return (
+    <div
+      style={{
+        padding: '6px 10px',
+        borderBottom: `1px solid ${C.panelBorder}`,
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,180,255,0.04)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      {/* Callsign + Type badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: 'monospace' }}>
+          {flight.callsign}
+        </span>
+        <TypeBadge label={flight.type} color={color} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: tColor, display: 'inline-block', boxShadow: `0 0 4px ${tColor}` }} />
+          <span style={{ fontSize: 9, color: tColor }}>{flight.trustScore}</span>
+        </span>
+      </div>
+
+      {/* Details grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 10px', fontSize: 9, marginLeft: 2 }}>
+        <div>
+          <span style={{ color: C.dimText }}>ALT </span>
+          <span style={{ color: C.text }}>{(flight.alt / 1000).toFixed(0)}K ft</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>SPD </span>
+          <span style={{ color: C.text }}>{flight.speed} kts</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>HDG </span>
+          <span style={{ color: C.text }}>{Math.round(flight.heading)}&deg;</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>SRC </span>
+          <span style={{ color: C.text }}>{flight.source}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Vessel Row ──────────────────────────────────────────
+
+function VesselRow({ vessel }: { vessel: VesselTrack }) {
+  const color = vesselTypeColor(vessel.type);
+  const tColor = trustColor(vessel.trustScore);
+
+  return (
+    <div
+      style={{
+        padding: '6px 10px',
+        borderBottom: `1px solid ${C.panelBorder}`,
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,180,255,0.04)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      {/* Name + Type badge + Flag */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color, fontFamily: 'monospace' }}>
+          {vessel.name}
+        </span>
+        <TypeBadge label={vessel.type} color={color} />
+        {vessel.flag && (
+          <span style={{ fontSize: 8, color: C.dimText }}>{vessel.flag}</span>
+        )}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: tColor, display: 'inline-block', boxShadow: `0 0 4px ${tColor}` }} />
+          <span style={{ fontSize: 9, color: tColor }}>{vessel.trustScore}</span>
+        </span>
+      </div>
+
+      {/* Details grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 10px', fontSize: 9, marginLeft: 2 }}>
+        <div>
+          <span style={{ color: C.dimText }}>CLASS </span>
+          <span style={{ color: C.text }}>{vessel.classification || '\u2014'}</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>SPD </span>
+          <span style={{ color: C.text }}>{vessel.speed != null ? `${vessel.speed} kts` : '\u2014'}</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>HDG </span>
+          <span style={{ color: C.text }}>{vessel.heading != null ? `${Math.round(vessel.heading)}\u00B0` : '\u2014'}</span>
+        </div>
+        <div>
+          <span style={{ color: C.dimText }}>SRC </span>
+          <span style={{ color: C.text }}>{vessel.source}</span>
+        </div>
       </div>
     </div>
   );
@@ -403,63 +491,110 @@ function NewsRow({ item, isNew }: { item: NewsItem; isNew?: boolean }) {
 export default function IntelPanel({
   news,
   assessments,
+  flights,
+  vessels,
   selectedAssessment,
   setSelectedAssessment,
   onViewDag,
 }: IntelPanelProps) {
-  const [activeTab, setActiveTab] = useState<'assessments' | 'news'>('assessments');
+  const [activeTab, setActiveTab] = useState<TabId>('assessments');
 
-  // Use live data when available, fall back to static
-  const displayAssessments = assessments.length > 0 ? assessments : STATIC_ASSESSMENTS;
-  const displayNews = news.length > 0 ? news : STATIC_NEWS;
+  // Severity filter state (all active by default)
+  const [severityFilters, setSeverityFilters] = useState<Set<Assessment['level']>>(
+    () => new Set(SEVERITY_LEVELS)
+  );
+  const [sortMode, setSortMode] = useState<'time' | 'severity'>('time');
+
+  // Toggle a severity filter
+  const toggleFilter = (level: Assessment['level']) => {
+    setSeverityFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) {
+        // Don't allow removing last filter
+        if (next.size > 1) next.delete(level);
+      } else {
+        next.add(level);
+      }
+      return next;
+    });
+  };
+
+  // Live data only — no fallback
+  const rawAssessments = assessments;
+  const displayNews = news;
+
+  // Filtered + sorted assessments
+  const displayAssessments = useMemo(() => {
+    const filtered = rawAssessments.filter((a) => severityFilters.has(a.level));
+    if (sortMode === 'severity') {
+      return [...filtered].sort((a, b) => severityRank(b.level) - severityRank(a.level));
+    }
+    return filtered; // already in time order from stream
+  }, [rawAssessments, severityFilters, sortMode]);
+
+  // Tab definitions with counts
+  const tabs: { id: TabId; label: string; count: number }[] = [
+    { id: 'assessments', label: 'ASSESS', count: displayAssessments.length },
+    { id: 'news', label: 'NEWS', count: displayNews.length },
+    { id: 'flights', label: 'FLIGHTS', count: flights.length },
+    { id: 'vessels', label: 'VESSELS', count: vessels.length },
+  ];
 
   return (
     <div style={panelStyle}>
-      {/* Tab Bar */}
+      {/* Inject news animation keyframes */}
+      <style>{newsAnimKeyframes}</style>
+
+      {/* Tab Bar — 4 tabs */}
       <div style={tabBarStyle}>
-        {(['assessments', 'news'] as const).map((tab) => (
+        {tabs.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             style={{
               flex: 1,
               padding: '8px 0',
               background: 'transparent',
               border: 'none',
-              borderBottom: activeTab === tab ? `2px solid ${C.cyan}` : '2px solid transparent',
-              color: activeTab === tab ? C.cyan : C.dimText,
-              fontSize: 9,
+              borderBottom: activeTab === tab.id ? `2px solid ${C.cyan}` : '2px solid transparent',
+              color: activeTab === tab.id ? C.cyan : C.dimText,
+              fontSize: 8,
               fontWeight: 700,
               fontFamily: 'monospace',
-              letterSpacing: 1,
+              letterSpacing: 0.5,
               cursor: 'pointer',
               transition: 'color 0.15s, border-color 0.15s',
               textTransform: 'uppercase',
             }}
           >
-            {tab === 'assessments' ? `ASSESSMENTS (${displayAssessments.length})` : `NEWS (${displayNews.length})`}
+            {tab.label} ({tab.count})
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {activeTab === 'assessments' ? (
+
+        {/* ── ASSESSMENTS TAB ──────────────────────────────── */}
+        {activeTab === 'assessments' && (
           <>
-            {/* Section Header */}
             <div
               style={{
-                padding: '6px 10px',
-                fontSize: 9,
-                color: C.dimText,
-                borderBottom: `1px solid ${C.panelBorder}`,
-                letterSpacing: 1,
+                padding: '6px 10px', fontSize: 9, color: C.dimText,
+                borderBottom: `1px solid ${C.panelBorder}`, letterSpacing: 1,
               }}
             >
               AI-FUSED MULTI-SOURCE ASSESSMENTS
             </div>
 
-            {/* Assessment Cards */}
+            {/* Severity filter pills + sort toggle */}
+            <SeverityFilters
+              activeFilters={severityFilters}
+              onToggle={toggleFilter}
+              sortMode={sortMode}
+              onToggleSort={() => setSortMode((m) => m === 'time' ? 'severity' : 'time')}
+            />
+
             {displayAssessments.map((assessment) => (
               <AssessmentCard
                 key={assessment.id}
@@ -469,19 +604,23 @@ export default function IntelPanel({
                 onViewDag={() => onViewDag(assessment)}
               />
             ))}
+
+            {displayAssessments.length === 0 && (
+              <div style={{ padding: '20px 10px', fontSize: 10, color: C.dimText, textAlign: 'center' }}>
+                {assessments.length === 0 ? 'Awaiting live assessment data...' : 'No assessments match filters'}
+              </div>
+            )}
           </>
-        ) : (
+        )}
+
+        {/* ── NEWS TAB ─────────────────────────────────────── */}
+        {activeTab === 'news' && (
           <>
-            {/* Section Header */}
             <div
               style={{
-                padding: '6px 10px',
-                fontSize: 9,
-                color: C.dimText,
-                borderBottom: `1px solid ${C.panelBorder}`,
-                letterSpacing: 1,
-                display: 'flex',
-                justifyContent: 'space-between',
+                padding: '6px 10px', fontSize: 9, color: C.dimText,
+                borderBottom: `1px solid ${C.panelBorder}`, letterSpacing: 1,
+                display: 'flex', justifyContent: 'space-between',
               }}
             >
               <span>MULTI-SOURCE INTELLIGENCE FEED</span>
@@ -489,11 +628,65 @@ export default function IntelPanel({
                 <span style={{ color: C.green, fontWeight: 700 }}>LIVE</span>
               )}
             </div>
+            {displayNews.length > 0 ? (
+              displayNews.map((item, idx) => (
+                <NewsRow key={`${item.time}-${idx}`} item={item} isNew={idx < 2} />
+              ))
+            ) : (
+              <div style={{ padding: '20px 10px', fontSize: 10, color: C.dimText, textAlign: 'center' }}>
+                Awaiting GAZETTE / HERALD feed data...
+              </div>
+            )}
+          </>
+        )}
 
-            {/* News Items */}
-            {displayNews.map((item, idx) => (
-              <NewsRow key={`${item.time}-${idx}`} item={item} isNew={idx < 2 && news.length > 0} />
-            ))}
+        {/* ── FLIGHTS TAB ──────────────────────────────────── */}
+        {activeTab === 'flights' && (
+          <>
+            <div
+              style={{
+                padding: '6px 10px', fontSize: 9, color: C.dimText,
+                borderBottom: `1px solid ${C.panelBorder}`, letterSpacing: 1,
+                display: 'flex', justifyContent: 'space-between',
+              }}
+            >
+              <span>ADS-B / OPENSKY FLIGHT TRACKS</span>
+              {flights.length > 0 && (
+                <span style={{ color: C.green, fontWeight: 700 }}>LIVE</span>
+              )}
+            </div>
+            {flights.length > 0 ? (
+              flights.map((f) => <FlightRow key={f.id} flight={f} />)
+            ) : (
+              <div style={{ padding: '20px 10px', fontSize: 10, color: C.dimText, textAlign: 'center' }}>
+                Waiting for SKYWATCH data...
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── VESSELS TAB ──────────────────────────────────── */}
+        {activeTab === 'vessels' && (
+          <>
+            <div
+              style={{
+                padding: '6px 10px', fontSize: 9, color: C.dimText,
+                borderBottom: `1px solid ${C.panelBorder}`, letterSpacing: 1,
+                display: 'flex', justifyContent: 'space-between',
+              }}
+            >
+              <span>AIS MARITIME VESSEL TRACKS</span>
+              {vessels.length > 0 && (
+                <span style={{ color: C.green, fontWeight: 700 }}>LIVE</span>
+              )}
+            </div>
+            {vessels.length > 0 ? (
+              vessels.map((v) => <VesselRow key={v.id} vessel={v} />)
+            ) : (
+              <div style={{ padding: '20px 10px', fontSize: 10, color: C.dimText, textAlign: 'center' }}>
+                Waiting for NEPTUNE data...
+              </div>
+            )}
           </>
         )}
       </div>

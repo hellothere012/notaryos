@@ -4,15 +4,12 @@
 // PANOPTICON — Real-Time OSINT Data Hook
 // ═══════════════════════════════════════════════════════════
 // Connects to the backend SSE stream (/v1/panopticon/stream)
-// for live OSINT data from HERALD, GAZETTE, and SKYWATCH agents.
-//
-// Falls back to simulated data if the stream is unavailable,
-// so the dashboard always renders regardless of backend status.
+// for live OSINT data from HERALD, GAZETTE, SKYWATCH, and
+// NEPTUNE agents. Returns empty arrays when no data is available.
 // ═══════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { FlightTrack, VesselTrack, NewsItem, Assessment } from './types';
-import { createFlights, createVessels, ASSESSMENTS, NEWS_FEED } from './simulated-data';
 
 // API base — uses the public API endpoint
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.agenttownsquare.com';
@@ -20,7 +17,7 @@ const SSE_URL = `${API_BASE}/v1/panopticon/stream`;
 
 // ─── Connection State ────────────────────────────────────
 
-export type StreamStatus = 'connecting' | 'connected' | 'disconnected' | 'fallback';
+export type StreamStatus = 'connecting' | 'connected' | 'disconnected';
 
 interface AgentStatus {
   name: string;
@@ -281,7 +278,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
       };
 
     } catch {
-      setStreamStatus('fallback');
+      setStreamStatus('disconnected');
     }
   }, [handleSnapshotEvent, handleFlightsEvent, handleNewsEvent, handleOfficialEvent, handleVesselsEvent]);
 
@@ -295,9 +292,9 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
     reconnectTimer.current = setTimeout(() => {
       reconnectTimer.current = null;
 
-      // After 5 failed attempts, fall back to simulated data
-      if (reconnectAttempts.current > 5) {
-        setStreamStatus('fallback');
+      // After 10 failed attempts, stop retrying
+      if (reconnectAttempts.current > 10) {
+        setStreamStatus('disconnected');
         return;
       }
 
@@ -323,29 +320,17 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
   }, [connect]);
 
   // ─── Compute Output ──────────────────────────────────
-  // Use live data when available, fall back to simulated
+  // Live data only — empty arrays when no data is available
 
-  const isLive = streamStatus === 'connected' && liveFlights.length > 0;
-
-  // For flights: use live data if available, otherwise animate simulated
-  const flights = isLive ? liveFlights : createFlights(tick * 100);
-
-  // For vessels: use live NEPTUNE data if available, otherwise simulated
-  const vessels = liveVessels.length > 0 ? liveVessels : createVessels(tick * 100);
-
-  // For news: merge live + static, preferring live
-  const news = liveNews.length > 0 ? liveNews : NEWS_FEED;
-
-  // Assessments: use live if available, otherwise static
-  const assessments = liveAssessments.length > 0 ? liveAssessments : ASSESSMENTS;
+  const isLive = streamStatus === 'connected';
 
   const activeAgents = Object.values(agentStatuses).filter(a => a.status === 'ACTIVE').length;
 
   return {
-    flights,
-    vessels,
-    news,
-    assessments,
+    flights: liveFlights,
+    vessels: liveVessels,
+    news: liveNews,
+    assessments: liveAssessments,
     agentStatuses,
     streamStatus,
     isLive,

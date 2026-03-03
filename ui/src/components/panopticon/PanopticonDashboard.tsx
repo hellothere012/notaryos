@@ -314,8 +314,8 @@ export default function PanopticonDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Real-time OSINT data stream (falls back to simulated if offline)
-  const { flights, vessels, news, assessments, streamStatus, isLive, stats } = usePanopticonStream(tick);
+  // Real-time OSINT data stream — live data only, no simulated fallback
+  const { flights, vessels, news, assessments, agentStatuses, streamStatus, isLive, stats } = usePanopticonStream(tick);
 
   // Mouse handlers for globe rotation
   const handleMouseDown = useCallback(
@@ -419,7 +419,7 @@ export default function PanopticonDashboard() {
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Left: Agent status panel (desktop) */}
         <div className="hidden md:flex">
-          <AgentBar layers={layers} setLayers={setLayers} />
+          <AgentBar layers={layers} setLayers={setLayers} agentStatuses={agentStatuses} />
         </div>
 
         {/* Center: Globe */}
@@ -455,10 +455,9 @@ export default function PanopticonDashboard() {
             }}
           >
             {[
-              { label: 'AGENTS ACTIVE', value: isLive ? `${stats.activeAgents}/6` : '6/6', color: isLive ? (stats.activeAgents >= 3 ? C.green : C.amber) : C.green },
-              { label: 'DATA SOURCE', value: isLive ? 'LIVE' : 'SIMULATED', color: isLive ? C.green : C.amber },
-              { label: 'MESSAGES', value: isLive ? `${stats.messagesReceived}` : '--', color: C.cyan },
-              { label: 'OIL (BRENT)', value: '$118.42 \u25B28%', color: C.red },
+              { label: 'AGENTS ACTIVE', value: `${stats.activeAgents}/6`, color: stats.activeAgents >= 3 ? C.green : stats.activeAgents > 0 ? C.amber : C.dimText },
+              { label: 'STREAM', value: isLive ? 'CONNECTED' : streamStatus.toUpperCase(), color: isLive ? C.green : C.amber },
+              { label: 'MESSAGES', value: `${stats.messagesReceived}`, color: C.cyan },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 7, color: C.dimText, letterSpacing: 1 }}>
@@ -485,6 +484,8 @@ export default function PanopticonDashboard() {
           <IntelPanel
             news={news}
             assessments={assessments}
+            flights={flights}
+            vessels={vessels}
             selectedAssessment={selectedAssessment}
             setSelectedAssessment={handleAssessmentSelect}
             onViewDag={handleViewDag}
@@ -503,12 +504,14 @@ export default function PanopticonDashboard() {
 
       {/* Mobile: Slide-up drawers */}
       <MobileDrawer isOpen={mobilePanel === 'agents'} onClose={() => setMobilePanel(null)}>
-        <AgentBar layers={layers} setLayers={setLayers} />
+        <AgentBar layers={layers} setLayers={setLayers} agentStatuses={agentStatuses} />
       </MobileDrawer>
       <MobileDrawer isOpen={mobilePanel === 'intel'} onClose={() => setMobilePanel(null)}>
         <IntelPanel
           news={news}
           assessments={assessments}
+          flights={flights}
+          vessels={vessels}
           selectedAssessment={selectedAssessment}
           setSelectedAssessment={handleAssessmentSelect}
           onViewDag={handleViewDag}

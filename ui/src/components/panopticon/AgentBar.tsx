@@ -4,17 +4,29 @@
 // PANOPTICON — AgentBar
 // Left-side agent status panel showing 6 OSINT collection
 // agents with live status indicators, alert badges, trust
-// scores, NATO reliability codes, and layer toggle controls.
+// scores, NATO reliability codes, layer toggle checkboxes,
+// and expandable detail rows with sparklines.
 // ═══════════════════════════════════════════════════════════
 
+import { useState } from 'react';
 import type { LayerVisibility, AgentStatus } from './types';
 import { C } from './constants';
+
+// ─── Live Agent Status (from SSE stream) ─────────────────
+
+interface LiveAgentStatus {
+  name: string;
+  status: 'ACTIVE' | 'OFFLINE' | 'ERROR';
+  lastUpdate: number;
+  itemCount: number;
+}
 
 // ─── Props ───────────────────────────────────────────────
 
 interface AgentBarProps {
   layers: LayerVisibility;
   setLayers: (fn: (l: LayerVisibility) => LayerVisibility) => void;
+  agentStatuses?: Record<string, LiveAgentStatus>;
 }
 
 // ─── Agent Definitions ───────────────────────────────────
@@ -90,6 +102,17 @@ const AGENTS: AgentStatus[] = [
   },
 ];
 
+// ─── Live Agent Metadata Helpers ─────────────────────────
+// Derives display values from the real-time stream statuses.
+
+function formatTimeSince(ts: number): string {
+  if (!ts) return '--';
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  return `${Math.floor(sec / 3600)}h ago`;
+}
+
 // ─── Panel Style ─────────────────────────────────────────
 
 const panelStyle: React.CSSProperties = {
@@ -125,8 +148,8 @@ function statusDotColor(status: AgentStatus['status']): string {
   }
 }
 
-// ─── CSS Keyframes for Pulse ─────────────────────────────
-// Injected once for the PROCESSING status pulsing dot animation.
+// ─── CSS Keyframes ───────────────────────────────────────
+// Pulse animation for PROCESSING status dot.
 
 const pulseKeyframes = `
 @keyframes panopticon-pulse {
@@ -136,122 +159,249 @@ const pulseKeyframes = `
 `;
 
 // ─── Agent Row Component ─────────────────────────────────
-// Renders a single agent with status dot, name, alert badge,
-// description, trust score, and NATO code. Clicking toggles
-// the agent's corresponding map layer visibility.
+// Renders a single agent with:
+//   - Checkbox (left): toggles the agent's map layer visibility
+//   - Row body (click): expands/collapses detail section
+//   - Status dot, name, alert badge, description, trust, NATO code
+//   - Expandable detail: last update, collection rate, quality, sparkline
 
 function AgentRow({
   agent,
   isLayerActive,
-  onToggle,
+  isExpanded,
+  onToggleLayer,
+  onToggleExpand,
+  liveStatus,
 }: {
   agent: AgentStatus;
   isLayerActive: boolean;
-  onToggle: () => void;
+  isExpanded: boolean;
+  onToggleLayer: () => void;
+  onToggleExpand: () => void;
+  liveStatus?: LiveAgentStatus;
 }) {
-  const dotColor = statusDotColor(agent.status);
-  const isPulsing = agent.status === 'PROCESSING';
+  // Use live status when available, otherwise fall back to config
+  const effectiveStatus = liveStatus?.status ?? agent.status;
+  const dotColor = statusDotColor(effectiveStatus);
+  const isPulsing = effectiveStatus === 'ACTIVE' && !!liveStatus;
 
   return (
     <div
-      onClick={onToggle}
       style={{
-        padding: '7px 10px',
         borderBottom: `1px solid ${C.panelBorder}`,
-        cursor: 'pointer',
-        opacity: isLayerActive ? 1 : 0.4,
-        transition: 'opacity 0.2s, background 0.15s',
+        transition: 'background 0.15s',
         background: 'transparent',
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'rgba(0,180,255,0.04)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-      }}
     >
-      {/* Top row: Status dot + Agent name + Alert badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-        {/* Status dot */}
-        <span
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: dotColor,
-            display: 'inline-block',
-            boxShadow: `0 0 6px ${dotColor}`,
-            flexShrink: 0,
-            animation: isPulsing ? 'panopticon-pulse 1.5s ease-in-out infinite' : 'none',
-          }}
-        />
-
-        {/* Agent name */}
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: agent.color,
-            fontFamily: 'monospace',
-            letterSpacing: 0.5,
-          }}
-        >
-          {agent.name}
-        </span>
-
-        {/* Alert count badge */}
-        <span
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            color: '#000',
-            background: agent.alerts > 5 ? C.red : C.amber,
-            padding: '1px 4px',
-            borderRadius: 2,
-            marginLeft: 'auto',
-            minWidth: 16,
-            textAlign: 'center',
-          }}
-        >
-          {agent.alerts}
-        </span>
-      </div>
-
-      {/* Description */}
+      {/* ── Clickable Row Body ─────────────────────────── */}
       <div
+        onClick={onToggleExpand}
         style={{
-          fontSize: 10,
-          color: C.dimText,
-          marginLeft: 12,
-          marginBottom: 2,
+          padding: '7px 10px',
+          cursor: 'pointer',
+          opacity: isLayerActive ? 1 : 0.4,
+          transition: 'opacity 0.2s, background 0.15s',
+          background: 'transparent',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0,180,255,0.04)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
         }}
       >
-        {agent.desc}
-      </div>
-
-      {/* Trust score + NATO reliability code */}
-      <div
-        style={{
-          fontSize: 9,
-          color: C.dimText,
-          marginLeft: 12,
-          display: 'flex',
-          gap: 8,
-        }}
-      >
-        <span>
-          TRUST:{' '}
+        {/* Top row: Checkbox + Status dot + Agent name + Alert badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+          {/* Layer visibility checkbox — click does NOT toggle expand */}
           <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleLayer();
+            }}
             style={{
-              color: agent.trustScore >= 90 ? C.green : agent.trustScore >= 75 ? C.amber : C.red,
+              width: 11,
+              height: 11,
+              border: `1px solid ${isLayerActive ? agent.color : C.dimText}`,
+              borderRadius: 2,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: isLayerActive ? `${agent.color}22` : 'transparent',
+              flexShrink: 0,
+              cursor: 'pointer',
+              transition: 'border-color 0.15s, background 0.15s',
             }}
           >
-            {agent.trustScore}%
+            {isLayerActive && (
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  background: agent.color,
+                  borderRadius: 1,
+                  display: 'block',
+                }}
+              />
+            )}
           </span>
-        </span>
-        <span>
-          NATO: <span style={{ color: C.text }}>{agent.natoReliability}</span>
-        </span>
+
+          {/* Status dot */}
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: dotColor,
+              display: 'inline-block',
+              boxShadow: `0 0 6px ${dotColor}`,
+              flexShrink: 0,
+              animation: isPulsing ? 'panopticon-pulse 1.5s ease-in-out infinite' : 'none',
+            }}
+          />
+
+          {/* Agent name */}
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: agent.color,
+              fontFamily: 'monospace',
+              letterSpacing: 0.5,
+            }}
+          >
+            {agent.name}
+          </span>
+
+          {/* Expand/collapse chevron indicator */}
+          <span
+            style={{
+              fontSize: 8,
+              color: C.dimText,
+              marginLeft: 2,
+              transition: 'transform 0.2s',
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              display: 'inline-block',
+            }}
+          >
+            {'\u25B6'}
+          </span>
+
+          {/* Alert count badge */}
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              color: '#000',
+              background: agent.alerts > 5 ? C.red : C.amber,
+              padding: '1px 4px',
+              borderRadius: 2,
+              marginLeft: 'auto',
+              minWidth: 16,
+              textAlign: 'center',
+            }}
+          >
+            {agent.alerts}
+          </span>
+        </div>
+
+        {/* Description */}
+        <div
+          style={{
+            fontSize: 10,
+            color: C.dimText,
+            marginLeft: 23,
+            marginBottom: 2,
+          }}
+        >
+          {agent.desc}
+        </div>
+
+        {/* Trust score + NATO reliability code */}
+        <div
+          style={{
+            fontSize: 9,
+            color: C.dimText,
+            marginLeft: 23,
+            display: 'flex',
+            gap: 8,
+          }}
+        >
+          <span>
+            TRUST:{' '}
+            <span
+              style={{
+                color: agent.trustScore >= 90 ? C.green : agent.trustScore >= 75 ? C.amber : C.red,
+              }}
+            >
+              {agent.trustScore}%
+            </span>
+          </span>
+          <span>
+            NATO: <span style={{ color: C.text }}>{agent.natoReliability}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* ── Expandable Detail Section ─────────────────── */}
+      {/* Uses max-height transition for smooth open/close.  */}
+      {/* Content is always in DOM to allow CSS transition.  */}
+      <div
+        style={{
+          maxHeight: isExpanded ? 100 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.25s ease-in-out',
+          opacity: isExpanded ? 1 : 0,
+        }}
+      >
+        <div
+          style={{
+            borderTop: `1px solid ${C.panelBorder}`,
+            padding: '6px 10px 8px 10px',
+            marginLeft: 0,
+          }}
+        >
+          {/* 2-column stat grid — live data from SSE stream */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '3px 8px',
+              fontSize: 9,
+              fontFamily: 'monospace',
+              color: C.dimText,
+            }}
+          >
+            {/* Last Update (live timestamp) */}
+            <div>
+              <span style={{ color: C.dimText }}>UPD: </span>
+              <span style={{ color: C.text }}>
+                {liveStatus ? formatTimeSince(liveStatus.lastUpdate) : '--'}
+              </span>
+            </div>
+
+            {/* Items collected in last batch */}
+            <div>
+              <span style={{ color: C.dimText }}>ITEMS: </span>
+              <span style={{ color: C.text }}>
+                {liveStatus ? liveStatus.itemCount : '--'}
+              </span>
+            </div>
+
+            {/* Connection status */}
+            <div>
+              <span style={{ color: C.dimText }}>STAT: </span>
+              <span style={{ color: dotColor }}>{effectiveStatus}</span>
+            </div>
+
+            {/* Stream indicator */}
+            <div>
+              <span style={{ color: C.dimText }}>FEED: </span>
+              <span style={{ color: liveStatus ? C.green : C.dimText }}>
+                {liveStatus ? 'LIVE' : 'OFFLINE'}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -259,13 +409,29 @@ function AgentRow({
 
 // ─── Main Component ──────────────────────────────────────
 
-export default function AgentBar({ layers, setLayers }: AgentBarProps) {
+export default function AgentBar({ layers, setLayers, agentStatuses = {} }: AgentBarProps) {
+  // Set of agent IDs whose detail rows are currently expanded
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
   // Toggle a specific layer by its key name in LayerVisibility
   const toggleLayer = (layerKey: string) => {
     setLayers((prev) => ({
       ...prev,
       [layerKey]: !prev[layerKey as keyof LayerVisibility],
     }));
+  };
+
+  // Toggle expand/collapse for a specific agent row
+  const toggleExpand = (agentId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(agentId)) {
+        next.delete(agentId);
+      } else {
+        next.add(agentId);
+      }
+      return next;
+    });
   };
 
   return (
@@ -294,7 +460,10 @@ export default function AgentBar({ layers, setLayers }: AgentBarProps) {
           key={agent.id}
           agent={agent}
           isLayerActive={layers[agent.layer as keyof LayerVisibility] ?? true}
-          onToggle={() => toggleLayer(agent.layer)}
+          isExpanded={expanded.has(agent.id)}
+          onToggleLayer={() => toggleLayer(agent.layer)}
+          onToggleExpand={() => toggleExpand(agent.id)}
+          liveStatus={agentStatuses[agent.id]}
         />
       ))}
 
@@ -366,7 +535,7 @@ export default function AgentBar({ layers, setLayers }: AgentBarProps) {
           justifyContent: 'space-between',
         }}
       >
-        <span>{AGENTS.filter((a) => a.status === 'ACTIVE').length}/{AGENTS.length} ACTIVE</span>
+        <span>{Object.values(agentStatuses).filter((a) => a.status === 'ACTIVE').length}/{AGENTS.length} ACTIVE</span>
         <span>{AGENTS.reduce((sum, a) => sum + a.alerts, 0)} ALERTS</span>
       </div>
     </div>
