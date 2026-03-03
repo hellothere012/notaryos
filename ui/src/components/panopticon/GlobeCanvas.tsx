@@ -23,10 +23,18 @@ interface GlobeCanvasProps {
 }
 
 // ----------------------------------------------------------------
+// Label type for deconfliction
+// ----------------------------------------------------------------
+interface GlobeLabel {
+  x: number;       // screen x (label anchor)
+  y: number;       // screen y (label anchor)
+  text: string;
+  color: string;
+  priority: number; // higher = placed first, won't be displaced
+}
+
+// ----------------------------------------------------------------
 // Orthographic projection
-// Projects a lat/lon coordinate onto a 2D plane given a center
-// point (cLat, cLon) and globe radius R. Returns null when the
-// point is on the back-side of the globe (cosC < 0).
 // ----------------------------------------------------------------
 function project(
   lat: number,
@@ -47,7 +55,7 @@ function project(
   const cosLambdaDelta = Math.cos(lambda - lambda0);
 
   const cosC = sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosLambdaDelta;
-  if (cosC < 0) return null; // behind the globe
+  if (cosC < 0) return null;
 
   return {
     x: R * cosPhi * Math.sin(lambda - lambda0),
@@ -56,7 +64,80 @@ function project(
 }
 
 // ----------------------------------------------------------------
-// Flight icon color by type
+// Label deconfliction
+// Greedy approach: place highest-priority labels first.
+// Lower-priority labels get nudged downward if overlapping.
+// ----------------------------------------------------------------
+const LABEL_FONT_SIZE = 9;
+const CHAR_WIDTH = 5.4; // approx for 9px monospace
+const LABEL_PAD_X = 4;
+const LABEL_PAD_Y = 2;
+
+function deconflictLabels(labels: GlobeLabel[]): GlobeLabel[] {
+  // Sort by priority descending — important labels get placed first
+  const sorted = [...labels].sort((a, b) => b.priority - a.priority);
+
+  // Track placed label bounding boxes {x, y, w, h} (x,y = top-left of box)
+  const placed: { cx: number; cy: number; hw: number; hh: number }[] = [];
+
+  for (const label of sorted) {
+    const hw = (label.text.length * CHAR_WIDTH + LABEL_PAD_X * 2) / 2;
+    const hh = (LABEL_FONT_SIZE + LABEL_PAD_Y * 2) / 2;
+    const labelCx = label.x + hw; // center of label box
+    let labelCy = label.y;
+
+    // Try to find a non-overlapping position (nudge downward)
+    for (let attempt = 0; attempt < 6; attempt++) {
+      let overlapping = false;
+      for (const p of placed) {
+        if (Math.abs(labelCx - p.cx) < hw + p.hw + 2 &&
+            Math.abs(labelCy - p.cy) < hh + p.hh + 1) {
+          overlapping = true;
+          labelCy = p.cy + p.hh + hh + 2;
+          break;
+        }
+      }
+      if (!overlapping) break;
+    }
+
+    label.y = labelCy;
+    placed.push({ cx: labelCx, cy: labelCy, hw, hh });
+  }
+
+  return sorted;
+}
+
+// ----------------------------------------------------------------
+// Draw all collected labels with dark backdrops
+// ----------------------------------------------------------------
+function drawLabels(ctx: CanvasRenderingContext2D, labels: GlobeLabel[]) {
+  const resolved = deconflictLabels(labels);
+
+  ctx.font = `${LABEL_FONT_SIZE}px monospace`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+
+  for (const label of resolved) {
+    const tw = label.text.length * CHAR_WIDTH;
+    const bx = label.x - LABEL_PAD_X;
+    const by = label.y - LABEL_FONT_SIZE / 2 - LABEL_PAD_Y;
+    const bw = tw + LABEL_PAD_X * 2;
+    const bh = LABEL_FONT_SIZE + LABEL_PAD_Y * 2;
+
+    // Dark backdrop for readability
+    ctx.fillStyle = 'rgba(6,10,18,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 2);
+    ctx.fill();
+
+    // Label text
+    ctx.fillStyle = label.color;
+    ctx.fillText(label.text, label.x, label.y);
+  }
+}
+
+// ----------------------------------------------------------------
+// Icon color helpers
 // ----------------------------------------------------------------
 function flightColor(type: FlightTrack['type']): string {
   switch (type) {
@@ -69,9 +150,6 @@ function flightColor(type: FlightTrack['type']): string {
   }
 }
 
-// ----------------------------------------------------------------
-// Vessel icon color by type
-// ----------------------------------------------------------------
 function vesselColor(type: VesselTrack['type']): string {
   switch (type) {
     case 'carrier': return C.cyan;
@@ -82,23 +160,15 @@ function vesselColor(type: VesselTrack['type']): string {
   }
 }
 
-// ----------------------------------------------------------------
-// Convert any CSS color (hex or named) to rgba with a given alpha.
-// Uses an offscreen canvas to let the browser parse the color.
-// Falls back to transparent on invalid input.
-// ----------------------------------------------------------------
 function colorToRgba(color: string, alpha: number): string {
-  // Fast path for common hex formats
   const hexMatch = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
   if (hexMatch) {
     return `rgba(${parseInt(hexMatch[1], 16)},${parseInt(hexMatch[2], 16)},${parseInt(hexMatch[3], 16)},${alpha})`;
   }
-  // Short hex (#abc -> #aabbcc)
   const shortHex = color.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i);
   if (shortHex) {
     return `rgba(${parseInt(shortHex[1] + shortHex[1], 16)},${parseInt(shortHex[2] + shortHex[2], 16)},${parseInt(shortHex[3] + shortHex[3], 16)},${alpha})`;
   }
-  // Already rgb/rgba -- inject alpha
   if (color.startsWith('rgb(')) {
     return color.replace('rgb(', 'rgba(').replace(')', `,${alpha})`);
   }
@@ -142,6 +212,10 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     setZoom((z) => Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2)));
   }, []);
 
+  const zoomReset = useCallback(() => {
+    setZoom(1.0);
+  }, []);
+
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     setZoom((z) => {
@@ -149,6 +223,18 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
       return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(z + delta).toFixed(2)));
     });
   }, []);
+
+  // Keyboard zoom shortcuts
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomIn(); }
+      if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomOut(); }
+      if (e.key === '0') { e.preventDefault(); zoomReset(); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [zoomIn, zoomOut, zoomReset]);
 
   // ----------------------------------------------------------
   // ResizeObserver: keep canvas sized to its container
@@ -172,8 +258,6 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
 
   // ----------------------------------------------------------
   // Drawing helper: draw a polygon from GEO coordinate pairs
-  // Each pair is [lon, lat]. Returns true if at least one point
-  // was visible (front-side of globe).
   // ----------------------------------------------------------
   const drawPolygon = useCallback(
     (
@@ -220,17 +304,18 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     const { w, h } = size;
     const dpr = window.devicePixelRatio || 2;
 
-    // Set canvas resolution to 2x DPI for crisp rendering
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Derived values
     const cx = w / 2;
     const cy = h / 2;
-    const R = Math.min(w, h) * 0.42 * zoom; // globe radius (scaled by zoom)
+    const R = Math.min(w, h) * 0.42 * zoom;
     const cLat = rotation.lat;
     const cLon = rotation.lon;
+
+    // Collect all labels for batch drawing with deconfliction
+    const allLabels: GlobeLabel[] = [];
 
     // ==========================================================
     // 1. Clear + background
@@ -239,7 +324,7 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     ctx.fillRect(0, 0, w, h);
 
     // ==========================================================
-    // 2. Atmosphere glow (outer ring around globe)
+    // 2. Atmosphere glow
     // ==========================================================
     const atmosGrad = ctx.createRadialGradient(cx, cy, R * 0.97, cx, cy, R * 1.15);
     atmosGrad.addColorStop(0, 'rgba(0,160,255,0.08)');
@@ -265,7 +350,6 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     ctx.arc(cx, cy, R, 0, TAU);
     ctx.fill();
 
-    // Globe edge ring
     ctx.strokeStyle = C.globeEdge;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -274,62 +358,43 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
 
     // ==========================================================
     // 4. Graticule grid lines
-    // Latitude lines every 20 degrees, longitude every 30 degrees
     // ==========================================================
     ctx.strokeStyle = C.grid;
     ctx.lineWidth = 0.5;
 
-    // Latitude lines
     for (let lat = -80; lat <= 80; lat += 20) {
       ctx.beginPath();
       let started = false;
       for (let lon = -180; lon <= 180; lon += 2) {
         const p = project(lat, lon, cLat, cLon, R);
-        if (!p) {
-          started = false;
-          continue;
-        }
-        if (!started) {
-          ctx.moveTo(cx + p.x, cy + p.y);
-          started = true;
-        } else {
-          ctx.lineTo(cx + p.x, cy + p.y);
-        }
+        if (!p) { started = false; continue; }
+        if (!started) { ctx.moveTo(cx + p.x, cy + p.y); started = true; }
+        else { ctx.lineTo(cx + p.x, cy + p.y); }
       }
       ctx.stroke();
     }
 
-    // Longitude lines
     for (let lon = -180; lon < 180; lon += 30) {
       ctx.beginPath();
       let started = false;
       for (let lat = -90; lat <= 90; lat += 2) {
         const p = project(lat, lon, cLat, cLon, R);
-        if (!p) {
-          started = false;
-          continue;
-        }
-        if (!started) {
-          ctx.moveTo(cx + p.x, cy + p.y);
-          started = true;
-        } else {
-          ctx.lineTo(cx + p.x, cy + p.y);
-        }
+        if (!p) { started = false; continue; }
+        if (!started) { ctx.moveTo(cx + p.x, cy + p.y); started = true; }
+        else { ctx.lineTo(cx + p.x, cy + p.y); }
       }
       ctx.stroke();
     }
 
     // ==========================================================
-    // 5. Country polygons
+    // 5. Country polygons (clipped to globe)
     // ==========================================================
-    // Clip drawing to the globe disc so polygons don't spill out
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, TAU);
     ctx.clip();
 
     for (const [name, coords] of Object.entries(GEO)) {
-      // Special handling for water bodies
       if (name === 'persianGulf' || name === 'caspianSea') {
         const visible = drawPolygon(ctx, coords, cx, cy, R, cLat, cLon);
         if (visible) {
@@ -342,7 +407,6 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         continue;
       }
 
-      // Iran: special fill + stroke
       if (name === 'iran') {
         const visible = drawPolygon(ctx, coords, cx, cy, R, cLat, cLon);
         if (visible) {
@@ -355,7 +419,6 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         continue;
       }
 
-      // All other countries
       const visible = drawPolygon(ctx, coords, cx, cy, R, cLat, cLon);
       if (visible) {
         ctx.fillStyle = C.land;
@@ -367,7 +430,7 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     }
 
     // ==========================================================
-    // 6. Strait of Hormuz highlight — pulsing indicator
+    // 6. Strait of Hormuz highlight
     // ==========================================================
     const hormuzP = project(LOCATIONS.hormuz.lat, LOCATIONS.hormuz.lon, cLat, cLon, R);
     if (hormuzP) {
@@ -396,11 +459,8 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     ctx.restore(); // end globe clip
 
     // ==========================================================
-    // 7. Location labels
+    // 7. Location labels → collect into allLabels
     // ==========================================================
-    ctx.font = '8px monospace';
-    ctx.textBaseline = 'middle';
-
     for (const loc of GLOBE_LABELS) {
       const p = project(loc.lat, loc.lon, cLat, cLon, R);
       if (!p) continue;
@@ -410,18 +470,20 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
       // Small dot at location
       ctx.fillStyle = C.dimText;
       ctx.beginPath();
-      ctx.arc(lx, ly, 1.5, 0, TAU);
+      ctx.arc(lx, ly, 2, 0, TAU);
       ctx.fill();
 
-      // Label text, offset to the right
-      ctx.fillStyle = C.dimText;
-      ctx.textAlign = 'left';
-      ctx.fillText(loc.name, lx + 5, ly);
+      allLabels.push({
+        x: lx + 6,
+        y: ly,
+        text: loc.name,
+        color: C.text,
+        priority: 1, // lowest — displaced by flights/vessels
+      });
     }
 
     // ==========================================================
-    // 8. Flight icons (when layer enabled)
-    // Heading-rotated triangles with radial glow + callsign label
+    // 8. Flight icons + labels
     // ==========================================================
     if (layers.flights) {
       for (const flight of flights) {
@@ -431,10 +493,10 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         const fx = cx + p.x;
         const fy = cy + p.y;
         const color = flightColor(flight.type);
-        const headingRad = (flight.heading - 90) * DEG; // rotate so 0=north points up
+        const headingRad = (flight.heading - 90) * DEG;
         const iconSize = 5;
 
-        // Radial glow behind the icon
+        // Radial glow
         const flightGlow = ctx.createRadialGradient(fx, fy, 0, fx, fy, iconSize * 3);
         flightGlow.addColorStop(0, colorToRgba(color, 0.3));
         flightGlow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -443,31 +505,32 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         ctx.arc(fx, fy, iconSize * 3, 0, TAU);
         ctx.fill();
 
-        // Triangle icon rotated to heading
+        // Triangle icon
         ctx.save();
         ctx.translate(fx, fy);
         ctx.rotate(headingRad);
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(0, -iconSize);                          // nose
-        ctx.lineTo(-iconSize * 0.6, iconSize * 0.6);       // left wing
-        ctx.lineTo(iconSize * 0.6, iconSize * 0.6);        // right wing
+        ctx.moveTo(0, -iconSize);
+        ctx.lineTo(-iconSize * 0.6, iconSize * 0.6);
+        ctx.lineTo(iconSize * 0.6, iconSize * 0.6);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
 
-        // Callsign label
-        ctx.font = '8px monospace';
-        ctx.fillStyle = color;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(flight.callsign, fx + 8, fy - 2);
+        // Collect label (don't draw inline)
+        allLabels.push({
+          x: fx + 9,
+          y: fy - 2,
+          text: flight.callsign,
+          color,
+          priority: flight.type === 'adversary' ? 5 : 3,
+        });
       }
     }
 
     // ==========================================================
-    // 9. Vessel icons (when layer enabled)
-    // Diamond shape with radial glow
+    // 9. Vessel icons + labels
     // ==========================================================
     if (layers.vessels) {
       for (const vessel of vessels) {
@@ -480,7 +543,7 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         const iconSize = 4;
         const isCarrier = vessel.type === 'carrier';
 
-        // Radial glow -- carriers get a larger, more prominent glow
+        // Radial glow
         const glowRadius = isCarrier ? iconSize * 5 : iconSize * 3;
         const glowAlpha = isCarrier ? 0.35 : 0.2;
         const vesselGlow = ctx.createRadialGradient(vx, vy, 0, vx, vy, glowRadius);
@@ -494,32 +557,31 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         // Diamond shape
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(vx, vy - iconSize);         // top
-        ctx.lineTo(vx + iconSize * 0.7, vy);   // right
-        ctx.lineTo(vx, vy + iconSize);          // bottom
-        ctx.lineTo(vx - iconSize * 0.7, vy);   // left
+        ctx.moveTo(vx, vy - iconSize);
+        ctx.lineTo(vx + iconSize * 0.7, vy);
+        ctx.lineTo(vx, vy + iconSize);
+        ctx.lineTo(vx - iconSize * 0.7, vy);
         ctx.closePath();
         ctx.fill();
 
-        // Vessel name label
-        ctx.font = '8px monospace';
-        ctx.fillStyle = color;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(vessel.name, vx + 8, vy - 2);
+        // Collect label
+        allLabels.push({
+          x: vx + 9,
+          y: vy - 2,
+          text: vessel.name,
+          color,
+          priority: isCarrier ? 4 : 2,
+        });
       }
     }
 
     // ==========================================================
-    // 10. Missile trajectory arcs (when layer enabled)
-    // Animated dashed arcs between key locations with moving head
+    // 10. Missile trajectory arcs
     // ==========================================================
     if (layers.missiles) {
       for (const route of MISSILE_ROUTES) {
         const pFrom = project(route.from.lat, route.from.lon, cLat, cLon, R);
         const pTo = project(route.to.lat, route.to.lon, cLat, cLon, R);
-
-        // Only draw if both endpoints are on the visible hemisphere
         if (!pFrom || !pTo) continue;
 
         const x1 = cx + pFrom.x;
@@ -527,18 +589,15 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         const x2 = cx + pTo.x;
         const y2 = cy + pTo.y;
 
-        // Compute arc control point -- elevated midpoint for parabolic look
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
         const dist = Math.hypot(x2 - x1, y2 - y1);
-        // Perpendicular direction pointing "upward" from the line
         const nx = -(y2 - y1) / dist;
         const ny = (x2 - x1) / dist;
         const arcHeight = dist * 0.35;
         const cpx = mx + nx * arcHeight;
         const cpy = my + ny * arcHeight;
 
-        // Dashed arc line
         ctx.strokeStyle = route.color;
         ctx.lineWidth = 1.2;
         ctx.globalAlpha = 0.5;
@@ -550,14 +609,11 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         ctx.setLineDash([]);
         ctx.globalAlpha = 1;
 
-        // Animated head -- travels along the arc based on tick
-        const t = ((tick * 0.015) % 1); // 0..1 looping parameter
-        // Quadratic bezier interpolation: B(t) = (1-t)^2*P0 + 2(1-t)t*CP + t^2*P1
+        const t = ((tick * 0.015) % 1);
         const oneMinusT = 1 - t;
         const headX = oneMinusT * oneMinusT * x1 + 2 * oneMinusT * t * cpx + t * t * x2;
         const headY = oneMinusT * oneMinusT * y1 + 2 * oneMinusT * t * cpy + t * t * y2;
 
-        // Glowing head dot
         const headGlow = ctx.createRadialGradient(headX, headY, 0, headX, headY, 8);
         headGlow.addColorStop(0, route.color);
         headGlow.addColorStop(0.4, colorToRgba(route.color, 0.4));
@@ -567,13 +623,18 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
         ctx.arc(headX, headY, 8, 0, TAU);
         ctx.fill();
 
-        // Solid head dot
         ctx.fillStyle = route.color;
         ctx.beginPath();
         ctx.arc(headX, headY, 2.5, 0, TAU);
         ctx.fill();
       }
     }
+
+    // ==========================================================
+    // 11. Draw ALL labels with deconfliction + dark backdrops
+    // ==========================================================
+    drawLabels(ctx, allLabels);
+
   }, [rotation, flights, vessels, layers, size, tick, zoom, drawPolygon]);
 
   // ----------------------------------------------------------
@@ -596,6 +657,15 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     userSelect: 'none',
     lineHeight: 1,
     transition: 'border-color 0.15s, background 0.15s',
+  };
+
+  const hoverIn = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = 'rgba(0,212,255,0.6)';
+    e.currentTarget.style.background = 'rgba(0,180,255,0.12)';
+  };
+  const hoverOut = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = 'rgba(0,180,255,0.25)';
+    e.currentTarget.style.background = 'rgba(8,16,28,0.85)';
   };
 
   return (
@@ -622,47 +692,43 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
           zIndex: 10,
         }}
       >
-        <button
-          onClick={zoomIn}
-          style={zoomBtnStyle}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.6)';
-            e.currentTarget.style.background = 'rgba(0,180,255,0.12)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0,180,255,0.25)';
-            e.currentTarget.style.background = 'rgba(8,16,28,0.85)';
-          }}
-          title="Zoom in"
-        >
+        <button onClick={zoomIn} style={zoomBtnStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut} title="Zoom in (+)">
           +
         </button>
-        <div
+        <button
+          onClick={zoomReset}
           style={{
-            textAlign: 'center',
+            ...zoomBtnStyle,
             fontSize: 9,
-            color: C.dimText,
-            fontFamily: 'monospace',
-            padding: '2px 0',
+            height: 22,
+            width: 40,
+            alignSelf: 'center',
+            color: zoom === 1.0 ? C.dimText : C.cyan,
           }}
+          onMouseEnter={hoverIn}
+          onMouseLeave={hoverOut}
+          title="Reset zoom (0)"
         >
           {zoom.toFixed(1)}x
-        </div>
-        <button
-          onClick={zoomOut}
-          style={zoomBtnStyle}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0,212,255,0.6)';
-            e.currentTarget.style.background = 'rgba(0,180,255,0.12)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(0,180,255,0.25)';
-            e.currentTarget.style.background = 'rgba(8,16,28,0.85)';
-          }}
-          title="Zoom out"
-        >
+        </button>
+        <button onClick={zoomOut} style={zoomBtnStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut} title="Zoom out (-)">
           −
         </button>
+      </div>
+
+      {/* Keyboard hint */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 10,
+          bottom: 8,
+          fontSize: 8,
+          color: 'rgba(74,122,154,0.5)',
+          fontFamily: 'monospace',
+          pointerEvents: 'none',
+        }}
+      >
+        +/− zoom &middot; drag rotate
       </div>
     </div>
   );

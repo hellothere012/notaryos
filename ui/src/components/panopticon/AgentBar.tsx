@@ -93,7 +93,7 @@ const AGENTS: AgentStatus[] = [
 // ─── Panel Style ─────────────────────────────────────────
 
 const panelStyle: React.CSSProperties = {
-  width: 210,
+  width: 220,
   background: C.panel,
   borderRight: `1px solid ${C.panelBorder}`,
   fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
@@ -201,7 +201,7 @@ function AgentRow({
         {/* Alert count badge */}
         <span
           style={{
-            fontSize: 7,
+            fontSize: 9,
             fontWeight: 700,
             color: '#000',
             background: agent.alerts > 5 ? C.red : C.amber,
@@ -219,7 +219,7 @@ function AgentRow({
       {/* Description */}
       <div
         style={{
-          fontSize: 8,
+          fontSize: 10,
           color: C.dimText,
           marginLeft: 12,
           marginBottom: 2,
@@ -231,7 +231,7 @@ function AgentRow({
       {/* Trust score + NATO reliability code */}
       <div
         style={{
-          fontSize: 7,
+          fontSize: 9,
           color: C.dimText,
           marginLeft: 12,
           display: 'flex',
@@ -276,7 +276,7 @@ export default function AgentBar({ layers, setLayers }: AgentBarProps) {
       <div
         style={{
           padding: '8px 10px',
-          fontSize: 8,
+          fontSize: 10,
           fontWeight: 700,
           color: C.cyan,
           borderBottom: `1px solid ${C.panelBorder}`,
@@ -342,7 +342,7 @@ export default function AgentBar({ layers, setLayers }: AgentBarProps) {
 
         <span
           style={{
-            fontSize: 8,
+            fontSize: 10,
             fontWeight: 700,
             color: layers.missiles ? C.red : C.dimText,
             letterSpacing: 0.5,
@@ -358,7 +358,7 @@ export default function AgentBar({ layers, setLayers }: AgentBarProps) {
       <div
         style={{
           padding: '6px 10px',
-          fontSize: 7,
+          fontSize: 9,
           color: C.dimText,
           borderTop: `1px solid ${C.panelBorder}`,
           display: 'flex',

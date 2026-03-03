@@ -24,7 +24,7 @@ interface IntelPanelProps {
 // All measurements use inline styles for zero-dependency rendering.
 
 const panelStyle: React.CSSProperties = {
-  width: 280,
+  width: 300,
   background: C.panel,
   borderLeft: `1px solid ${C.panelBorder}`,
   fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
@@ -124,10 +124,10 @@ function AssessmentCard({
     >
       {/* Time + Severity Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-        <span style={{ fontSize: 7, color: C.dimText }}>{assessment.time}</span>
+        <span style={{ fontSize: 9, color: C.dimText }}>{assessment.time}</span>
         <span
           style={{
-            fontSize: 7,
+            fontSize: 9,
             fontWeight: 700,
             color: '#000',
             background: sevColor,
@@ -143,7 +143,7 @@ function AssessmentCard({
       {/* Title */}
       <div
         style={{
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 700,
           color: C.brightText,
           lineHeight: 1.3,
@@ -156,7 +156,7 @@ function AssessmentCard({
       {/* Summary */}
       <div
         style={{
-          fontSize: 8,
+          fontSize: 10,
           color: C.text,
           lineHeight: 1.4,
           marginBottom: 6,
@@ -171,7 +171,7 @@ function AssessmentCard({
           <span
             key={src}
             style={{
-              fontSize: 7,
+              fontSize: 9,
               color: '#000',
               background: C.cyan,
               padding: '1px 4px',
@@ -188,7 +188,7 @@ function AssessmentCard({
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {/* Confidence bar */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 7, color: C.dimText }}>CONF</span>
+          <span style={{ fontSize: 9, color: C.dimText }}>CONF</span>
           <div
             style={{
               flex: 1,
@@ -214,7 +214,7 @@ function AssessmentCard({
               }}
             />
           </div>
-          <span style={{ fontSize: 7, color: C.dimText }}>
+          <span style={{ fontSize: 9, color: C.dimText }}>
             {Math.round(assessment.confidence <= 1 ? assessment.confidence * 100 : assessment.confidence)}%
           </span>
         </div>
@@ -222,19 +222,18 @@ function AssessmentCard({
         {/* DAG hash link */}
         <span
           style={{
-            fontSize: 7,
+            fontSize: 9,
             color: '#aa66ff',
             cursor: 'pointer',
             textDecoration: 'none',
             fontFamily: 'monospace',
           }}
-          title={`Provenance: ${assessment.dagHash}`}
+          title={`View provenance DAG: ${assessment.dagHash}`}
           onClick={(e) => {
             e.stopPropagation();
-            // DAG hash click could open a provenance viewer in future
           }}
         >
-          {assessment.dagHash}
+          {assessment.dagHash.slice(0, 10)}...
         </span>
       </div>
     </div>
@@ -258,11 +257,11 @@ function NewsRow({ item }: { item: NewsItem }) {
     >
       {/* Time + Source Type Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-        <span style={{ fontSize: 7, color: C.dimText }}>{item.time}</span>
+        <span style={{ fontSize: 9, color: C.dimText }}>{item.time}</span>
         {item.type && (
           <span
             style={{
-              fontSize: 7,
+              fontSize: 9,
               fontWeight: 700,
               color: '#000',
               background: typeColor,
@@ -287,12 +286,12 @@ function NewsRow({ item }: { item: NewsItem }) {
               boxShadow: `0 0 4px ${tColor}`,
             }}
           />
-          <span style={{ fontSize: 7, color: tColor }}>{item.trust}</span>
+          <span style={{ fontSize: 9, color: tColor }}>{item.trust}</span>
         </span>
       </div>
 
       {/* Source Name + Text */}
-      <div style={{ fontSize: 8, color: C.text, lineHeight: 1.4 }}>
+      <div style={{ fontSize: 10, color: C.text, lineHeight: 1.4 }}>
         <span style={{ fontWeight: 700, color: C.brightText }}>{item.source}</span>
         {' -- '}
         {item.text}
@@ -343,7 +342,7 @@ export default function IntelPanel({ selectedAssessment, setSelectedAssessment }
             <div
               style={{
                 padding: '6px 10px',
-                fontSize: 7,
+                fontSize: 9,
                 color: C.dimText,
                 borderBottom: `1px solid ${C.panelBorder}`,
                 letterSpacing: 1,
@@ -368,7 +367,7 @@ export default function IntelPanel({ selectedAssessment, setSelectedAssessment }
             <div
               style={{
                 padding: '6px 10px',
-                fontSize: 7,
+                fontSize: 9,
                 color: C.dimText,
                 borderBottom: `1px solid ${C.panelBorder}`,
                 letterSpacing: 1,
