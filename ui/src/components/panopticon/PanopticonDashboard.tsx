@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { C } from './constants';
-import { createFlights, createVessels, ASSESSMENTS } from './simulated-data';
 import type { Assessment, LayerVisibility } from './types';
+import { usePanopticonStream } from './usePanopticonStream';
 import ThreatBanner from './ThreatBanner';
 import GlobeCanvas from './GlobeCanvas';
 import IntelPanel from './IntelPanel';
@@ -54,9 +54,8 @@ export default function PanopticonDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Generate animated data
-  const flights = useMemo(() => createFlights(tick * 100), [tick]);
-  const vessels = useMemo(() => createVessels(tick * 100), [tick]);
+  // Real-time OSINT data stream (falls back to simulated if offline)
+  const { flights, vessels, streamStatus, isLive, stats } = usePanopticonStream(tick);
 
   // Mouse handlers for globe rotation
   const handleMouseDown = useCallback(
@@ -171,9 +170,9 @@ export default function PanopticonDashboard() {
             }}
           >
             {[
-              { label: 'AGENTS ACTIVE', value: '6/6', color: C.green },
-              { label: 'MESSAGES/SEC', value: '636', color: C.cyan },
-              { label: 'TRUST VERIFIED', value: '100%', color: C.green },
+              { label: 'AGENTS ACTIVE', value: isLive ? `${stats.activeAgents}/6` : '6/6', color: isLive ? (stats.activeAgents >= 3 ? C.green : C.amber) : C.green },
+              { label: 'DATA SOURCE', value: isLive ? 'LIVE' : 'SIMULATED', color: isLive ? C.green : C.amber },
+              { label: 'MESSAGES', value: isLive ? `${stats.messagesReceived}` : '--', color: C.cyan },
               { label: 'OIL (BRENT)', value: '$118.42 \u25B28%', color: C.red },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
