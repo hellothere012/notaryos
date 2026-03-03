@@ -94,6 +94,7 @@ const AGENTS: AgentStatus[] = [
 
 const panelStyle: React.CSSProperties = {
   width: 220,
+  minWidth: 220,
   background: C.panel,
   borderRight: `1px solid ${C.panelBorder}`,
   fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',

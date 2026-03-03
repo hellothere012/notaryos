@@ -20,6 +20,7 @@ interface GlobeCanvasProps {
   vessels: VesselTrack[];
   layers: LayerVisibility;
   tick: number;
+  onEntitySelect?: (type: 'flight' | 'vessel', data: FlightTrack | VesselTrack, screenX: number, screenY: number) => void;
 }
 
 // ----------------------------------------------------------------
@@ -198,6 +199,7 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
   vessels,
   layers,
   tick,
+  onEntitySelect,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +217,14 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
   const zoomReset = useCallback(() => {
     setZoom(1.0);
   }, []);
+
+  // Store projected entity screen positions for click hit-testing
+  const entityPositionsRef = useRef<Array<{
+    type: 'flight' | 'vessel';
+    data: FlightTrack | VesselTrack;
+    sx: number; // screen x
+    sy: number; // screen y
+  }>>([]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -316,6 +326,9 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
 
     // Collect all labels for batch drawing with deconfliction
     const allLabels: GlobeLabel[] = [];
+
+    // Reset entity position tracking for hit-testing
+    const entityPositions: typeof entityPositionsRef.current = [];
 
     // ==========================================================
     // 1. Clear + background
@@ -526,6 +539,9 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
           color,
           priority: flight.type === 'adversary' ? 5 : 3,
         });
+
+        // Track position for click hit-testing
+        entityPositions.push({ type: 'flight', data: flight, sx: fx, sy: fy });
       }
     }
 
@@ -572,6 +588,9 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
           color,
           priority: isCarrier ? 4 : 2,
         });
+
+        // Track position for click hit-testing
+        entityPositions.push({ type: 'vessel', data: vessel, sx: vx, sy: vy });
       }
     }
 
@@ -635,7 +654,41 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     // ==========================================================
     drawLabels(ctx, allLabels);
 
+    // Save entity positions for click hit-testing
+    entityPositionsRef.current = entityPositions;
+
   }, [rotation, flights, vessels, layers, size, tick, zoom, drawPolygon]);
+
+  // ----------------------------------------------------------
+  // Click handler for entity hit-testing
+  // ----------------------------------------------------------
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    if (!onEntitySelect) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    const HIT_RADIUS = 18; // pixels
+
+    // Find closest entity within hit radius
+    let closest: (typeof entityPositionsRef.current)[0] | null = null;
+    let closestDist = HIT_RADIUS;
+
+    for (const entity of entityPositionsRef.current) {
+      const dist = Math.hypot(entity.sx - clickX, entity.sy - clickY);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = entity;
+      }
+    }
+
+    if (closest) {
+      e.stopPropagation();
+      onEntitySelect(closest.type, closest.data, e.clientX, e.clientY);
+    }
+  }, [onEntitySelect]);
 
   // ----------------------------------------------------------
   // Render
@@ -672,7 +725,8 @@ const GlobeCanvas: React.FC<GlobeCanvasProps> = ({
     <div
       ref={containerRef}
       onWheel={handleWheel}
-      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
+      onClick={handleCanvasClick}
+      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', cursor: 'crosshair' }}
     >
       <canvas
         ref={canvasRef}
