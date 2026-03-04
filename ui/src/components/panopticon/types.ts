@@ -44,6 +44,26 @@ export interface NewsItem {
   url?: string;
 }
 
+export interface EventSource {
+  name: string;
+  domain: string;
+  trust: number;
+  url: string;
+}
+
+export interface LiveEvent {
+  id: string;
+  time: string;
+  timestamp: number;
+  title: string;
+  severity: 'FLASH' | 'CRITICAL' | 'MAJOR' | 'DEVELOPING';
+  sources: EventSource[];
+  source_count: number;
+  summary: string;
+  region: string;
+  keywords_matched: string[];
+}
+
 export interface AssessmentSource {
   name: string;
   type: string;

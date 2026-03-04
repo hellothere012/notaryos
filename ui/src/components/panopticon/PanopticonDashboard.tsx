@@ -315,7 +315,7 @@ export default function PanopticonDashboard() {
   }, []);
 
   // Real-time OSINT data stream — live data only, no simulated fallback
-  const { flights, vessels, news, assessments, agentStatuses, streamStatus, isLive, stats } = usePanopticonStream(tick);
+  const { flights, vessels, news, assessments, events, agentStatuses, streamStatus, isLive, stats } = usePanopticonStream(tick);
 
   // Mouse handlers for globe rotation
   const handleMouseDown = useCallback(
@@ -486,6 +486,7 @@ export default function PanopticonDashboard() {
             assessments={assessments}
             flights={flights}
             vessels={vessels}
+            events={events}
             selectedAssessment={selectedAssessment}
             setSelectedAssessment={handleAssessmentSelect}
             onViewDag={handleViewDag}
@@ -512,6 +513,7 @@ export default function PanopticonDashboard() {
           assessments={assessments}
           flights={flights}
           vessels={vessels}
+          events={events}
           selectedAssessment={selectedAssessment}
           setSelectedAssessment={handleAssessmentSelect}
           onViewDag={handleViewDag}

@@ -79,6 +79,17 @@ const AGENTS: AgentStatus[] = [
     natoReliability: 'A-1',
   },
   {
+    id: 'wire',
+    name: 'WIRE',
+    desc: 'Live Event Feed',
+    status: 'ACTIVE',
+    alerts: 0,
+    color: '#ff8844',
+    layer: 'news',
+    trustScore: 85,
+    natoReliability: 'B-2',
+  },
+  {
     id: 'gazette',
     name: 'GAZETTE',
     desc: 'News Wire Services',

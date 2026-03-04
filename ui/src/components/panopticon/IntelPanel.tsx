@@ -8,8 +8,8 @@
 // and live data from usePanopticonStream (no fallback).
 // ═══════════════════════════════════════════════════════════
 
-import { useState, useMemo } from 'react';
-import type { Assessment, NewsItem, FlightTrack, VesselTrack } from './types';
+import { useState, useMemo, useCallback } from 'react';
+import type { Assessment, NewsItem, FlightTrack, VesselTrack, LiveEvent, EventSource } from './types';
 import { C } from './constants';
 
 // ─── Props ───────────────────────────────────────────────
@@ -19,6 +19,7 @@ interface IntelPanelProps {
   assessments: Assessment[];
   flights: FlightTrack[];
   vessels: VesselTrack[];
+  events: LiveEvent[];
   selectedAssessment: Assessment | null;
   setSelectedAssessment: (a: Assessment) => void;
   onViewDag: (a: Assessment) => void;
@@ -26,7 +27,7 @@ interface IntelPanelProps {
 
 // ─── Tab Type ────────────────────────────────────────────
 
-type TabId = 'assessments' | 'news' | 'flights' | 'vessels';
+type TabId = 'events' | 'assessments' | 'news' | 'flights' | 'vessels';
 
 // ─── Style Constants ─────────────────────────────────────
 
@@ -58,6 +59,10 @@ const newsAnimKeyframes = `
 @keyframes intel-news-glow {
   0% { background-color: rgba(0,212,255,0.12); }
   100% { background-color: transparent; }
+}
+@keyframes panopticon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 `;
 
@@ -486,6 +491,239 @@ function VesselRow({ vessel }: { vessel: VesselTrack }) {
   );
 }
 
+// ─── Event Severity Color ────────────────────────────────
+
+function eventSeverityColor(severity: LiveEvent['severity']): string {
+  switch (severity) {
+    case 'FLASH': return C.red;
+    case 'CRITICAL': return '#ff4444';
+    case 'MAJOR': return C.amber;
+    case 'DEVELOPING': return C.cyan;
+    default: return C.dimText;
+  }
+}
+
+// ─── Relative Time Helper ────────────────────────────────
+
+function relativeTime(ts: number): string {
+  const now = Date.now() / 1000;
+  const diff = Math.max(0, now - ts);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+// ─── External Link Warning Modal ─────────────────────────
+
+function ExternalLinkModal({
+  url,
+  domain,
+  onConfirm,
+  onCancel,
+}: {
+  url: string;
+  domain: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.7)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'monospace',
+      }}
+      onClick={onCancel}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: '#0a1428',
+          border: `1px solid ${C.panelBorder}`,
+          borderRadius: 8,
+          padding: '20px 24px',
+          maxWidth: 400,
+          width: '90%',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 16 }}>&#x1F6E1;</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.amber, letterSpacing: 0.5 }}>
+            LEAVING NOTARYOS
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: C.text, lineHeight: 1.6, marginBottom: 16 }}>
+          You are about to visit <span style={{ color: C.brightText, fontWeight: 700 }}>{domain}</span> —
+          an external site not controlled by NotaryOS. We cannot guarantee the security
+          or accuracy of external content.
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              padding: '8px 0',
+              background: 'rgba(0,180,255,0.15)',
+              border: `1px solid ${C.cyan}`,
+              borderRadius: 4,
+              color: C.cyan,
+              fontSize: 10,
+              fontWeight: 700,
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+              letterSpacing: 0.5,
+            }}
+          >
+            CONTINUE TO {domain.toUpperCase().slice(0, 20)}
+          </button>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '8px 16px',
+              background: 'transparent',
+              border: `1px solid ${C.panelBorder}`,
+              borderRadius: 4,
+              color: C.dimText,
+              fontSize: 10,
+              fontWeight: 700,
+              fontFamily: 'monospace',
+              cursor: 'pointer',
+            }}
+          >
+            CANCEL
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Event Row Component ─────────────────────────────────
+
+function EventRow({
+  event,
+  isNew,
+  onExternalLink,
+}: {
+  event: LiveEvent;
+  isNew?: boolean;
+  onExternalLink: (url: string, domain: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const sevColor = eventSeverityColor(event.severity);
+  const isFlash = event.severity === 'FLASH';
+
+  return (
+    <div
+      style={{
+        padding: '8px 10px',
+        borderBottom: `1px solid ${C.panelBorder}`,
+        background: 'transparent',
+        animation: isNew ? 'intel-news-slide-in 0.4s ease-out, intel-news-glow 2s ease-out' : 'none',
+        cursor: 'pointer',
+      }}
+      onClick={() => setExpanded(!expanded)}
+    >
+      {/* Header: timestamp + severity badge + source count */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 9, color: C.dimText }}>{relativeTime(event.timestamp)}</span>
+        <span
+          style={{
+            fontSize: 8,
+            fontWeight: 700,
+            color: '#000',
+            background: sevColor,
+            padding: '1px 5px',
+            borderRadius: 2,
+            letterSpacing: 0.5,
+            animation: isFlash ? 'panopticon-pulse 1.5s ease-in-out infinite' : 'none',
+          }}
+        >
+          {event.severity}
+        </span>
+        <span style={{ fontSize: 8, color: C.dimText, marginLeft: 'auto' }}>
+          {event.source_count} {event.source_count === 1 ? 'source' : 'sources'}
+        </span>
+      </div>
+
+      {/* Title */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.brightText, lineHeight: 1.4, marginBottom: 6 }}>
+        {event.title}
+      </div>
+
+      {/* Source pills — clickable with external link icon */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: expanded ? 6 : 0 }}>
+        {event.sources.map((src, i) => {
+          const tColor = trustColor(src.trust);
+          return (
+            <span
+              key={`${src.domain}-${i}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (src.url) onExternalLink(src.url, src.domain);
+              }}
+              style={{
+                fontSize: 8,
+                fontWeight: 700,
+                color: '#000',
+                background: tColor,
+                padding: '1px 5px',
+                borderRadius: 2,
+                cursor: src.url ? 'pointer' : 'default',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                transition: 'opacity 0.15s',
+              }}
+              title={src.url ? `Open ${src.domain} (external)` : src.domain}
+            >
+              {src.name}
+              {src.url && (
+                <span style={{ fontSize: 7, opacity: 0.7 }}>{'\u2197'}</span>
+              )}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Expanded: summary + keywords */}
+      {expanded && (
+        <div style={{ marginTop: 4 }}>
+          {event.summary && (
+            <div style={{ fontSize: 10, color: C.text, lineHeight: 1.4, marginBottom: 4 }}>
+              {event.summary}
+            </div>
+          )}
+          {event.keywords_matched.length > 0 && (
+            <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+              {event.keywords_matched.map((kw) => (
+                <span
+                  key={kw}
+                  style={{
+                    fontSize: 7,
+                    color: C.dimText,
+                    border: `1px solid ${C.panelBorder}`,
+                    padding: '0 3px',
+                    borderRadius: 2,
+                  }}
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────
 
 export default function IntelPanel({
@@ -493,11 +731,33 @@ export default function IntelPanel({
   assessments,
   flights,
   vessels,
+  events,
   selectedAssessment,
   setSelectedAssessment,
   onViewDag,
 }: IntelPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('assessments');
+  const [activeTab, setActiveTab] = useState<TabId>('events');
+
+  // External link warning modal state
+  const [pendingLink, setPendingLink] = useState<{ url: string; domain: string } | null>(null);
+  const externalLinkDismissed = typeof window !== 'undefined'
+    ? localStorage.getItem('notaryos_external_link_warning_dismissed') === 'true'
+    : false;
+
+  const handleExternalLink = useCallback((url: string, domain: string) => {
+    if (externalLinkDismissed) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      setPendingLink({ url, domain });
+    }
+  }, [externalLinkDismissed]);
+
+  const confirmExternalLink = useCallback(() => {
+    if (pendingLink) {
+      window.open(pendingLink.url, '_blank', 'noopener,noreferrer');
+      setPendingLink(null);
+    }
+  }, [pendingLink]);
 
   // Severity filter state (all active by default)
   const [severityFilters, setSeverityFilters] = useState<Set<Assessment['level']>>(
@@ -534,6 +794,7 @@ export default function IntelPanel({
 
   // Tab definitions with counts
   const tabs: { id: TabId; label: string; count: number }[] = [
+    { id: 'events', label: 'EVENTS', count: events.length },
     { id: 'assessments', label: 'ASSESS', count: displayAssessments.length },
     { id: 'news', label: 'NEWS', count: displayNews.length },
     { id: 'flights', label: 'FLIGHTS', count: flights.length },
@@ -572,8 +833,50 @@ export default function IntelPanel({
         ))}
       </div>
 
+      {/* External Link Warning Modal */}
+      {pendingLink && (
+        <ExternalLinkModal
+          url={pendingLink.url}
+          domain={pendingLink.domain}
+          onConfirm={confirmExternalLink}
+          onCancel={() => setPendingLink(null)}
+        />
+      )}
+
       {/* Tab Content */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
+
+        {/* ── EVENTS TAB ─────────────────────────────────────── */}
+        {activeTab === 'events' && (
+          <>
+            <div
+              style={{
+                padding: '6px 10px', fontSize: 9, color: C.dimText,
+                borderBottom: `1px solid ${C.panelBorder}`, letterSpacing: 1,
+                display: 'flex', justifyContent: 'space-between',
+              }}
+            >
+              <span>LIVE WIRE — REAL-TIME EVENT FEED</span>
+              {events.length > 0 && (
+                <span style={{ color: C.green, fontWeight: 700 }}>LIVE</span>
+              )}
+            </div>
+            {events.length > 0 ? (
+              events.map((event, idx) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  isNew={idx < 3}
+                  onExternalLink={handleExternalLink}
+                />
+              ))
+            ) : (
+              <div style={{ padding: '20px 10px', fontSize: 10, color: C.dimText, textAlign: 'center' }}>
+                Monitoring live feeds...
+              </div>
+            )}
+          </>
+        )}
 
         {/* ── ASSESSMENTS TAB ──────────────────────────────── */}
         {activeTab === 'assessments' && (
