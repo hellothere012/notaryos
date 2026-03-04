@@ -96,6 +96,20 @@ export const AppHeader: React.FC = () => {
             >
               Panopticon
             </Link>
+            <Link
+              href="/osint"
+              className={`px-3 py-2 rounded-lg transition-colors font-medium flex items-center gap-1.5 ${
+                isActive('/osint')
+                  ? 'text-amber-400 bg-amber-500/20'
+                  : 'text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10'
+              }`}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+              </span>
+              OSINT
+            </Link>
 
             {isAuthenticated && (
               <>
@@ -220,6 +234,21 @@ export const AppHeader: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Panopticon
+                </Link>
+                <Link
+                  href="/osint"
+                  className={`px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 ${
+                    isActive('/osint')
+                      ? 'text-amber-400 bg-amber-500/20'
+                      : 'text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                  </span>
+                  OSINT Live
                 </Link>
 
                 {isAuthenticated && (
