@@ -19,6 +19,7 @@ export interface FlightTrack {
   aircraft: string;
   source: 'adsb_exchange' | 'opensky' | 'simulated';
   trustScore: number;
+  lastSeen?: number;
 }
 
 export interface VesselTrack {
@@ -33,6 +34,7 @@ export interface VesselTrack {
   heading?: number;
   source: 'ais' | 'marine_traffic' | 'simulated';
   trustScore: number;
+  lastSeen?: number;
 }
 
 export interface NewsItem {

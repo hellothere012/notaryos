@@ -745,6 +745,11 @@ export default function IntelPanel({
     : false;
 
   const handleExternalLink = useCallback((url: string, domain: string) => {
+    // Security: only allow http(s) URLs — reject javascript: and data: schemes
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
+    } catch { return; }
     if (externalLinkDismissed) {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {
@@ -754,6 +759,11 @@ export default function IntelPanel({
 
   const confirmExternalLink = useCallback(() => {
     if (pendingLink) {
+      // Security: re-validate scheme on confirmation
+      try {
+        const parsed = new URL(pendingLink.url);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
+      } catch { return; }
       window.open(pendingLink.url, '_blank', 'noopener,noreferrer');
       setPendingLink(null);
     }

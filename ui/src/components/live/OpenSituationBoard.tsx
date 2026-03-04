@@ -26,11 +26,7 @@ import {
   Wifi,
   WifiOff,
 } from 'lucide-react';
-
-// ─── Constants ────────────────────────────────────────────────
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.agenttownsquare.com';
-const SSE_URL = `${API_BASE}/v1/panopticon/stream`;
+import { usePanopticonStream, type StreamStatus } from '../panopticon/usePanopticonStream';
 
 const COLORS = {
   bg: '#0F172A',
@@ -70,7 +66,6 @@ interface FeedItem {
   agentColor: string;
 }
 
-type StreamStatus = 'connecting' | 'connected' | 'disconnected';
 
 // ─── Animated Counter ─────────────────────────────────────────
 // Smoothly animates number changes with an odometer-like effect.
@@ -454,29 +449,41 @@ function MethodologySection() {
 // ─── Main Component ───────────────────────────────────────────
 
 export default function OpenSituationBoard() {
-  // ── State ─────────────────────────────────────────────────
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>('connecting');
-  const [lastEventTime, setLastEventTime] = useState(0);
-  const [timeSinceUpdate, setTimeSinceUpdate] = useState(0);
-  const [activeAgents, setActiveAgents] = useState<Set<string>>(new Set());
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  // ── Shared SSE hook — single connection, merge-by-ID ─────
+  const stream = usePanopticonStream(0);
 
-  // Counter values
+  // Derived from hook (no bouncing — hook merges by ID)
+  const totalFlights = stream.flights.length;
+  const militaryFlights = stream.flights.filter(f => f.type !== 'civilian').length;
+  const vesselsTracked = stream.vessels.length;
+  const streamStatus = stream.streamStatus;
+
+  // Cumulative counters — ratchet up, never reset
   const [receiptsIssued, setReceiptsIssued] = useState(0);
-  const [militaryFlights, setMilitaryFlights] = useState(0);
-  const [totalFlights, setTotalFlights] = useState(0);
-  const [vesselsTracked, setVesselsTracked] = useState(0);
   const [eventsDetected, setEventsDetected] = useState(0);
   const [airspaceAdvisories, setAirspaceAdvisories] = useState(0);
   const [highSeverityEvents, setHighSeverityEvents] = useState(0);
   const [assessmentsGenerated, setAssessmentsGenerated] = useState(0);
 
-  // Delta tracking
+  // UI state
+  const [lastEventTime, setLastEventTime] = useState(0);
+  const [timeSinceUpdate, setTimeSinceUpdate] = useState(0);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [deltas, setDeltas] = useState<Record<string, number>>({});
   const deltaAccum = useRef<Record<string, number>>({});
-  const esRef = useRef<EventSource | null>(null);
-  const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reconnectAttempts = useRef(0);
+
+  // Previous lengths for detecting new data from hook
+  const prevFlightsLen = useRef(0);
+  const prevVesselsLen = useRef(0);
+  const prevEventsLen = useRef(0);
+  const prevNewsLen = useRef(0);
+  const prevAssessmentsLen = useRef(0);
+
+  // Active agents derived from hook
+  const activeAgentNames = Object.keys(stream.agentStatuses).filter(
+    k => stream.agentStatuses[k].status === 'ACTIVE'
+  );
+  const activeAgents = new Set(activeAgentNames);
 
   // ── "Time since last update" ticker ───────────────────────
   useEffect(() => {
@@ -493,7 +500,7 @@ export default function OpenSituationBoard() {
     const interval = setInterval(() => {
       setDeltas({ ...deltaAccum.current });
       deltaAccum.current = {};
-    }, 60_000); // snapshot deltas every minute
+    }, 60_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -513,222 +520,93 @@ export default function OpenSituationBoard() {
     });
   }, []);
 
-  // ── SSE Connection ────────────────────────────────────────
-  const connect = useCallback(() => {
-    if (esRef.current?.readyState === EventSource.OPEN) return;
-    if (esRef.current) esRef.current.close();
-
-    setStreamStatus('connecting');
-
-    try {
-      const es = new EventSource(SSE_URL);
-      esRef.current = es;
-
-      es.addEventListener('connected', () => {
-        setStreamStatus('connected');
-        reconnectAttempts.current = 0;
-        addFeedItem('SYSTEM', 'Connected to live data stream', COLORS.success);
-      });
-
-      es.addEventListener('snapshot', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          setLastEventTime(Date.now());
-
-          if (data.flights?.length) {
-            const mil = data.flights.filter((f: any) => f.type === 'military').length;
-            setTotalFlights(data.flights.length);
-            setMilitaryFlights(mil);
-            setActiveAgents((prev) => new Set([...prev, 'skywatch']));
-            addFeedItem('SKYWATCH', `Tracking ${data.flights.length} aircraft (${mil} military)`, '#06b6d4');
-          }
-          if (data.vessels?.length) {
-            setVesselsTracked(data.vessels.length);
-            setActiveAgents((prev) => new Set([...prev, 'neptune']));
-            addFeedItem('NEPTUNE', `Monitoring ${data.vessels.length} vessels`, '#4488cc');
-          }
-          if (data.news?.length) {
-            setActiveAgents((prev) => new Set([...prev, 'gazette']));
-          }
-          if (data.official?.length) {
-            setAirspaceAdvisories(data.official.length);
-            setActiveAgents((prev) => new Set([...prev, 'herald']));
-          }
-          if (data.events?.length) {
-            setEventsDetected(data.events.length);
-            const high = data.events.filter((e: any) =>
-              e.severity === 'FLASH' || e.severity === 'CRITICAL'
-            ).length;
-            setHighSeverityEvents(high);
-            setActiveAgents((prev) => new Set([...prev, 'wire']));
-            addFeedItem('WIRE', `${data.events.length} events loaded (${high} high-severity)`, '#ff8844');
-          }
-          if (data.assessments?.length) {
-            setAssessmentsGenerated(data.assessments.length);
-            setActiveAgents((prev) => new Set([...prev, 'fusion']));
-            addFeedItem('FUSION', `${data.assessments.length} assessments active`, '#f59e0b');
-          }
-
-          // Estimate receipts from total data points
-          const totalPoints =
-            (data.flights?.length || 0) +
-            (data.vessels?.length || 0) +
-            (data.events?.length || 0) +
-            (data.assessments?.length || 0) +
-            (data.news?.length || 0) +
-            (data.official?.length || 0);
-          setReceiptsIssued((prev) => Math.max(prev, totalPoints));
-        } catch { /* ignore parse errors */ }
-      });
-
-      es.addEventListener('flights', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            const mil = items.filter((f: any) => f.type === 'military').length;
-            setTotalFlights(items.length);
-            setMilitaryFlights(mil);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'skywatch']));
-            setReceiptsIssued((prev) => prev + items.length);
-            deltaAccum.current.flights = (deltaAccum.current.flights || 0) + items.length;
-            addFeedItem('SKYWATCH', `${items.length} aircraft positions updated`, '#06b6d4');
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('vessels', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setVesselsTracked(items.length);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'neptune']));
-            setReceiptsIssued((prev) => prev + items.length);
-            addFeedItem('NEPTUNE', `${items.length} vessel positions updated`, '#4488cc');
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('events', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setEventsDetected((prev) => prev + items.length);
-            const high = items.filter((ev: any) =>
-              ev.severity === 'FLASH' || ev.severity === 'CRITICAL'
-            ).length;
-            if (high > 0) setHighSeverityEvents((prev) => prev + high);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'wire']));
-            setReceiptsIssued((prev) => prev + items.length);
-            deltaAccum.current.events = (deltaAccum.current.events || 0) + items.length;
-
-            // Add top event to feed
-            const top = items[0];
-            if (top?.title) {
-              const sevLabel = top.severity === 'FLASH' || top.severity === 'CRITICAL' ? `[${top.severity}] ` : '';
-              addFeedItem('WIRE', `${sevLabel}${top.title}`, '#ff8844');
-            }
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('news', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'gazette']));
-            setReceiptsIssued((prev) => prev + items.length);
-            if (items[0]?.text) {
-              addFeedItem('GAZETTE', items[0].text.slice(0, 120), '#8888cc');
-            }
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('official', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setAirspaceAdvisories((prev) => prev + items.length);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'herald']));
-            setReceiptsIssued((prev) => prev + items.length);
-            if (items[0]?.text) {
-              addFeedItem('HERALD', items[0].text.slice(0, 120), '#cc4488');
-            }
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('notams', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setAirspaceAdvisories((prev) => prev + items.length);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'herald']));
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('assessments', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          const items = data.items || [];
-          if (items.length > 0) {
-            setAssessmentsGenerated((prev) => prev + items.length);
-            setLastEventTime(Date.now());
-            setActiveAgents((prev) => new Set([...prev, 'fusion']));
-            setReceiptsIssued((prev) => prev + items.length);
-            deltaAccum.current.assessments = (deltaAccum.current.assessments || 0) + items.length;
-            if (items[0]?.title) {
-              addFeedItem('FUSION', `Assessment: ${items[0].title}`, '#f59e0b');
-            }
-          }
-        } catch { /* ignore */ }
-      });
-
-      es.addEventListener('heartbeat', () => {
-        setLastEventTime(Date.now());
-      });
-
-      es.onerror = () => {
-        if (es.readyState === EventSource.CLOSED) {
-          setStreamStatus('disconnected');
-          scheduleReconnect();
-        }
-      };
-    } catch {
-      setStreamStatus('disconnected');
-    }
-  }, [addFeedItem]);
-
-  const scheduleReconnect = useCallback(() => {
-    if (reconnectRef.current) return;
-    reconnectAttempts.current++;
-    const delay = Math.min(2000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
-    reconnectRef.current = setTimeout(() => {
-      reconnectRef.current = null;
-      if (reconnectAttempts.current <= 10) connect();
-    }, delay);
-  }, [connect]);
+  // ── React to hook data changes → update cumulative counters + feed ──
 
   useEffect(() => {
-    connect();
-    return () => {
-      if (esRef.current) { esRef.current.close(); esRef.current = null; }
-      if (reconnectRef.current) { clearTimeout(reconnectRef.current); reconnectRef.current = null; }
-    };
-  }, [connect]);
+    if (stream.flights.length !== prevFlightsLen.current) {
+      const diff = stream.flights.length - prevFlightsLen.current;
+      if (diff > 0) {
+        setReceiptsIssued(prev => prev + diff);
+        deltaAccum.current.flights = (deltaAccum.current.flights || 0) + diff;
+        addFeedItem('SKYWATCH', `Tracking ${stream.flights.length} aircraft`, '#06b6d4');
+      }
+      setLastEventTime(Date.now());
+      prevFlightsLen.current = stream.flights.length;
+    }
+  }, [stream.flights.length, addFeedItem]);
+
+  useEffect(() => {
+    if (stream.vessels.length !== prevVesselsLen.current) {
+      const diff = stream.vessels.length - prevVesselsLen.current;
+      if (diff > 0) {
+        setReceiptsIssued(prev => prev + diff);
+        addFeedItem('NEPTUNE', `Monitoring ${stream.vessels.length} vessels`, '#4488cc');
+      }
+      setLastEventTime(Date.now());
+      prevVesselsLen.current = stream.vessels.length;
+    }
+  }, [stream.vessels.length, addFeedItem]);
+
+  useEffect(() => {
+    if (stream.events.length !== prevEventsLen.current) {
+      const diff = stream.events.length - prevEventsLen.current;
+      if (diff > 0) {
+        setEventsDetected(prev => prev + diff);
+        setReceiptsIssued(prev => prev + diff);
+        deltaAccum.current.events = (deltaAccum.current.events || 0) + diff;
+        const high = stream.events.slice(0, diff).filter(
+          e => e.severity === 'FLASH' || e.severity === 'CRITICAL'
+        ).length;
+        if (high > 0) setHighSeverityEvents(prev => prev + high);
+        const top = stream.events[0];
+        if (top?.title) {
+          const sevLabel = top.severity === 'FLASH' || top.severity === 'CRITICAL' ? `[${top.severity}] ` : '';
+          addFeedItem('WIRE', `${sevLabel}${top.title}`, '#ff8844');
+        }
+      }
+      setLastEventTime(Date.now());
+      prevEventsLen.current = stream.events.length;
+    }
+  }, [stream.events.length, stream.events, addFeedItem]);
+
+  useEffect(() => {
+    if (stream.news.length !== prevNewsLen.current) {
+      const diff = stream.news.length - prevNewsLen.current;
+      if (diff > 0) {
+        setReceiptsIssued(prev => prev + diff);
+        const top = stream.news[0];
+        if (top?.text) {
+          addFeedItem('GAZETTE', top.text.slice(0, 120), '#8888cc');
+        }
+      }
+      setLastEventTime(Date.now());
+      prevNewsLen.current = stream.news.length;
+    }
+  }, [stream.news.length, stream.news, addFeedItem]);
+
+  useEffect(() => {
+    if (stream.assessments.length !== prevAssessmentsLen.current) {
+      const diff = stream.assessments.length - prevAssessmentsLen.current;
+      if (diff > 0) {
+        setAssessmentsGenerated(prev => prev + diff);
+        setReceiptsIssued(prev => prev + diff);
+        deltaAccum.current.assessments = (deltaAccum.current.assessments || 0) + diff;
+        const top = stream.assessments[0];
+        if (top?.title) {
+          addFeedItem('FUSION', `Assessment: ${top.title}`, '#f59e0b');
+        }
+      }
+      setLastEventTime(Date.now());
+      prevAssessmentsLen.current = stream.assessments.length;
+    }
+  }, [stream.assessments.length, stream.assessments, addFeedItem]);
+
+  // Update lastEventTime from hook stats
+  useEffect(() => {
+    if (stream.stats.lastEventTime > 0) {
+      setLastEventTime(stream.stats.lastEventTime);
+    }
+  }, [stream.stats.lastEventTime]);
 
   // ── Build counter data ────────────────────────────────────
   const counters: CounterData[] = [

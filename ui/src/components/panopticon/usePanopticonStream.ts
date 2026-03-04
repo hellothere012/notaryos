@@ -82,22 +82,38 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
   // ─── SSE Event Handlers ──────────────────────────────
 
   const handleFlightsEvent = useCallback((data: any) => {
-    const items: FlightTrack[] = (data.items || []).map((f: any) => ({
-      id: f.id || f.callsign || 'UNK',
-      callsign: f.callsign || f.id || 'UNK',
-      type: f.type || 'civilian',
-      lat: f.lat,
-      lon: f.lon,
-      alt: f.alt || 0,
-      heading: f.heading || 0,
-      speed: f.speed || 0,
-      aircraft: f.aircraft || 'Unknown',
-      source: f.source || 'opensky',
-      trustScore: f.trustScore || f.trust_score || 70,
-    }));
+    const items: FlightTrack[] = (data.items || [])
+      .filter((f: any) => typeof f.lat === 'number' && typeof f.lon === 'number')
+      .map((f: any) => ({
+        id: f.id || f.callsign || 'UNK',
+        callsign: f.callsign || f.id || 'UNK',
+        type: f.type || 'civilian',
+        lat: f.lat,
+        lon: f.lon,
+        alt: f.alt || 0,
+        heading: f.heading || 0,
+        speed: f.speed || 0,
+        aircraft: f.aircraft || 'Unknown',
+        source: f.source || 'opensky',
+        trustScore: f.trustScore || f.trust_score || 70,
+      }));
 
     if (items.length > 0) {
-      setLiveFlights(items);
+      setLiveFlights(prev => {
+        const byId = new Map(prev.map(f => [f.id, f]));
+        for (const f of items) {
+          byId.set(f.id, { ...f, lastSeen: Date.now() });
+        }
+        // Age out entries not seen for 15 minutes
+        const cutoff = Date.now() - 15 * 60 * 1000;
+        const live = [...byId.values()].filter(f => (f.lastSeen || 0) > cutoff);
+        // Hard cap: keep 500 most recently seen to prevent memory exhaustion
+        if (live.length > 500) {
+          live.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+          return live.slice(0, 500);
+        }
+        return live;
+      });
       setAgentStatuses(prev => ({
         ...prev,
         skywatch: { name: 'SKYWATCH', status: 'ACTIVE', lastUpdate: Date.now(), itemCount: items.length },
@@ -153,22 +169,38 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
   }, []);
 
   const handleVesselsEvent = useCallback((data: any) => {
-    const items: VesselTrack[] = (data.items || []).map((v: any) => ({
-      id: v.id || v.name || 'UNK',
-      name: v.name || 'Unknown Vessel',
-      type: mapVesselType(v.type),
-      lat: v.lat,
-      lon: v.lon,
-      classification: v.classification || '',
-      flag: v.flag,
-      speed: v.speed,
-      heading: v.heading,
-      source: v.source === 'aisstream' ? 'ais' : (v.source || 'simulated'),
-      trustScore: v.trustScore || v.trust_score || 70,
-    }));
+    const items: VesselTrack[] = (data.items || [])
+      .filter((v: any) => typeof v.lat === 'number' && typeof v.lon === 'number')
+      .map((v: any) => ({
+        id: v.id || v.name || 'UNK',
+        name: v.name || 'Unknown Vessel',
+        type: mapVesselType(v.type),
+        lat: v.lat,
+        lon: v.lon,
+        classification: v.classification || '',
+        flag: v.flag,
+        speed: v.speed,
+        heading: v.heading,
+        source: v.source === 'aisstream' ? 'ais' : (v.source || 'simulated'),
+        trustScore: v.trustScore || v.trust_score || 70,
+      }));
 
     if (items.length > 0) {
-      setLiveVessels(items);
+      setLiveVessels(prev => {
+        const byId = new Map(prev.map(v => [v.id, v]));
+        for (const v of items) {
+          byId.set(v.id, { ...v, lastSeen: Date.now() });
+        }
+        // Age out entries not seen for 15 minutes
+        const cutoff = Date.now() - 15 * 60 * 1000;
+        const live = [...byId.values()].filter(v => (v.lastSeen || 0) > cutoff);
+        // Hard cap: keep 500 most recently seen to prevent memory exhaustion
+        if (live.length > 500) {
+          live.sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+          return live.slice(0, 500);
+        }
+        return live;
+      });
       setAgentStatuses(prev => ({
         ...prev,
         neptune: { name: 'NEPTUNE', status: 'ACTIVE', lastUpdate: Date.now(), itemCount: items.length },
@@ -201,7 +233,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
         const newItems = items.filter(e => !seen.has(e.id));
         return [...newItems, ...prev]
           .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, 200);
+          .slice(0, 100);
       });
       setAgentStatuses(prev => ({
         ...prev,
@@ -217,7 +249,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
       level: a.level || 'LOW',
       title: a.title || 'Assessment',
       summary: a.summary || '',
-      sources: a.sources || [],
+      sources: (a.sources || []).filter((s: unknown): s is string => typeof s === 'string'),
       confidence: a.confidence ?? 50,
       aiConsensus: a.aiConsensus || a.ai_consensus || '',
       dagHash: a.dagHash || a.dag_hash || '',
@@ -340,20 +372,14 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
         lastEventTime.current = Date.now();
       });
 
-      es.addEventListener('error', (e) => {
+      // Note: any change to handler useCallback deps triggers EventSource restart
+      es.addEventListener('error', () => {
         // SSE auto-reconnects, but track state
         if (es.readyState === EventSource.CLOSED) {
           setStreamStatus('disconnected');
           scheduleReconnect();
         }
       });
-
-      es.onerror = () => {
-        if (es.readyState === EventSource.CLOSED) {
-          setStreamStatus('disconnected');
-          scheduleReconnect();
-        }
-      };
 
     } catch {
       setStreamStatus('disconnected');
