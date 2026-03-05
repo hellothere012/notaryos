@@ -97,6 +97,16 @@ export const AppHeader: React.FC = () => {
               Panopticon
             </Link>
             <Link
+              href="/panopticon-v2"
+              className={`px-2 py-1 rounded transition-colors text-xs font-bold ${
+                isActive('/panopticon-v2')
+                  ? 'text-emerald-400 bg-emerald-500/20'
+                  : 'text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10'
+              }`}
+            >
+              V2
+            </Link>
+            <Link
               href="/osint"
               className={`px-3 py-2 rounded-lg transition-colors font-medium flex items-center gap-1.5 ${
                 isActive('/osint')
@@ -234,6 +244,17 @@ export const AppHeader: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Panopticon
+                </Link>
+                <Link
+                  href="/panopticon-v2"
+                  className={`px-4 py-2.5 rounded-lg font-medium ${
+                    isActive('/panopticon-v2')
+                      ? 'text-emerald-400 bg-emerald-500/20'
+                      : 'text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Panopticon V2
                 </Link>
                 <Link
                   href="/osint"
