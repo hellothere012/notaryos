@@ -171,6 +171,8 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
   const handleVesselsEvent = useCallback((data: any) => {
     const items: VesselTrack[] = (data.items || [])
       .filter((v: any) => typeof v.lat === 'number' && typeof v.lon === 'number')
+      // Drop simulated vessels — only show real AIS data
+      .filter((v: any) => v.source === 'aisstream' || v.source === 'ais' || v.source === 'marine_traffic')
       .map((v: any) => ({
         id: v.id || v.name || 'UNK',
         name: v.name || 'Unknown Vessel',
@@ -181,7 +183,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
         flag: v.flag,
         speed: v.speed,
         heading: v.heading,
-        source: v.source === 'aisstream' ? 'ais' : (v.source || 'simulated'),
+        source: v.source === 'aisstream' ? 'ais' : (v.source || 'ais'),
         trustScore: v.trustScore || v.trust_score || 70,
       }));
 

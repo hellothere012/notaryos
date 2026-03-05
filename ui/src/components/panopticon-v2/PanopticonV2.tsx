@@ -15,8 +15,10 @@ import GlobeCanvasV2 from './GlobeCanvasV2';
 import FusedTimeline from './FusedTimeline';
 import AgentBarV2 from './AgentBarV2';
 import EntityTooltipV2 from './EntityTooltipV2';
-import CorrelationTree from './CorrelationTree';
+import ReceiptExplosion from './ReceiptExplosion';
 import MobileNav from './MobileNav';
+import { useTimeBuffer } from './useTimeBuffer';
+import TimeScrubber from './TimeScrubber';
 
 // ─── Threat Level Derivation ────────────────────────────────
 
@@ -139,8 +141,14 @@ export default function PanopticonV2() {
     setSelectedEntity({ type, data, screenX, screenY });
   }, []);
 
-  // ── Correlation Tree Modal ──────────────────────────────
+  // ── Correlation / Receipt Explosion ─────────────────────
   const [correlationAssessment, setCorrelationAssessment] = useState<Assessment | null>(null);
+
+  // ── Time Buffer + Scrubber ─────────────────────────────
+  const [scrubberTime, setScrubberTime] = useState<number | null>(null);
+  const { getSnapshotAt, getTimeRange, getSnapshotCount } = useTimeBuffer({
+    flights, vessels, news, assessments, events,
+  });
 
   // ── Mobile View ─────────────────────────────────────────
   const [mobileView, setMobileView] = useState<'globe' | 'feed' | 'agents'>('globe');
@@ -153,8 +161,18 @@ export default function PanopticonV2() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // ── Display Data (live or scrubbed snapshot) ────────────
+  const snapshot = scrubberTime !== null ? getSnapshotAt(scrubberTime) : null;
+  const displayFlights = snapshot?.flights ?? flights;
+  const displayVessels = snapshot?.vessels ?? vessels;
+  const displayNews = snapshot?.news ?? news;
+  const displayAssessments = snapshot?.assessments ?? assessments;
+  const displayEvents = snapshot?.events ?? events;
+
   // ── Derived Data ────────────────────────────────────────
-  const threatLevel = deriveThreatLevel(assessments);
+  const threatLevel = deriveThreatLevel(displayAssessments);
+  const hasData = flights.length > 0 || news.length > 0 || assessments.length > 0 || events.length > 0;
+  const isDisconnected = streamStatus === 'disconnected' && !hasData;
 
   // ── Render ──────────────────────────────────────────────
 
@@ -196,8 +214,8 @@ export default function PanopticonV2() {
           >
             <GlobeCanvasV2
               rotation={rotation}
-              flights={flights}
-              vessels={vessels}
+              flights={displayFlights}
+              vessels={displayVessels}
               layers={layers}
               tick={tick}
               onEntitySelect={handleEntitySelect}
@@ -209,11 +227,11 @@ export default function PanopticonV2() {
         {isMobile && mobileView === 'feed' && (
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <FusedTimeline
-              flights={flights}
-              vessels={vessels}
-              news={news}
-              assessments={assessments}
-              events={events}
+              flights={displayFlights}
+              vessels={displayVessels}
+              news={displayNews}
+              assessments={displayAssessments}
+              events={displayEvents}
               onViewCorrelation={setCorrelationAssessment}
             />
           </div>
@@ -233,15 +251,58 @@ export default function PanopticonV2() {
         {/* ── Desktop: Fused Timeline (right) ───────────── */}
         {!isMobile && (
           <FusedTimeline
-            flights={flights}
-            vessels={vessels}
-            news={news}
-            assessments={assessments}
-            events={events}
+            flights={displayFlights}
+            vessels={displayVessels}
+            news={displayNews}
+            assessments={displayAssessments}
+            events={displayEvents}
             onViewCorrelation={setCorrelationAssessment}
           />
         )}
       </div>
+
+      {/* ── Disconnected Overlay ─────────────────────────── */}
+      {isDisconnected && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(6,10,18,0.92)',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div style={{ textAlign: 'center', fontFamily: '"SF Mono", "Fira Code", monospace' }}>
+            <div style={{ fontSize: 32, color: C.red, marginBottom: 12 }}>{'\u26A0'}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.brightText, marginBottom: 8 }}>
+              API UNAVAILABLE
+            </div>
+            <div style={{ fontSize: 11, color: C.dimText, maxWidth: 320, lineHeight: 1.5, marginBottom: 16 }}>
+              Unable to connect to the OSINT data stream. The backend may be temporarily offline.
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                background: 'rgba(0,180,255,0.15)',
+                border: `1px solid ${C.cyan}`,
+                color: C.cyan,
+                fontSize: 11,
+                fontWeight: 700,
+                fontFamily: 'monospace',
+                padding: '8px 20px',
+                borderRadius: 4,
+                cursor: 'pointer',
+                letterSpacing: 1,
+              }}
+            >
+              TRY AGAIN
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Entity Tooltip Overlay ──────────────────────── */}
       {selectedEntity && (
@@ -251,9 +312,9 @@ export default function PanopticonV2() {
         />
       )}
 
-      {/* ── Correlation Tree Modal ──────────────────────── */}
+      {/* ── Receipt Explosion Arcs ──────────────────────── */}
       {correlationAssessment && (
-        <CorrelationTree
+        <ReceiptExplosion
           assessment={correlationAssessment}
           onClose={() => setCorrelationAssessment(null)}
         />
@@ -264,6 +325,16 @@ export default function PanopticonV2() {
         <MobileNav
           activeView={mobileView}
           onViewChange={setMobileView}
+        />
+      )}
+
+      {/* ── Time Scrubber (desktop only, below globe) ───── */}
+      {!isMobile && (
+        <TimeScrubber
+          scrubberTime={scrubberTime}
+          onScrubberChange={setScrubberTime}
+          timeRange={getTimeRange()}
+          snapshotCount={getSnapshotCount()}
         />
       )}
 

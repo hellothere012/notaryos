@@ -191,8 +191,9 @@ const MISSILE_ROUTES = [
 // Component
 // ----------------------------------------------------------------
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 6.0;
-const ZOOM_STEP = 0.25;
+const ZOOM_MAX = 20.0;
+const ZOOM_STEP = 0.5;
+const ZOOM_DEFAULT = 3.0;
 const ZOOM_WHEEL_STEP = 0.1;
 
 export default function GlobeCanvasV2({
@@ -206,7 +207,7 @@ export default function GlobeCanvasV2({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
-  const [zoom, setZoom] = useState(1.0);
+  const [zoom, setZoom] = useState(ZOOM_DEFAULT);
 
   const zoomIn = useCallback(() => {
     setZoom((z) => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2)));
@@ -217,7 +218,7 @@ export default function GlobeCanvasV2({
   }, []);
 
   const zoomReset = useCallback(() => {
-    setZoom(1.0);
+    setZoom(ZOOM_DEFAULT);
   }, []);
 
   // Store projected entity screen positions for click hit-testing
@@ -544,9 +545,9 @@ export default function GlobeCanvasV2({
           ctx.stroke();
         }
 
-        // Collect label — only at zoom >= 1.5 (density culling)
+        // Collect label — only at zoom >= default (density culling)
         // Adversary flights always labeled (critical intel)
-        if (zoom >= 1.5 || flight.type === 'adversary') {
+        if (zoom >= ZOOM_DEFAULT || flight.type === 'adversary') {
           allLabels.push({
             x: fx + 9,
             y: fy - 2,
@@ -607,9 +608,9 @@ export default function GlobeCanvasV2({
           ctx.stroke();
         }
 
-        // Collect label — only at zoom >= 1.5 (density culling)
+        // Collect label — only at zoom >= default (density culling)
         // Carriers always labeled (high-value targets)
-        if (zoom >= 1.5 || isCarrier || vessel.type === 'adversary') {
+        if (zoom >= ZOOM_DEFAULT || isCarrier || vessel.type === 'adversary') {
           allLabels.push({
             x: vx + 9,
             y: vy - 2,
