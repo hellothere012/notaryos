@@ -645,8 +645,8 @@ assert result.valid  # True`}</code>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     {[
-                      { value: '4.70ms', label: 'P50 verification latency' },
-                      { value: '178+', label: 'Receipts/sec (8 workers)' },
+                      { value: '<5ms', label: 'Verification latency' },
+                      { value: '178+', label: 'Receipts per second' },
                       { value: '100%', label: 'Success rate in production' },
                       { value: '7 layers', label: 'Zero-trust security' },
                     ].map((stat, i) => (
@@ -658,7 +658,7 @@ assert result.valid  # True`}</code>
                   </div>
 
                   <p className="text-xs text-gray-500 mb-6">
-                    Verified on DigitalOcean droplet &mdash; 4 vCPU / 8 GB RAM / 8 workers. 5,416 benchmark requests, 100% success rate.
+                    Benchmarked in production &mdash; 5,416 requests, 100% success rate.
                   </p>
 
                   <div className="flex flex-wrap gap-3">

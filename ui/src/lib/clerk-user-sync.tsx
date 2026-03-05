@@ -9,7 +9,7 @@ import { authClient } from '@/lib/api-client';
  *
  * This component renders nothing visible; it just watches for changes to
  * the Clerk user and upserts the profile to the NotaryOS backend so the
- * `notaryos_users` table stays in sync.
+ * user record stays in sync.
  */
 export function ClerkUserSync() {
   const { user, isSignedIn } = useUser();
