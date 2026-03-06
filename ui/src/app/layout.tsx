@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Courier_Prime, IBM_Plex_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
+import { Analytics } from '@vercel/analytics/next';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -107,6 +108,7 @@ export default function RootLayout({
         >
           <Providers>{children}</Providers>
         </ClerkProvider>
+        <Analytics />
       </body>
     </html>
   );
