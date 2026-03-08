@@ -255,6 +255,7 @@ export function usePanopticonStream(tick: number): PanopticonStreamData {
       confidence: a.confidence ?? 50,
       aiConsensus: a.aiConsensus || a.ai_consensus || '',
       dagHash: a.dagHash || a.dag_hash || '',
+      reasoningTree: a.reasoningTree || undefined,
     }));
 
     if (items.length > 0) {

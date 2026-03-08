@@ -72,6 +72,19 @@ export interface AssessmentSource {
   receiptHash?: string;
 }
 
+export interface ReasoningNodeInfo {
+  node_id: string;
+  node_type: 'root' | 'branch' | 'selected' | 'pruned' | 'conclusion' | 'observation';
+  content: string;
+  confidence: number;
+}
+
+export interface ReasoningTreeInfo {
+  nodeCount: number;
+  nodeTypes: Record<string, number>;
+  nodes?: ReasoningNodeInfo[];
+}
+
 export interface Assessment {
   id: string;
   time: string;
@@ -82,6 +95,7 @@ export interface Assessment {
   confidence: number;
   aiConsensus: string;
   dagHash: string;
+  reasoningTree?: ReasoningTreeInfo;
 }
 
 export interface AgentStatus {

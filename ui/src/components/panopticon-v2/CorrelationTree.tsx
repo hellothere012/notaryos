@@ -8,7 +8,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { C } from '../panopticon/constants';
-import type { Assessment } from '../panopticon/types';
+import type { Assessment, ReasoningNodeInfo } from '../panopticon/types';
 import ReceiptSeal from './ReceiptSeal';
 
 // ─── Props ─────────────────────────────────────────────────
@@ -285,6 +285,130 @@ export default function CorrelationTree({ assessment, onClose }: CorrelationTree
             </div>
           </div>
         </div>
+
+        {/* Reasoning Tree Nodes (if available) */}
+        {assessment.reasoningTree && assessment.reasoningTree.nodes && assessment.reasoningTree.nodes.length > 0 && (
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.panelBorder}` }}>
+            <div style={{ fontSize: 10, color: C.dimText, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 }}>
+              REASONING ANALYSIS ({assessment.reasoningTree.nodeCount} nodes)
+            </div>
+
+            {/* Node type summary badges */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+              {Object.entries(assessment.reasoningTree.nodeTypes)
+                .filter(([, count]) => count > 0)
+                .map(([type, count]) => {
+                  const typeColors: Record<string, string> = {
+                    root: C.dimText,
+                    branch: C.cyan,
+                    selected: C.green,
+                    pruned: C.red,
+                    conclusion: '#d4a82b',
+                    observation: C.text,
+                  };
+                  return (
+                    <span
+                      key={type}
+                      style={{
+                        fontSize: 8,
+                        color: typeColors[type] || C.dimText,
+                        background: `${typeColors[type] || C.dimText}12`,
+                        border: `1px solid ${typeColors[type] || C.dimText}30`,
+                        padding: '1px 5px',
+                        borderRadius: 2,
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {type.toUpperCase()}: {count}
+                    </span>
+                  );
+                })}
+            </div>
+
+            {/* Reasoning nodes */}
+            <div style={{ position: 'relative', paddingLeft: 14 }}>
+              {/* Vertical connector */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 5,
+                  top: 0,
+                  bottom: 0,
+                  width: 1,
+                  background: 'rgba(0,180,255,0.08)',
+                }}
+              />
+
+              {assessment.reasoningTree.nodes.map((node: ReasoningNodeInfo, i: number) => {
+                const nodeColors: Record<string, string> = {
+                  root: C.dimText,
+                  branch: C.cyan,
+                  selected: C.green,
+                  pruned: C.red,
+                  conclusion: '#d4a82b',
+                  observation: C.text,
+                };
+                const nodeIcons: Record<string, string> = {
+                  root: '\u25CE',
+                  branch: '\u25CB',
+                  selected: '\u25C9',
+                  pruned: '\u2715',
+                  conclusion: '\u25C6',
+                  observation: '\u25CB',
+                };
+                const color = nodeColors[node.node_type] || C.dimText;
+
+                return (
+                  <div
+                    key={node.node_id}
+                    style={{
+                      position: 'relative',
+                      marginBottom: i < (assessment.reasoningTree?.nodes?.length || 0) - 1 ? 6 : 0,
+                    }}
+                  >
+                    {/* Node icon */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: -11,
+                        top: 2,
+                        fontSize: 8,
+                        color,
+                        zIndex: 1,
+                      }}
+                    >
+                      {nodeIcons[node.node_type] || '\u25CB'}
+                    </div>
+
+                    {/* Node content */}
+                    <div
+                      style={{
+                        borderLeft: `2px solid ${color}30`,
+                        paddingLeft: 8,
+                        paddingTop: 1,
+                        paddingBottom: 1,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 8, fontWeight: 700, color, textTransform: 'uppercase' }}>
+                          {node.node_type}
+                        </span>
+                        {node.confidence > 0 && (
+                          <span style={{ fontSize: 7, color: C.dimText }}>
+                            {Math.round(node.confidence * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 8, color: C.dimText, lineHeight: 1.3, marginTop: 1 }}>
+                        {node.content.length > 150 ? node.content.slice(0, 150) + '...' : node.content}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${C.panelBorder}`, fontSize: 8, color: C.dimText, textAlign: 'center' }}>
