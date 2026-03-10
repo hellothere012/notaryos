@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { C } from '../panopticon/constants';
-import type { Assessment } from '../panopticon/types';
+import type { Assessment, ReasoningNodeInfo } from '../panopticon/types';
 import ReceiptSeal from './ReceiptSeal';
 
 interface ReceiptExplosionProps {
@@ -315,6 +315,81 @@ export default function ReceiptExplosion({ assessment, onClose }: ReceiptExplosi
             textAlign: 'center',
           }}>
             AI Consensus: {assessment.aiConsensus}
+          </div>
+        )}
+
+        {/* Reasoning Tree (if available from fusion debate) */}
+        {assessment.reasoningTree && assessment.reasoningTree.nodes && assessment.reasoningTree.nodes.length > 0 && (
+          <div style={{
+            marginTop: 12, padding: '10px 14px',
+            background: 'rgba(255,255,255,0.02)',
+            border: `1px solid ${C.panelBorder}`,
+            borderRadius: 4,
+            maxHeight: 220,
+            overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 9, color: C.dimText, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                REASONING ANALYSIS ({assessment.reasoningTree.nodeCount} nodes)
+              </span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {Object.entries(assessment.reasoningTree.nodeTypes)
+                  .filter(([, count]) => count > 0)
+                  .map(([type, count]) => {
+                    const tc: Record<string, string> = {
+                      root: '#6b7d8e', branch: '#00b4ff', selected: '#00ff88',
+                      pruned: '#ff3344', conclusion: '#d4a82b', observation: '#c8d0d8',
+                    };
+                    return (
+                      <span key={type} style={{
+                        fontSize: 7, color: tc[type] || '#6b7d8e',
+                        background: `${tc[type] || '#6b7d8e'}15`,
+                        padding: '1px 4px', borderRadius: 2,
+                      }}>
+                        {type.toUpperCase()}: {count}
+                      </span>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {assessment.reasoningTree.nodes.map((node: ReasoningNodeInfo, i: number) => {
+              const nc: Record<string, string> = {
+                root: '#6b7d8e', branch: '#00b4ff', selected: '#00ff88',
+                pruned: '#ff3344', conclusion: '#d4a82b', observation: '#c8d0d8',
+              };
+              const icons: Record<string, string> = {
+                root: '\u25CE', branch: '\u25CB', selected: '\u25C9',
+                pruned: '\u2715', conclusion: '\u25C6', observation: '\u25CB',
+              };
+              const color = nc[node.node_type] || '#6b7d8e';
+              return (
+                <div key={node.node_id} style={{
+                  display: 'flex', gap: 6, marginBottom: i < (assessment.reasoningTree?.nodes?.length || 0) - 1 ? 4 : 0,
+                  borderLeft: `2px solid ${color}40`,
+                  paddingLeft: 8,
+                }}>
+                  <span style={{ fontSize: 8, color, flexShrink: 0, marginTop: 1 }}>
+                    {icons[node.node_type] || '\u25CB'}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ fontSize: 7, fontWeight: 700, color, textTransform: 'uppercase' }}>
+                        {node.node_type}
+                      </span>
+                      {node.confidence > 0 && (
+                        <span style={{ fontSize: 7, color: C.dimText }}>
+                          {Math.round(node.confidence * 100)}%
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 8, color: C.dimText, lineHeight: 1.3 }}>
+                      {node.content.length > 120 ? node.content.slice(0, 120) + '...' : node.content}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
