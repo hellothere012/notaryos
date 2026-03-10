@@ -129,6 +129,8 @@ export default function ReceiptExplosion({ assessment, onClose }: ReceiptExplosi
         style={{
           width: '90vw',
           maxWidth: 720,
+          maxHeight: '90vh',
+          overflowY: 'auto',
           opacity: phase === 1 ? 1 : 0,
           transform: phase === 1 ? 'scale(1)' : 'scale(0.9)',
           transition: 'opacity 0.3s, transform 0.3s',
