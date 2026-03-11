@@ -106,18 +106,19 @@ export default function TimelineItem({ entry, onViewCorrelation }: TimelineItemP
       </div>
 
       {/* ── Expanded Detail ──────────────────────────── */}
-      <div
-        style={{
-          maxHeight: expanded ? 500 : 0,
-          overflow: 'hidden',
-          transition: 'max-height 0.25s ease-in-out',
-          opacity: expanded ? 1 : 0,
-        }}
-      >
-        <div style={{ marginTop: 6, marginLeft: 22, fontSize: 9, color: C.dimText }}>
+      {expanded && (
+        <div
+          style={{
+            overflow: 'visible',
+            marginTop: 6,
+            marginLeft: 22,
+            fontSize: 9,
+            color: C.dimText,
+          }}
+        >
           {renderExpanded(entry, onViewCorrelation)}
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { C } from '../panopticon/constants';
 import type { FlightTrack, VesselTrack, NewsItem, Assessment, LiveEvent } from '../panopticon/types';
 import TimelineItem, { type TimelineEntry, type TimelineEntryType } from './TimelineItem';
+import AnalystInput from './AnalystInput';
 
 // ─── Props ─────────────────────────────────────────────────
 
@@ -68,7 +69,8 @@ function formatTimeLabel(epochMs: number): string {
 
 const panelStyle: React.CSSProperties = {
   width: 320,
-  minWidth: 320,
+  minWidth: 280,
+  maxWidth: '100vw',
   background: C.panel,
   borderLeft: `1px solid ${C.panelBorder}`,
   fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
@@ -261,6 +263,9 @@ export default function FusedTimeline({
           );
         })}
       </div>
+
+      {/* Analyst input — human analysis submission */}
+      <AnalystInput />
 
       {/* Scrollable feed */}
       <div

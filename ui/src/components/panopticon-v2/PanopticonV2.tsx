@@ -225,7 +225,7 @@ export default function PanopticonV2() {
 
         {/* ── Mobile: Feed View ─────────────────────────── */}
         {isMobile && mobileView === 'feed' && (
-          <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div style={{ flex: 1, overflow: 'hidden', width: '100%' }}>
             <FusedTimeline
               flights={displayFlights}
               vessels={displayVessels}
