@@ -125,7 +125,7 @@ export default function ModelColumn({ result, weight }: ModelColumnProps) {
           </div>
         )}
 
-        {result.reasoningTree ? (
+        {result.reasoningTree?.root ? (
           <ReasoningNodeComponent node={result.reasoningTree.root} />
         ) : result.content ? (
           <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
