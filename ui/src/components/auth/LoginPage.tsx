@@ -18,7 +18,9 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectPath = searchParams.get('redirect') || '/verify';
+  // Validate redirect to prevent open redirect attacks — only allow relative paths
+  const rawRedirect = searchParams.get('redirect') || '/verify';
+  const redirectPath = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/verify';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

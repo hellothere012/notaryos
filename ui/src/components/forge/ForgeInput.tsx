@@ -86,6 +86,7 @@ export default function ForgeInput({ models, presets, onSubmit, disabled }: Forg
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Enter your prompt... All models will analyze it in parallel."
           disabled={disabled}
+          maxLength={10000}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
           }}

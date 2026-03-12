@@ -149,6 +149,7 @@ export default function ForgePage() {
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="notary_live_..."
+            autoComplete="off"
             style={{
               flex: 1,
               maxWidth: 400,
