@@ -47,7 +47,7 @@ export default function ForgeCanvas({ state }: ForgeCanvasProps) {
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto', scrollBehavior: 'smooth' }}>
       {/* Prompt receipt bar */}
       {state.promptReceipt && (
         <div
@@ -104,8 +104,7 @@ export default function ForgeCanvas({ state }: ForgeCanvasProps) {
           gap: 8,
           padding: '0 12px',
           overflowX: 'auto',
-          overflowY: 'hidden',
-          minHeight: 0,
+          minHeight: 300,
         }}
       >
         {state.models.map((model) => (

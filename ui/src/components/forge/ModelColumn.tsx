@@ -6,6 +6,7 @@
 // tree and receipt badges. Pure rendering — no backend logic.
 // ═══════════════════════════════════════════════════════════
 
+import { useEffect, useRef } from 'react';
 import type { ModelResult } from './types';
 import ForgeReceipt from './ForgeReceipt';
 import ReasoningNodeComponent from './ReasoningNode';
@@ -24,10 +25,18 @@ interface ModelColumnProps {
 }
 
 export default function ModelColumn({ result, weight }: ModelColumnProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
   const color = MODEL_COLORS[result.modelKey] || '#00d4ff';
   const isComplete = result.status === 'complete';
   const isError = result.status === 'error';
   const isPending = result.status === 'pending';
+
+  // Auto-scroll content area as streaming text arrives
+  useEffect(() => {
+    if (contentRef.current && result.content) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+    }
+  }, [result.content]);
 
   return (
     <div
@@ -103,6 +112,7 @@ export default function ModelColumn({ result, weight }: ModelColumnProps) {
 
       {/* Content area */}
       <div
+        ref={contentRef}
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -111,6 +121,7 @@ export default function ModelColumn({ result, weight }: ModelColumnProps) {
           fontFamily: 'monospace',
           color: '#a0c4e0',
           lineHeight: 1.5,
+          scrollBehavior: 'smooth',
         }}
       >
         {isPending && (

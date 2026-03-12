@@ -13,11 +13,11 @@ import { useForgeStream, fetchForgeModels } from '@/components/forge/useForgeStr
 import type { AvailableModel } from '@/components/forge/types';
 
 const FALLBACK_MODELS: AvailableModel[] = [
-  { key: 'grok', display_name: 'GROK' },
+  { key: 'chatgpt', display_name: 'GPT-5.4' },
   { key: 'gemini', display_name: 'GEMINI' },
   { key: 'sonnet', display_name: 'SONNET' },
   { key: 'kimi', display_name: 'KIMI' },
-  { key: 'chatgpt', display_name: 'CHATGPT' },
+  { key: 'grok', display_name: 'GROK' },
 ];
 
 const FALLBACK_PRESETS = ['general', 'osint', 'trading', 'real_estate', 'legal', 'custom'];

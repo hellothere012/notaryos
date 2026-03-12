@@ -35,7 +35,7 @@ interface ForgeInputProps {
 
 export default function ForgeInput({ models, presets, onSubmit, disabled }: ForgeInputProps) {
   const [prompt, setPrompt] = useState('');
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['grok', 'gemini', 'sonnet']));
+  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['chatgpt', 'gemini', 'sonnet']));
   const [preset, setPreset] = useState('general');
   const [customPrompt, setCustomPrompt] = useState('');
 

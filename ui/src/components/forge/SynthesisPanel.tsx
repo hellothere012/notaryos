@@ -6,6 +6,7 @@
 // the bottom of the forge view. Pure UI — no backend logic.
 // ═══════════════════════════════════════════════════════════
 
+import { useEffect, useRef } from 'react';
 import type { ForgeCompleteEvent } from './types';
 import ForgeReceipt from './ForgeReceipt';
 
@@ -26,13 +27,22 @@ export default function SynthesisPanel({
   complete,
   phase,
 }: SynthesisPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const isSynthesizing = phase === 'synthesizing';
   const isComplete = phase === 'complete';
+
+  // Auto-scroll the synthesis panel into view when content arrives
+  useEffect(() => {
+    if (panelRef.current && (assessment || Object.keys(modelWeights).length > 0)) {
+      panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [assessment, modelWeights]);
 
   if (phase === 'idle' || phase === 'started') return null;
 
   return (
     <div
+      ref={panelRef}
       style={{
         borderTop: '2px solid rgba(255,170,0,0.3)',
         background: 'rgba(8,16,28,0.95)',
