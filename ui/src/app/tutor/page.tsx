@@ -27,7 +27,6 @@ export default function TutorPage() {
 
   useEffect(() => {
     fetchForgeModels().then(({ models: m }) => {
-      // Only show active models for tutor — simpler UI
       const active = m.filter((model) => model.status !== 'blocked');
       if (active.length > 0) setModels(active);
     });
@@ -38,7 +37,6 @@ export default function TutorPage() {
       setShowKeyInput(true);
       return;
     }
-    // Map subject to tutor preset
     const presetMap: Record<string, string> = {
       math: 'tutor_math',
       science: 'tutor_science',
@@ -58,20 +56,21 @@ export default function TutorPage() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
-        color: '#a0c4e0',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+        color: '#f0e6d6',
+        background: '#141210',
       }}
     >
       {/* Top bar */}
       <div
         style={{
-          padding: '10px 16px',
-          borderBottom: '1px solid rgba(139,92,246,0.15)',
+          padding: '12px 20px',
+          borderBottom: '1px solid rgba(216,160,100,0.12)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
-          background: 'rgba(8,16,28,0.98)',
+          background: 'rgba(20,18,16,0.98)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -80,23 +79,21 @@ export default function TutorPage() {
             style={{
               fontSize: 11,
               fontWeight: 700,
-              color: '#64748b',
+              color: '#8a7e72',
               textDecoration: 'none',
               letterSpacing: 1,
-              fontFamily: '-apple-system, sans-serif',
             }}
           >
             NotaryOS
           </a>
-          <span style={{ color: '#334155' }}>/</span>
+          <span style={{ color: '#3d3730' }}>/</span>
           <span
             style={{
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 800,
-              background: 'linear-gradient(135deg, #a78bfa, #22d3ee)',
+              background: 'linear-gradient(135deg, #e8985a, #d47c6a)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontFamily: '-apple-system, sans-serif',
             }}
           >
             AI Tutor
@@ -108,13 +105,12 @@ export default function TutorPage() {
             onClick={() => setShowKeyInput(!showKeyInput)}
             style={{
               fontSize: 11,
-              fontFamily: '-apple-system, sans-serif',
               fontWeight: 600,
-              padding: '5px 14px',
+              padding: '6px 16px',
               borderRadius: 8,
-              border: `1px solid ${apiKey ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
-              background: apiKey ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
-              color: apiKey ? '#22c55e' : '#f87171',
+              border: `1px solid ${apiKey ? 'rgba(122,184,145,0.3)' : 'rgba(212,124,106,0.3)'}`,
+              background: apiKey ? 'rgba(122,184,145,0.08)' : 'rgba(212,124,106,0.08)',
+              color: apiKey ? '#7ab891' : '#d47c6a',
               cursor: 'pointer',
             }}
           >
@@ -126,13 +122,12 @@ export default function TutorPage() {
               onClick={reset}
               style={{
                 fontSize: 11,
-                fontFamily: '-apple-system, sans-serif',
                 fontWeight: 600,
-                padding: '5px 14px',
+                padding: '6px 16px',
                 borderRadius: 8,
-                border: '1px solid rgba(139,92,246,0.25)',
-                background: 'rgba(139,92,246,0.06)',
-                color: '#a78bfa',
+                border: '1px solid rgba(232,152,90,0.25)',
+                background: 'rgba(232,152,90,0.08)',
+                color: '#e8985a',
                 cursor: 'pointer',
               }}
             >
@@ -146,16 +141,16 @@ export default function TutorPage() {
       {showKeyInput && (
         <div
           style={{
-            padding: '10px 16px',
-            borderBottom: '1px solid rgba(139,92,246,0.1)',
-            background: 'rgba(0,0,0,0.25)',
+            padding: '10px 20px',
+            borderBottom: '1px solid rgba(216,160,100,0.1)',
+            background: 'rgba(30,27,23,0.9)',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 12, color: '#64748b', fontFamily: '-apple-system, sans-serif', fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: '#8a7e72', fontWeight: 600 }}>
             API Key
           </span>
           <input
@@ -167,13 +162,13 @@ export default function TutorPage() {
             style={{
               flex: 1,
               maxWidth: 400,
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid rgba(139,92,246,0.2)',
+              background: 'rgba(0,0,0,0.25)',
+              border: '1px solid rgba(216,160,100,0.18)',
               borderRadius: 8,
-              padding: '6px 12px',
+              padding: '7px 12px',
               fontSize: 13,
               fontFamily: 'monospace',
-              color: '#e2e8f0',
+              color: '#f0e6d6',
               outline: 'none',
             }}
           />
@@ -181,13 +176,12 @@ export default function TutorPage() {
             onClick={() => setShowKeyInput(false)}
             style={{
               fontSize: 11,
-              fontFamily: '-apple-system, sans-serif',
               fontWeight: 600,
-              padding: '5px 14px',
+              padding: '6px 16px',
               borderRadius: 8,
-              border: '1px solid rgba(139,92,246,0.2)',
+              border: '1px solid rgba(232,152,90,0.2)',
               background: 'transparent',
-              color: '#a78bfa',
+              color: '#e8985a',
               cursor: 'pointer',
             }}
           >

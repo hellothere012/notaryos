@@ -11,9 +11,9 @@ const SUBJECTS = [
     key: 'math',
     label: 'Math',
     emoji: '📐',
-    color: '#a78bfa',
-    bg: 'rgba(167,139,250,0.08)',
-    border: 'rgba(167,139,250,0.2)',
+    color: '#e8a838',
+    bg: 'rgba(232,168,56,0.06)',
+    border: 'rgba(232,168,56,0.18)',
     tagline: 'Calculus, Algebra, Stats, Proofs',
     examples: [
       'Walk me through integration by parts for ∫ x^2 e^x dx',
@@ -25,9 +25,9 @@ const SUBJECTS = [
     key: 'science',
     label: 'Science',
     emoji: '🔬',
-    color: '#22d3ee',
-    bg: 'rgba(34,211,238,0.08)',
-    border: 'rgba(34,211,238,0.2)',
+    color: '#5ab89a',
+    bg: 'rgba(90,184,154,0.06)',
+    border: 'rgba(90,184,154,0.18)',
     tagline: 'Physics, Chemistry, Biology',
     examples: [
       'Explain how buffers work in chemistry with a step-by-step example',
@@ -39,9 +39,9 @@ const SUBJECTS = [
     key: 'humanities',
     label: 'Humanities',
     emoji: '📚',
-    color: '#fbbf24',
-    bg: 'rgba(251,191,36,0.08)',
-    border: 'rgba(251,191,36,0.2)',
+    color: '#d47c8a',
+    bg: 'rgba(212,124,138,0.06)',
+    border: 'rgba(212,124,138,0.18)',
     tagline: 'History, Literature, Philosophy',
     examples: [
       'Help me build a thesis for my essay on The Great Gatsby\'s green light',
@@ -53,9 +53,9 @@ const SUBJECTS = [
     key: 'law',
     label: 'Law',
     emoji: '⚖️',
-    color: '#f87171',
-    bg: 'rgba(248,113,113,0.08)',
-    border: 'rgba(248,113,113,0.2)',
+    color: '#9a8ac8',
+    bg: 'rgba(154,138,200,0.06)',
+    border: 'rgba(154,138,200,0.18)',
     tagline: 'Case Briefs, Constitutional, Criminal Justice',
     examples: [
       'Break down Miranda v. Arizona — arguments on both sides',
@@ -68,17 +68,15 @@ const SUBJECTS = [
 const COMPARISON = {
   regular: {
     label: 'Regular AI',
-    color: '#4a5568',
     lines: [
       'The integral of x^2 sin(x) dx is',
       '-x^2 cos(x) + 2x sin(x) + 2cos(x) + C',
       '',
-      '...okay but HOW? 🤔',
+      '...okay but HOW?',
     ],
   },
   tutor: {
     label: 'AI Tutor',
-    color: '#8b5cf6',
     lines: [
       { step: '1', text: 'Recognize this needs Integration by Parts (IBP)' },
       { step: '2', text: 'Choose u = x^2 (polynomial) and dv = sin(x)dx' },
@@ -99,19 +97,20 @@ export default function TutorLanding() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '40px 20px 80px',
+        padding: '48px 20px 80px',
         scrollBehavior: 'smooth',
+        background: '#141210',
       }}
     >
       {/* ── Hero ─────────────────────────────────── */}
-      <div style={{ textAlign: 'center', maxWidth: 640, marginBottom: 48 }}>
+      <div style={{ textAlign: 'center', maxWidth: 640, marginBottom: 56 }}>
         <div
           style={{
-            fontSize: 44,
+            fontSize: 46,
             fontWeight: 900,
             lineHeight: 1.1,
-            marginBottom: 16,
-            background: 'linear-gradient(135deg, #a78bfa, #22d3ee, #fbbf24)',
+            marginBottom: 18,
+            background: 'linear-gradient(135deg, #e8985a, #d47c6a, #c46878)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -125,8 +124,8 @@ export default function TutorLanding() {
         <div
           style={{
             fontSize: 16,
-            color: '#94a3b8',
-            lineHeight: 1.7,
+            color: '#a09080',
+            lineHeight: 1.8,
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             maxWidth: 480,
             margin: '0 auto',
@@ -138,7 +137,7 @@ export default function TutorLanding() {
         </div>
         <div
           style={{
-            marginTop: 20,
+            marginTop: 22,
             display: 'flex',
             gap: 8,
             justifyContent: 'center',
@@ -152,11 +151,11 @@ export default function TutorLanding() {
                 fontSize: 11,
                 fontFamily: '-apple-system, sans-serif',
                 fontWeight: 600,
-                padding: '5px 14px',
+                padding: '6px 16px',
                 borderRadius: 20,
-                background: 'rgba(139,92,246,0.1)',
-                color: '#a78bfa',
-                border: '1px solid rgba(139,92,246,0.15)',
+                background: 'rgba(232,152,90,0.08)',
+                color: '#d4946a',
+                border: '1px solid rgba(232,152,90,0.15)',
               }}
             >
               {t}
@@ -170,14 +169,14 @@ export default function TutorLanding() {
         style={{
           maxWidth: 680,
           width: '100%',
-          marginBottom: 48,
+          marginBottom: 56,
         }}
       >
         <div
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: '#64748b',
+            color: '#8a7e72',
             fontFamily: '-apple-system, sans-serif',
             textTransform: 'uppercase',
             letterSpacing: 2,
@@ -187,15 +186,15 @@ export default function TutorLanding() {
         >
           The difference
         </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           {/* Regular AI */}
           <div
             style={{
               flex: '1 1 280px',
-              padding: '20px',
-              borderRadius: 12,
-              border: '1px solid rgba(74,85,104,0.3)',
-              background: 'rgba(74,85,104,0.06)',
+              padding: '22px',
+              borderRadius: 14,
+              border: '1px solid rgba(160,144,128,0.15)',
+              background: 'rgba(160,144,128,0.04)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
@@ -204,10 +203,10 @@ export default function TutorLanding() {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: '#64748b',
+                  background: '#6b5e52',
                 }}
               />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', fontFamily: '-apple-system, sans-serif' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#8a7e72', fontFamily: '-apple-system, sans-serif' }}>
                 Regular AI
               </span>
             </div>
@@ -217,7 +216,7 @@ export default function TutorLanding() {
                 style={{
                   fontSize: 12,
                   fontFamily: 'monospace',
-                  color: line ? '#94a3b8' : 'transparent',
+                  color: line ? '#a09080' : 'transparent',
                   lineHeight: 1.8,
                   minHeight: line ? 'auto' : 12,
                 }}
@@ -231,10 +230,10 @@ export default function TutorLanding() {
           <div
             style={{
               flex: '1 1 280px',
-              padding: '20px',
-              borderRadius: 12,
-              border: '1px solid rgba(139,92,246,0.3)',
-              background: 'rgba(139,92,246,0.06)',
+              padding: '22px',
+              borderRadius: 14,
+              border: '1px solid rgba(232,152,90,0.25)',
+              background: 'rgba(232,152,90,0.04)',
               position: 'relative',
             }}
           >
@@ -242,13 +241,13 @@ export default function TutorLanding() {
               style={{
                 position: 'absolute',
                 top: -8,
-                right: 12,
+                right: 14,
                 fontSize: 9,
                 fontWeight: 800,
                 fontFamily: '-apple-system, sans-serif',
-                padding: '3px 10px',
+                padding: '3px 12px',
                 borderRadius: 10,
-                background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)',
+                background: 'linear-gradient(135deg, #e8985a, #d47c6a)',
                 color: '#fff',
                 letterSpacing: 1,
               }}
@@ -261,11 +260,11 @@ export default function TutorLanding() {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: '#8b5cf6',
-                  boxShadow: '0 0 8px rgba(139,92,246,0.5)',
+                  background: '#e8985a',
+                  boxShadow: '0 0 8px rgba(232,152,90,0.4)',
                 }}
               />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', fontFamily: '-apple-system, sans-serif' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#e8985a', fontFamily: '-apple-system, sans-serif' }}>
                 AI Tutor
               </span>
             </div>
@@ -284,14 +283,14 @@ export default function TutorLanding() {
                     minWidth: 22,
                     height: 22,
                     borderRadius: '50%',
-                    background: line.step === '✓' ? 'rgba(34,197,94,0.15)' : 'rgba(139,92,246,0.12)',
-                    border: `1px solid ${line.step === '✓' ? 'rgba(34,197,94,0.3)' : 'rgba(139,92,246,0.25)'}`,
+                    background: line.step === '✓' ? 'rgba(122,184,145,0.12)' : 'rgba(232,152,90,0.1)',
+                    border: `1px solid ${line.step === '✓' ? 'rgba(122,184,145,0.3)' : 'rgba(232,152,90,0.2)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 10,
                     fontWeight: 800,
-                    color: line.step === '✓' ? '#22c55e' : '#a78bfa',
+                    color: line.step === '✓' ? '#7ab891' : '#e8985a',
                     fontFamily: 'monospace',
                   }}
                 >
@@ -301,7 +300,7 @@ export default function TutorLanding() {
                   style={{
                     fontSize: 12,
                     fontFamily: 'monospace',
-                    color: line.step === '✓' ? '#22c55e' : '#c4b5fd',
+                    color: line.step === '✓' ? '#7ab891' : '#dcc4a8',
                     lineHeight: 1.6,
                     paddingTop: 2,
                   }}
@@ -315,12 +314,12 @@ export default function TutorLanding() {
       </div>
 
       {/* ── Why it works ─────────────────────────── */}
-      <div style={{ maxWidth: 680, width: '100%', marginBottom: 48 }}>
+      <div style={{ maxWidth: 680, width: '100%', marginBottom: 56 }}>
         <div
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: '#64748b',
+            color: '#8a7e72',
             fontFamily: '-apple-system, sans-serif',
             textTransform: 'uppercase',
             letterSpacing: 2,
@@ -336,39 +335,39 @@ export default function TutorLanding() {
               num: '3x',
               label: 'More perspectives',
               desc: 'Multiple models solve the same problem differently — you see which approach clicks for you',
-              gradient: 'linear-gradient(135deg, #a78bfa, #818cf8)',
+              gradient: 'linear-gradient(135deg, #e8a838, #d4946a)',
             },
             {
               num: '100%',
               label: 'Transparent reasoning',
               desc: 'Every step is shown, not hidden. See the full chain from question to answer',
-              gradient: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+              gradient: 'linear-gradient(135deg, #5ab89a, #4aa888)',
             },
             {
               num: '0',
               label: 'Black boxes',
               desc: 'Wrong approaches are shown and explained — you learn what NOT to do and why',
-              gradient: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+              gradient: 'linear-gradient(135deg, #d47c8a, #c46878)',
             },
           ].map((item) => (
             <div
               key={item.label}
               style={{
-                padding: '20px',
-                borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.06)',
-                background: 'rgba(255,255,255,0.02)',
+                padding: '22px',
+                borderRadius: 14,
+                border: '1px solid rgba(160,144,128,0.1)',
+                background: 'rgba(160,144,128,0.03)',
               }}
             >
               <div
                 style={{
-                  fontSize: 28,
+                  fontSize: 30,
                   fontWeight: 900,
                   fontFamily: '-apple-system, sans-serif',
                   background: item.gradient,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  marginBottom: 4,
+                  marginBottom: 6,
                 }}
               >
                 {item.num}
@@ -377,7 +376,7 @@ export default function TutorLanding() {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: '#e2e8f0',
+                  color: '#f0e6d6',
                   fontFamily: '-apple-system, sans-serif',
                   marginBottom: 6,
                 }}
@@ -387,7 +386,7 @@ export default function TutorLanding() {
               <div
                 style={{
                   fontSize: 12,
-                  color: '#64748b',
+                  color: '#8a7e72',
                   fontFamily: '-apple-system, sans-serif',
                   lineHeight: 1.6,
                 }}
@@ -400,12 +399,12 @@ export default function TutorLanding() {
       </div>
 
       {/* ── Subject cards with examples ────────────── */}
-      <div style={{ maxWidth: 680, width: '100%', marginBottom: 40 }}>
+      <div style={{ maxWidth: 680, width: '100%', marginBottom: 48 }}>
         <div
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: '#64748b',
+            color: '#8a7e72',
             fontFamily: '-apple-system, sans-serif',
             textTransform: 'uppercase',
             letterSpacing: 2,
@@ -420,19 +419,19 @@ export default function TutorLanding() {
             <div
               key={s.key}
               style={{
-                padding: '16px 20px',
-                borderRadius: 12,
+                padding: '18px 22px',
+                borderRadius: 14,
                 border: `1px solid ${s.border}`,
                 background: s.bg,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 22 }}>{s.emoji}</span>
+                <span style={{ fontSize: 24 }}>{s.emoji}</span>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: s.color, fontFamily: '-apple-system, sans-serif' }}>
                     {s.label}
                   </div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontFamily: '-apple-system, sans-serif' }}>
+                  <div style={{ fontSize: 11, color: '#8a7e72', fontFamily: '-apple-system, sans-serif' }}>
                     {s.tagline}
                   </div>
                 </div>
@@ -444,10 +443,10 @@ export default function TutorLanding() {
                     style={{
                       fontSize: 12,
                       fontFamily: '-apple-system, sans-serif',
-                      color: '#94a3b8',
-                      padding: '8px 12px',
+                      color: '#a09080',
+                      padding: '9px 14px',
                       borderRadius: 8,
-                      background: 'rgba(0,0,0,0.2)',
+                      background: 'rgba(20,18,16,0.6)',
                       lineHeight: 1.5,
                       cursor: 'default',
                     }}
@@ -462,12 +461,12 @@ export default function TutorLanding() {
       </div>
 
       {/* ── How it works — simple steps ────────────── */}
-      <div style={{ maxWidth: 680, width: '100%', marginBottom: 40 }}>
+      <div style={{ maxWidth: 680, width: '100%', marginBottom: 48 }}>
         <div
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: '#64748b',
+            color: '#8a7e72',
             fontFamily: '-apple-system, sans-serif',
             textTransform: 'uppercase',
             letterSpacing: 2,
@@ -494,9 +493,8 @@ export default function TutorLanding() {
                   display: 'flex',
                   alignItems: 'center',
                   padding: '0 4px',
-                  color: '#334155',
+                  color: '#4a3f35',
                   fontSize: 16,
-                  fontFamily: 'monospace',
                 }}
               >
                 {item.emoji}
@@ -508,17 +506,17 @@ export default function TutorLanding() {
                   flex: '1 1 120px',
                   maxWidth: 160,
                   textAlign: 'center',
-                  padding: '16px 10px',
-                  borderRadius: 12,
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.05)',
+                  padding: '18px 10px',
+                  borderRadius: 14,
+                  background: 'rgba(160,144,128,0.03)',
+                  border: '1px solid rgba(160,144,128,0.08)',
                 }}
               >
-                <div style={{ fontSize: 28, marginBottom: 8 }}>{item.emoji}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', fontFamily: '-apple-system, sans-serif', marginBottom: 4 }}>
+                <div style={{ fontSize: 30, marginBottom: 8 }}>{item.emoji}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#f0e6d6', fontFamily: '-apple-system, sans-serif', marginBottom: 4 }}>
                   {item.label}
                 </div>
-                <div style={{ fontSize: 10, color: '#64748b', fontFamily: '-apple-system, sans-serif', lineHeight: 1.4 }}>
+                <div style={{ fontSize: 10, color: '#8a7e72', fontFamily: '-apple-system, sans-serif', lineHeight: 1.4 }}>
                   {item.sub}
                 </div>
               </div>
@@ -537,11 +535,13 @@ export default function TutorLanding() {
       >
         <div
           style={{
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: 800,
-            color: '#e2e8f0',
             fontFamily: '-apple-system, sans-serif',
-            marginBottom: 8,
+            marginBottom: 10,
+            background: 'linear-gradient(135deg, #e8985a, #d47c6a)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
           }}
         >
           Stop memorizing. Start understanding.
@@ -549,9 +549,9 @@ export default function TutorLanding() {
         <div
           style={{
             fontSize: 13,
-            color: '#64748b',
+            color: '#8a7e72',
             fontFamily: '-apple-system, sans-serif',
-            lineHeight: 1.6,
+            lineHeight: 1.7,
           }}
         >
           Set your API key above, pick a subject, and ask your first question.

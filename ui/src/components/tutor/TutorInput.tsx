@@ -14,41 +14,41 @@ const SUBJECTS = [
     key: 'math',
     label: 'Math',
     emoji: '📐',
-    color: '#a78bfa',
-    activeGlow: 'rgba(167,139,250,0.25)',
+    color: '#e8a838',
+    activeGlow: 'rgba(232,168,56,0.2)',
     placeholder: 'e.g., Walk me through integration by parts for ∫ x^2 e^x dx',
   },
   {
     key: 'science',
     label: 'Science',
     emoji: '🔬',
-    color: '#22d3ee',
-    activeGlow: 'rgba(34,211,238,0.25)',
+    color: '#5ab89a',
+    activeGlow: 'rgba(90,184,154,0.2)',
     placeholder: 'e.g., How do buffers maintain pH? Show me step by step',
   },
   {
     key: 'humanities',
     label: 'Humanities',
     emoji: '📚',
-    color: '#fbbf24',
-    activeGlow: 'rgba(251,191,36,0.25)',
+    color: '#d47c8a',
+    activeGlow: 'rgba(212,124,138,0.2)',
     placeholder: 'e.g., Help me build a thesis about the green light in The Great Gatsby',
   },
   {
     key: 'law',
     label: 'Law',
     emoji: '⚖️',
-    color: '#f87171',
-    activeGlow: 'rgba(248,113,113,0.25)',
+    color: '#9a8ac8',
+    activeGlow: 'rgba(154,138,200,0.2)',
     placeholder: 'e.g., Break down Miranda v. Arizona — arguments on both sides',
   },
 ];
 
 const MODEL_COLORS: Record<string, string> = {
-  deepseek: '#00aaff',
-  gemini: '#4488ff',
-  sonnet: '#cc66ff',
-  kimi: '#00ccaa',
+  deepseek: '#c49a5c',
+  gemini: '#8aaa78',
+  sonnet: '#b88a9a',
+  kimi: '#6aaa9a',
 };
 
 interface TutorInputProps {
@@ -87,9 +87,9 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
   return (
     <div
       style={{
-        padding: '14px 16px',
-        borderBottom: `2px solid ${activeSubject.color}20`,
-        background: 'rgba(8,16,28,0.95)',
+        padding: '14px 20px',
+        borderBottom: `2px solid ${activeSubject.color}18`,
+        background: 'rgba(20,18,16,0.95)',
         flexShrink: 0,
       }}
     >
@@ -109,14 +109,14 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
                 fontSize: 13,
                 fontWeight: 700,
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-                padding: '8px 16px',
+                padding: '9px 18px',
                 borderRadius: 10,
-                border: `1.5px solid ${active ? s.color : 'rgba(255,255,255,0.06)'}`,
-                background: active ? `${s.color}12` : 'rgba(255,255,255,0.02)',
-                color: active ? s.color : '#64748b',
+                border: `1.5px solid ${active ? s.color : 'rgba(160,144,128,0.12)'}`,
+                background: active ? `${s.color}14` : 'rgba(160,144,128,0.04)',
+                color: active ? s.color : '#8a7e72',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: active ? `0 0 16px ${s.activeGlow}` : 'none',
+                boxShadow: active ? `0 0 20px ${s.activeGlow}` : 'none',
               }}
             >
               <span style={{ fontSize: 18 }}>{s.emoji}</span>
@@ -142,13 +142,13 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
             minHeight: 72,
             maxHeight: 180,
             resize: 'vertical',
-            background: 'rgba(0,0,0,0.3)',
-            border: `1.5px solid ${activeSubject.color}25`,
+            background: 'rgba(0,0,0,0.2)',
+            border: `1.5px solid ${activeSubject.color}22`,
             borderRadius: 10,
             padding: '12px 14px',
             fontSize: 14,
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            color: '#e2e8f0',
+            color: '#f0e6d6',
             outline: 'none',
             lineHeight: 1.6,
           }}
@@ -162,8 +162,7 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
           <span
             style={{
               fontSize: 10,
-              color: '#475569',
-              fontFamily: '-apple-system, sans-serif',
+              color: '#6b5e52',
               fontWeight: 600,
               marginRight: 4,
             }}
@@ -172,7 +171,7 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
           </span>
           {activeModels.map((m) => {
             const active = selectedModels.has(m.key);
-            const color = MODEL_COLORS[m.key] || '#00d4ff';
+            const color = MODEL_COLORS[m.key] || '#c49a5c';
             return (
               <button
                 key={m.key}
@@ -185,9 +184,9 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
                   letterSpacing: 0.5,
                   padding: '5px 12px',
                   borderRadius: 6,
-                  border: `1px solid ${active ? color : 'rgba(255,255,255,0.08)'}`,
-                  background: active ? `${color}15` : 'transparent',
-                  color: active ? color : '#475569',
+                  border: `1px solid ${active ? color : 'rgba(160,144,128,0.12)'}`,
+                  background: active ? `${color}18` : 'transparent',
+                  color: active ? color : '#6b5e52',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s',
                 }}
@@ -207,14 +206,14 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
             fontSize: 14,
             fontWeight: 800,
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            letterSpacing: 1,
+            letterSpacing: 0.5,
             padding: '9px 28px',
             borderRadius: 10,
             border: 'none',
             background: disabled
-              ? '#1e293b'
-              : `linear-gradient(135deg, ${activeSubject.color}, #06b6d4)`,
-            color: disabled ? '#475569' : '#fff',
+              ? '#2a2520'
+              : `linear-gradient(135deg, ${activeSubject.color}, #d47c6a)`,
+            color: disabled ? '#6b5e52' : '#fff',
             cursor: disabled ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s',
             boxShadow: disabled ? 'none' : `0 4px 16px ${activeSubject.activeGlow}`,
@@ -228,14 +227,13 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
       <div
         style={{
           fontSize: 11,
-          color: '#475569',
+          color: '#6b5e52',
           marginTop: 8,
-          fontFamily: '-apple-system, sans-serif',
         }}
       >
         {selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''} will solve this
         independently, then show you the clearest step-by-step path
-        <span style={{ color: '#334155', marginLeft: 6 }}>
+        <span style={{ color: '#4a3f35', marginLeft: 6 }}>
           Ctrl+Enter to submit
         </span>
       </div>
