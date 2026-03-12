@@ -11,6 +11,7 @@ import ForgeCanvas from '@/components/forge/ForgeCanvas';
 import { useForgeStream, fetchForgeModels } from '@/components/forge/useForgeStream';
 import type { AvailableModel } from '@/components/forge/types';
 import TutorInput from '@/components/tutor/TutorInput';
+import TutorLanding from '@/components/tutor/TutorLanding';
 
 const FALLBACK_MODELS: AvailableModel[] = [
   { key: 'deepseek', display_name: 'DEEPSEEK R1' },
@@ -207,8 +208,8 @@ export default function TutorPage() {
         disabled={isRunning}
       />
 
-      {/* Reuse ForgeCanvas for visualization */}
-      <ForgeCanvas state={state} />
+      {/* Show landing when idle, ForgeCanvas when running */}
+      {state.phase === 'idle' ? <TutorLanding /> : <ForgeCanvas state={state} />}
     </div>
   );
 }
