@@ -24,6 +24,10 @@ const PRESET_LABELS: Record<string, string> = {
   trading: 'Trading',
   real_estate: 'Real Estate',
   legal: 'Legal',
+  tutor_math: 'Tutor: Math',
+  tutor_science: 'Tutor: Science',
+  tutor_humanities: 'Tutor: Humanities',
+  tutor_law: 'Tutor: Law',
   custom: 'Custom',
 };
 
