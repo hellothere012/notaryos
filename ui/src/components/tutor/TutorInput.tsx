@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════
 // TUTOR — Input Panel
 // Student-friendly subject selector + prompt box.
-// Sends to Forge API with tutor-specific presets.
+// Warm, inviting design for high school/college students.
 // ═══════════════════════════════════════════════════════════
 
 import { useState } from 'react';
@@ -12,35 +12,35 @@ import type { AvailableModel } from '../forge/types';
 const SUBJECTS = [
   {
     key: 'math',
-    label: 'Mathematics',
-    icon: '∑',
-    color: '#8b5cf6',
-    description: 'Algebra, Calculus, Statistics, Proofs',
-    placeholder: 'e.g., How do I solve ∫ x²·sin(x) dx using integration by parts?',
+    label: 'Math',
+    emoji: '📐',
+    color: '#a78bfa',
+    activeGlow: 'rgba(167,139,250,0.25)',
+    placeholder: 'e.g., Walk me through integration by parts for ∫ x^2 e^x dx',
   },
   {
     key: 'science',
     label: 'Science',
-    icon: '⚛',
-    color: '#06b6d4',
-    description: 'Physics, Chemistry, Biology',
-    placeholder: 'e.g., Explain how Le Chatelier\'s principle applies to the Haber process',
+    emoji: '🔬',
+    color: '#22d3ee',
+    activeGlow: 'rgba(34,211,238,0.25)',
+    placeholder: 'e.g., How do buffers maintain pH? Show me step by step',
   },
   {
     key: 'humanities',
     label: 'Humanities',
-    icon: '📖',
-    color: '#f59e0b',
-    description: 'History, Literature, Philosophy',
-    placeholder: 'e.g., Analyze the theme of isolation in Frankenstein with textual evidence',
+    emoji: '📚',
+    color: '#fbbf24',
+    activeGlow: 'rgba(251,191,36,0.25)',
+    placeholder: 'e.g., Help me build a thesis about the green light in The Great Gatsby',
   },
   {
     key: 'law',
-    label: 'Law & Justice',
-    icon: '⚖',
-    color: '#ef4444',
-    description: 'Case Briefs, Constitutional, Criminal',
-    placeholder: 'e.g., Brief Miranda v. Arizona — what were the top arguments on each side?',
+    label: 'Law',
+    emoji: '⚖️',
+    color: '#f87171',
+    activeGlow: 'rgba(248,113,113,0.25)',
+    placeholder: 'e.g., Break down Miranda v. Arizona — arguments on both sides',
   },
 ];
 
@@ -87,14 +87,14 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
   return (
     <div
       style={{
-        padding: '12px 16px',
-        borderBottom: '1px solid rgba(139,92,246,0.15)',
+        padding: '14px 16px',
+        borderBottom: `2px solid ${activeSubject.color}20`,
         background: 'rgba(8,16,28,0.95)',
         flexShrink: 0,
       }}
     >
-      {/* Subject selector */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+      {/* Subject selector — big, tappable buttons */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {SUBJECTS.map((s) => {
           const active = subject === s.key;
           return (
@@ -105,29 +105,25 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                fontSize: 10,
+                gap: 8,
+                fontSize: 13,
                 fontWeight: 700,
-                fontFamily: 'monospace',
-                padding: '6px 12px',
-                borderRadius: 6,
-                border: `1px solid ${active ? s.color : 'rgba(255,255,255,0.08)'}`,
-                background: active ? `${s.color}15` : 'transparent',
-                color: active ? s.color : '#4a7a9a',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: `1.5px solid ${active ? s.color : 'rgba(255,255,255,0.06)'}`,
+                background: active ? `${s.color}12` : 'rgba(255,255,255,0.02)',
+                color: active ? s.color : '#64748b',
                 cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s',
+                transition: 'all 0.2s ease',
+                boxShadow: active ? `0 0 16px ${s.activeGlow}` : 'none',
               }}
             >
-              <span style={{ fontSize: 14 }}>{s.icon}</span>
+              <span style={{ fontSize: 18 }}>{s.emoji}</span>
               <span>{s.label}</span>
             </button>
           );
         })}
-      </div>
-
-      {/* Subject description */}
-      <div style={{ fontSize: 8, color: activeSubject.color, fontFamily: 'monospace', marginBottom: 8, letterSpacing: 0.5 }}>
-        {activeSubject.description}
       </div>
 
       {/* Prompt input */}
@@ -143,27 +139,36 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
           }}
           style={{
             width: '100%',
-            minHeight: 70,
+            minHeight: 72,
             maxHeight: 180,
             resize: 'vertical',
             background: 'rgba(0,0,0,0.3)',
-            border: `1px solid ${activeSubject.color}30`,
-            borderRadius: 6,
-            padding: '10px 12px',
-            fontSize: 12,
-            fontFamily: '"SF Mono", "Fira Code", monospace',
-            color: '#d0e8ff',
+            border: `1.5px solid ${activeSubject.color}25`,
+            borderRadius: 10,
+            padding: '12px 14px',
+            fontSize: 14,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            color: '#e2e8f0',
             outline: 'none',
+            lineHeight: 1.6,
           }}
         />
       </div>
 
-      {/* Model selector + submit */}
+      {/* Model selector + submit row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        {/* Model buttons */}
+        {/* Model pills */}
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <span style={{ fontSize: 8, color: '#4a7a9a', fontFamily: 'monospace', marginRight: 4 }}>
-            MODELS:
+          <span
+            style={{
+              fontSize: 10,
+              color: '#475569',
+              fontFamily: '-apple-system, sans-serif',
+              fontWeight: 600,
+              marginRight: 4,
+            }}
+          >
+            AI Models:
           </span>
           {activeModels.map((m) => {
             const active = selectedModels.has(m.key);
@@ -174,15 +179,15 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
                 onClick={() => toggleModel(m.key)}
                 disabled={disabled}
                 style={{
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: 700,
                   fontFamily: 'monospace',
                   letterSpacing: 0.5,
-                  padding: '4px 10px',
-                  borderRadius: 4,
-                  border: `1px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
-                  background: active ? `${color}18` : 'transparent',
-                  color: active ? color : '#4a7a9a',
+                  padding: '5px 12px',
+                  borderRadius: 6,
+                  border: `1px solid ${active ? color : 'rgba(255,255,255,0.08)'}`,
+                  background: active ? `${color}15` : 'transparent',
+                  color: active ? color : '#475569',
                   cursor: disabled ? 'not-allowed' : 'pointer',
                   transition: 'all 0.15s',
                 }}
@@ -193,32 +198,46 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
           })}
         </div>
 
-        {/* Submit */}
+        {/* Submit button */}
         <button
           onClick={handleSubmit}
           disabled={disabled || !prompt.trim() || selectedModels.size === 0}
           style={{
             marginLeft: 'auto',
-            fontSize: 11,
-            fontWeight: 700,
-            fontFamily: 'monospace',
-            letterSpacing: 2,
-            padding: '7px 24px',
-            borderRadius: 6,
+            fontSize: 14,
+            fontWeight: 800,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            letterSpacing: 1,
+            padding: '9px 28px',
+            borderRadius: 10,
             border: 'none',
-            background: disabled ? '#333' : `linear-gradient(135deg, ${activeSubject.color}, #06b6d4)`,
-            color: disabled ? '#666' : '#fff',
+            background: disabled
+              ? '#1e293b'
+              : `linear-gradient(135deg, ${activeSubject.color}, #06b6d4)`,
+            color: disabled ? '#475569' : '#fff',
             cursor: disabled ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s',
+            boxShadow: disabled ? 'none' : `0 4px 16px ${activeSubject.activeGlow}`,
           }}
         >
-          EXPLAIN
+          Explain This
         </button>
       </div>
 
-      {/* Status */}
-      <div style={{ fontSize: 8, color: '#4a7a9a', marginTop: 6, fontFamily: 'monospace' }}>
-        {selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''} will solve this independently, then synthesis reveals the best step-by-step approach | Ctrl+Enter to submit
+      {/* Helper text */}
+      <div
+        style={{
+          fontSize: 11,
+          color: '#475569',
+          marginTop: 8,
+          fontFamily: '-apple-system, sans-serif',
+        }}
+      >
+        {selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''} will solve this
+        independently, then show you the clearest step-by-step path
+        <span style={{ color: '#334155', marginLeft: 6 }}>
+          Ctrl+Enter to submit
+        </span>
       </div>
     </div>
   );

@@ -65,34 +65,41 @@ export default function TutorPage() {
       {/* Top bar */}
       <div
         style={{
-          padding: '8px 16px',
-          borderBottom: '1px solid rgba(139,92,246,0.2)',
+          padding: '10px 16px',
+          borderBottom: '1px solid rgba(139,92,246,0.15)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
-          background: 'rgba(8,16,28,0.95)',
+          background: 'rgba(8,16,28,0.98)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <a
             href="/"
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
-              color: '#00d4ff',
+              color: '#64748b',
               textDecoration: 'none',
-              letterSpacing: 2,
+              letterSpacing: 1,
+              fontFamily: '-apple-system, sans-serif',
             }}
           >
-            NOTARYOS
+            NotaryOS
           </a>
-          <span style={{ fontSize: 8, color: '#4a7a9a' }}>/</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#8b5cf6', letterSpacing: 1.5 }}>
-            AI TUTOR
-          </span>
-          <span style={{ fontSize: 8, color: '#6d28d9', fontWeight: 600, letterSpacing: 1 }}>
-            STEP-BY-STEP
+          <span style={{ color: '#334155' }}>/</span>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #a78bfa, #22d3ee)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: '-apple-system, sans-serif',
+            }}
+          >
+            AI Tutor
           </span>
         </div>
 
@@ -100,53 +107,38 @@ export default function TutorPage() {
           <button
             onClick={() => setShowKeyInput(!showKeyInput)}
             style={{
-              fontSize: 8,
-              fontFamily: 'monospace',
-              padding: '3px 10px',
-              borderRadius: 4,
-              border: `1px solid ${apiKey ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-              background: 'transparent',
-              color: apiKey ? '#22c55e' : '#ef4444',
+              fontSize: 11,
+              fontFamily: '-apple-system, sans-serif',
+              fontWeight: 600,
+              padding: '5px 14px',
+              borderRadius: 8,
+              border: `1px solid ${apiKey ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+              background: apiKey ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
+              color: apiKey ? '#22c55e' : '#f87171',
               cursor: 'pointer',
             }}
           >
-            {apiKey ? 'KEY SET' : 'SET API KEY'}
+            {apiKey ? 'Key Set' : 'Set API Key'}
           </button>
 
           {(state.phase === 'complete' || state.phase === 'error') && (
             <button
               onClick={reset}
               style={{
-                fontSize: 8,
-                fontFamily: 'monospace',
-                padding: '3px 10px',
-                borderRadius: 4,
-                border: '1px solid rgba(139,92,246,0.3)',
-                background: 'transparent',
-                color: '#8b5cf6',
+                fontSize: 11,
+                fontFamily: '-apple-system, sans-serif',
+                fontWeight: 600,
+                padding: '5px 14px',
+                borderRadius: 8,
+                border: '1px solid rgba(139,92,246,0.25)',
+                background: 'rgba(139,92,246,0.06)',
+                color: '#a78bfa',
                 cursor: 'pointer',
               }}
             >
-              NEW QUESTION
+              New Question
             </button>
           )}
-
-          <a
-            href="/forge"
-            style={{
-              fontSize: 8,
-              fontFamily: 'monospace',
-              padding: '3px 10px',
-              borderRadius: 4,
-              border: '1px solid rgba(0,212,255,0.2)',
-              background: 'transparent',
-              color: '#00d4ff',
-              cursor: 'pointer',
-              textDecoration: 'none',
-            }}
-          >
-            FORGE MODE
-          </a>
         </div>
       </div>
 
@@ -154,16 +146,18 @@ export default function TutorPage() {
       {showKeyInput && (
         <div
           style={{
-            padding: '8px 16px',
+            padding: '10px 16px',
             borderBottom: '1px solid rgba(139,92,246,0.1)',
-            background: 'rgba(0,0,0,0.3)',
+            background: 'rgba(0,0,0,0.25)',
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 10,
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 9, color: '#6d28d9', fontFamily: 'monospace' }}>API Key:</span>
+          <span style={{ fontSize: 12, color: '#64748b', fontFamily: '-apple-system, sans-serif', fontWeight: 600 }}>
+            API Key
+          </span>
           <input
             type="password"
             value={apiKey}
@@ -175,28 +169,29 @@ export default function TutorPage() {
               maxWidth: 400,
               background: 'rgba(0,0,0,0.3)',
               border: '1px solid rgba(139,92,246,0.2)',
-              borderRadius: 4,
-              padding: '4px 8px',
-              fontSize: 10,
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 13,
               fontFamily: 'monospace',
-              color: '#d0e8ff',
+              color: '#e2e8f0',
               outline: 'none',
             }}
           />
           <button
             onClick={() => setShowKeyInput(false)}
             style={{
-              fontSize: 8,
-              fontFamily: 'monospace',
-              padding: '3px 10px',
-              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: '-apple-system, sans-serif',
+              fontWeight: 600,
+              padding: '5px 14px',
+              borderRadius: 8,
               border: '1px solid rgba(139,92,246,0.2)',
               background: 'transparent',
-              color: '#8b5cf6',
+              color: '#a78bfa',
               cursor: 'pointer',
             }}
           >
-            DONE
+            Done
           </button>
         </div>
       )}
