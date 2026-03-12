@@ -1,9 +1,9 @@
 'use client';
 
 // ═══════════════════════════════════════════════════════════
-// TUTOR — Input Panel
+// TUTOR — Input Panel (Collapsible)
 // Student-friendly subject selector + prompt box.
-// Warm, inviting design for high school/college students.
+// Collapses to a slim bar on mobile to save screen space.
 // ═══════════════════════════════════════════════════════════
 
 import { useState } from 'react';
@@ -60,6 +60,7 @@ interface TutorInputProps {
 export default function TutorInput({ models, onSubmit, disabled }: TutorInputProps) {
   const [prompt, setPrompt] = useState('');
   const [subject, setSubject] = useState('math');
+  const [expanded, setExpanded] = useState(true);
   const [selectedModels, setSelectedModels] = useState<Set<string>>(
     new Set(['deepseek', 'gemini', 'sonnet']),
   );
@@ -82,8 +83,85 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
   const handleSubmit = () => {
     if (!prompt.trim() || selectedModels.size === 0 || disabled) return;
     onSubmit(prompt.trim(), subject, Array.from(selectedModels));
+    setExpanded(false);
   };
 
+  // ── Collapsed bar ──────────────────────────────
+  if (!expanded) {
+    return (
+      <div
+        style={{
+          padding: '10px 20px',
+          borderBottom: `1px solid ${activeSubject.color}18`,
+          background: 'rgba(20,18,16,0.95)',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          cursor: 'pointer',
+        }}
+        onClick={() => setExpanded(true)}
+      >
+        <span style={{ fontSize: 18 }}>{activeSubject.emoji}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {prompt.trim() ? (
+            <div
+              style={{
+                fontSize: 13,
+                color: '#a09080',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {prompt.trim()}
+            </div>
+          ) : (
+            <div
+              style={{
+                fontSize: 13,
+                color: '#6b5e52',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+              }}
+            >
+              Tap to ask a question...
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              color: '#6b5e52',
+              fontFamily: '-apple-system, sans-serif',
+              fontWeight: 600,
+            }}
+          >
+            {selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}
+          </span>
+          <span
+            style={{
+              fontSize: 16,
+              color: activeSubject.color,
+              transition: 'transform 0.2s',
+              display: 'inline-block',
+            }}
+          >
+            &#9660;
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Expanded panel ─────────────────────────────
   return (
     <div
       style={{
@@ -93,37 +171,71 @@ export default function TutorInput({ models, onSubmit, disabled }: TutorInputPro
         flexShrink: 0,
       }}
     >
-      {/* Subject selector — big, tappable buttons */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        {SUBJECTS.map((s) => {
-          const active = subject === s.key;
-          return (
-            <button
-              key={s.key}
-              onClick={() => setSubject(s.key)}
-              disabled={disabled}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 13,
-                fontWeight: 700,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-                padding: '9px 18px',
-                borderRadius: 10,
-                border: `1.5px solid ${active ? s.color : 'rgba(160,144,128,0.12)'}`,
-                background: active ? `${s.color}14` : 'rgba(160,144,128,0.04)',
-                color: active ? s.color : '#8a7e72',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: active ? `0 0 20px ${s.activeGlow}` : 'none',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>{s.emoji}</span>
-              <span>{s.label}</span>
-            </button>
-          );
-        })}
+      {/* Collapse toggle */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        {/* Subject selector — big, tappable buttons */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 1 }}>
+          {SUBJECTS.map((s) => {
+            const active = subject === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setSubject(s.key)}
+                disabled={disabled}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+                  padding: '9px 18px',
+                  borderRadius: 10,
+                  border: `1.5px solid ${active ? s.color : 'rgba(160,144,128,0.12)'}`,
+                  background: active ? `${s.color}14` : 'rgba(160,144,128,0.04)',
+                  color: active ? s.color : '#8a7e72',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: active ? `0 0 20px ${s.activeGlow}` : 'none',
+                }}
+              >
+                <span style={{ fontSize: 18 }}>{s.emoji}</span>
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Minimize button */}
+        <button
+          onClick={() => setExpanded(false)}
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            fontFamily: '-apple-system, sans-serif',
+            padding: '6px 10px',
+            borderRadius: 8,
+            border: '1px solid rgba(160,144,128,0.12)',
+            background: 'transparent',
+            color: '#6b5e52',
+            cursor: 'pointer',
+            flexShrink: 0,
+            marginLeft: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>&#9650;</span>
+          <span>Minimize</span>
+        </button>
       </div>
 
       {/* Prompt input */}
