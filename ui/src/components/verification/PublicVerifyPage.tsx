@@ -94,6 +94,14 @@ interface PublicReceiptResponse {
 /** Derived state for the component */
 type PageState = 'loading' | 'verified' | 'invalid' | 'not_found' | 'error';
 
+/** Props for PublicVerifyPage — all optional for backward compatibility */
+interface PublicVerifyPageProps {
+  /** Pre-fetched receipt data from the server component (skips client-side fetch) */
+  initialData?: PublicReceiptResponse;
+  /** Hash override — used when useParams() isn't available (e.g. dynamic import) */
+  hashOverride?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Tier color configuration (KIMI spec: free=slate, starter=cyan, pro=gold)
 // ---------------------------------------------------------------------------
@@ -587,15 +595,24 @@ const ErrorState: React.FC<{ message: string; onRetry: () => void }> = ({
 // Main component
 // ---------------------------------------------------------------------------
 
-const PublicVerifyPage: React.FC = () => {
-  const { hash } = useParams<{ hash: string }>();
+const PublicVerifyPage: React.FC<PublicVerifyPageProps> = ({ initialData, hashOverride } = {}) => {
+  const params = useParams<{ hash: string }>();
+  const hash = hashOverride || params?.hash;
 
   // ---- State ----
-  const [pageState, setPageState] = useState<PageState>('loading');
-  const [data, setData] = useState<PublicReceiptResponse | null>(null);
+  const [pageState, setPageState] = useState<PageState>(
+    initialData
+      ? initialData.found === false
+        ? 'not_found'
+        : initialData.verification?.valid
+          ? 'verified'
+          : 'invalid'
+      : 'loading'
+  );
+  const [data, setData] = useState<PublicReceiptResponse | null>(initialData ?? null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isFlipped, setIsFlipped] = useState(false);
-  const fetchAttempted = useRef(false);
+  const fetchAttempted = useRef(!!initialData);
 
   // ---- Derived values ----
   const receipt = data?.receipt ?? null;

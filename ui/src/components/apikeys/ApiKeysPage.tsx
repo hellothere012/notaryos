@@ -14,6 +14,20 @@ import { ApiKey, CreateApiKeyRequest, CreateApiKeyResponse } from '../../types';
 import { KeyRow } from './KeyRow';
 import { CreateKeyModal } from './CreateKeyModal';
 
+// Map backend snake_case → frontend camelCase
+function mapApiKeyResponse(raw: Record<string, any>): ApiKey {
+  return {
+    id: raw.id,
+    name: raw.name,
+    prefix: raw.prefix,
+    permissions: raw.permissions ?? [],
+    createdAt: raw.createdAt ?? raw.created_at ?? '',
+    lastUsedAt: raw.lastUsedAt ?? raw.last_used ?? undefined,
+    expiresAt: raw.expiresAt ?? raw.expires_at ?? undefined,
+    ipAllowlist: raw.ipAllowlist ?? raw.allowed_ips ?? undefined,
+  };
+}
+
 export const ApiKeysPage: React.FC = () => {
   // State
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -32,14 +46,14 @@ export const ApiKeysPage: React.FC = () => {
       // because Array.prototype.keys is a built-in method (truthy function)
       // that would short-circuit a naive `response.data.keys || ...` chain.
       const data = response.data;
-      const keys = Array.isArray(data)
+      const rawKeys = Array.isArray(data)
         ? data
         : Array.isArray(data?.items)
           ? data.items
           : Array.isArray(data?.keys)
             ? data.keys
             : [];
-      setApiKeys(keys);
+      setApiKeys(rawKeys.map(mapApiKeyResponse));
     } catch (err: any) {
       console.error('Failed to fetch API keys:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load API keys');
@@ -59,7 +73,7 @@ export const ApiKeysPage: React.FC = () => {
 
     // Add the new key to the list
     if (response.data.apiKey) {
-      setApiKeys((prev) => [response.data.apiKey, ...prev]);
+      setApiKeys((prev) => [mapApiKeyResponse(response.data.apiKey), ...prev]);
     } else {
       // Refresh the list if we don't get the key back
       fetchApiKeys();
@@ -80,8 +94,9 @@ export const ApiKeysPage: React.FC = () => {
 
     // Update the key in the list if we get a new one back
     if (response.data.apiKey) {
+      const mapped = mapApiKeyResponse(response.data.apiKey);
       setApiKeys((prev) =>
-        prev.map((key) => (key.id === keyId ? response.data.apiKey : key))
+        prev.map((key) => (key.id === keyId ? mapped : key))
       );
     }
 

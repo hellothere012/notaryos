@@ -118,15 +118,9 @@ function ReceiptSkeleton() {
 
 export function ReceiptPageClient({ data, hash }: ReceiptPageClientProps) {
   /**
-   * NOTE: Once the PublicVerifyPage component is migrated from react-router-dom
-   * to next/navigation (handled by another agent), we can pass `data` as a
-   * prop directly to skip the client-side fetch. For now, PublicVerifyPage
-   * fetches its own data using useParams().
-   *
-   * The Server Component parent has already validated that the receipt exists
-   * (calling notFound() if it doesn't), so the client-side fetch in
-   * PublicVerifyPage will succeed. The SSR + ISR metadata generation is the
-   * primary value of this architecture.
+   * Pass pre-fetched receipt data directly to PublicVerifyPage, which accepts
+   * optional `initialData` and `hashOverride` props to skip client-side fetch.
+   * The Server Component parent has already validated the receipt exists.
    */
-  return <PublicVerifyPage />;
+  return <PublicVerifyPage initialData={data} hashOverride={hash} />;
 }

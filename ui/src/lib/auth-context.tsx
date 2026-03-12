@@ -9,15 +9,17 @@
  * work without modification.
  *
  * Under the hood this delegates to @clerk/nextjs hooks.
+ * After Clerk login, syncs with backend to fetch actual role/tier.
  */
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   useUser as useClerkUser,
   useClerk,
   useAuth as useClerkAuth,
 } from '@clerk/nextjs';
 import { User, AuthState } from '@/types';
+import { authClient, API_ENDPOINTS } from '@/lib/api-client';
 
 /* -------------------------------------------------------------------------- */
 /*  Types (unchanged — re-used by components)                                 */
@@ -39,11 +41,50 @@ interface AuthContextType extends AuthState {
  *
  * Maps Clerk state to the existing AuthState / User types so components
  * like AppHeader, Sidebar, and UserMenu work without changes.
+ * Fetches actual role/tier from backend via /v1/auth/clerk/sync.
  */
 export const useAuth = (): AuthContextType => {
   const { user: clerkUser, isLoaded, isSignedIn } = useClerkUser();
   const { signOut, openSignIn, openSignUp } = useClerk();
   const { getToken } = useClerkAuth();
+  const [backendProfile, setBackendProfile] = useState<{ role: User['role']; tier: User['tier'] } | null>(null);
+  const syncAttempted = useRef(false);
+
+  const VALID_ROLES: User['role'][] = ['user', 'admin', 'agent_operator'];
+  const VALID_TIERS: User['tier'][] = ['free', 'starter', 'explorer', 'pro', 'enterprise'];
+
+  // Sync with backend to get actual role/tier
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !clerkUser || syncAttempted.current) return;
+    syncAttempted.current = true;
+
+    const syncProfile = async () => {
+      try {
+        const resp = await authClient.post(API_ENDPOINTS.clerkSync, {
+          email: clerkUser.primaryEmailAddress?.emailAddress,
+          display_name: clerkUser.fullName || clerkUser.username,
+          avatar_url: clerkUser.imageUrl,
+        });
+        if (resp.data?.role || resp.data?.tier) {
+          const role = VALID_ROLES.includes(resp.data.role) ? resp.data.role : 'user';
+          const tier = VALID_TIERS.includes(resp.data.tier) ? resp.data.tier : 'free';
+          setBackendProfile({ role, tier });
+        }
+      } catch (err) {
+        console.warn('[auth-context] profile sync failed:', err);
+      }
+    };
+
+    syncProfile();
+  }, [isLoaded, isSignedIn, clerkUser]);
+
+  // Reset sync flag on sign-out
+  useEffect(() => {
+    if (!isSignedIn) {
+      syncAttempted.current = false;
+      setBackendProfile(null);
+    }
+  }, [isSignedIn]);
 
   // Map Clerk user → our User type
   const user: User | null =
@@ -55,8 +96,8 @@ export const useAuth = (): AuthContextType => {
             clerkUser.username ||
             clerkUser.fullName ||
             clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0],
-          role: 'user',        // Default; admin detection can be added later
-          tier: 'free',        // Default; tier comes from backend sync
+          role: backendProfile?.role || 'user',
+          tier: backendProfile?.tier || 'free',
           createdAt: clerkUser.createdAt
             ? new Date(clerkUser.createdAt).toISOString()
             : new Date().toISOString(),
@@ -88,7 +129,18 @@ export const useAuth = (): AuthContextType => {
     },
 
     refreshUser: async () => {
-      // Clerk manages user state reactively — nothing to manually refresh
+      // Re-fetch backend profile to get updated role/tier
+      syncAttempted.current = false;
+      try {
+        const resp = await authClient.get(API_ENDPOINTS.clerkMe);
+        if (resp.data?.role || resp.data?.tier) {
+          const role = VALID_ROLES.includes(resp.data.role) ? resp.data.role : 'user';
+          const tier = VALID_TIERS.includes(resp.data.tier) ? resp.data.tier : 'free';
+          setBackendProfile({ role, tier });
+        }
+      } catch (err) {
+        console.warn('[auth-context] profile refresh failed:', err);
+      }
     },
   };
 };

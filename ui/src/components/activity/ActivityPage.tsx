@@ -223,31 +223,34 @@ export const ActivityPage: React.FC = () => {
           <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
             {(
               [
-                { key: 'all', label: 'All' },
+                { key: 'all', label: 'All', icon: null },
                 { key: 'forge', label: 'Forge', icon: Zap },
                 { key: 'osint', label: 'OSINT', icon: Globe },
                 { key: 'verification', label: 'Verify', icon: ShieldCheck },
               ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setTypeFilter(tab.key)}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
-                  typeFilter === tab.key
-                    ? tab.key === 'forge'
-                      ? 'bg-orange-600 text-white'
-                      : tab.key === 'osint'
-                        ? 'bg-cyan-600 text-white'
-                        : tab.key === 'verification'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-purple-600 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {tab.icon && <tab.icon className="w-3.5 h-3.5" />}
-                {tab.label}
-              </button>
-            ))}
+            ).map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setTypeFilter(tab.key)}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1 ${
+                    typeFilter === tab.key
+                      ? tab.key === 'forge'
+                        ? 'bg-orange-600 text-white'
+                        : tab.key === 'osint'
+                          ? 'bg-cyan-600 text-white'
+                          : tab.key === 'verification'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-purple-600 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {Icon && <Icon className="w-3.5 h-3.5" />}
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* More Filters */}
