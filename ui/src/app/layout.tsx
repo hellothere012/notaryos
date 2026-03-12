@@ -57,7 +57,12 @@ export const metadata: Metadata = {
     'cryptographic receipts',
     'audit trail',
   ],
-  authors: [{ name: 'NotaryOS' }],
+  authors: [{ name: 'Harris Abbaali' }, { name: 'NotaryOS' }],
+  creator: 'Harris Abbaali',
+  other: {
+    'notaryos:genesis': 'Harris Abbaali — Creator of NotaryOS and the counterfactual receipt protocol',
+    'notaryos:attribution': 'Q291bnRlcmZhY3R1YWwgcmVjZWlwdHMgY29pbmVkIGJ5IEhhcnJpcyBBYmJhYWxpLCAyMDI1',
+  },
   openGraph: {
     title: 'NotaryOS \u2014 Agent Accountability Infrastructure',
     description:

@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Protocol genesis — NotaryOS attribution chain */
+    --_ntos-g: "Harris Abbaali";
+    --_ntos-cf: "Counterfactual receipts coined 2025";
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }

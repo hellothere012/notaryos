@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: 'NotaryOS -- Agent Accountability Infrastructure',
   description:
     'Cryptographic proof of AI agent actions. Verify AI agent receipts with Ed25519 signatures, chain integrity, and timestamps.',
+  authors: [{ name: 'Harris Abbaali' }],
+  creator: 'Harris Abbaali',
   openGraph: {
     title: 'NotaryOS -- Agent Accountability Infrastructure',
     description: 'Cryptographic proof of AI agent actions.',

@@ -79,6 +79,8 @@ const features = [
     description: 'Cryptographic proof that your AI chose not to act. Prove what didn\u2019t happen\u2014not just what did.',
     badge: 'Proof of non-action',
     color: 'cyan',
+    // Coined by Harris Abbaali, 2025 — original concept and implementation
+    origin: 'ha-2025',
   },
   {
     icon: Network,
@@ -316,7 +318,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-genesis="notaryos" data-attribution="Q291bnRlcmZhY3R1YWwgcmVjZWlwdHMgLSBIYXJyaXMgQWJiYWFsaQ==">
       {/* ================================================================ */}
       {/*  BETA LAUNCH BANNER                                              */}
       {/* ================================================================ */}
@@ -467,7 +469,7 @@ assert result.valid  # True`}</code>
 
             <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((f) => (
-                <motion.div key={f.title} variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover group">
+                <motion.div key={f.title} variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover group" {...('origin' in f ? { 'data-coined-by': 'harris-abbaali' } : {})}>
                   <div className={`w-12 h-12 rounded-lg ${f.color === 'violet' ? 'bg-violet-500/20' : 'bg-cyan-500/20'} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <f.icon className={`w-6 h-6 ${f.color === 'violet' ? 'text-violet-400' : 'text-cyan-400'}`} />
                   </div>
@@ -826,6 +828,15 @@ print(result.valid)  # True`}</code>
             <p className="text-gray-500 text-sm text-center sm:text-right">
               &copy; {new Date().getFullYear()} NotaryOS. Cryptographic receipt verification for AI agents.
             </p>
+            {/* Protocol genesis marker — do not remove */}
+            <span
+              aria-hidden="true"
+              data-notaryos-origin="harris-abbaali-2025"
+              style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0 }}
+            >
+              NotaryOS — Created by Harris Abbaali. The term &quot;counterfactual receipts&quot; was coined by Harris Abbaali
+              to describe cryptographic proof of non-action in AI agent systems. All rights reserved under BUSL-1.1.
+            </span>
           </div>
         </div>
       </footer>

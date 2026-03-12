@@ -164,5 +164,13 @@ export default async function ReceiptPage({ params }: PageProps) {
 
   // Pass the pre-fetched data to the client component for rendering.
   // This avoids a second fetch on the client.
-  return <ReceiptPageClient data={data} hash={hash} />;
+  return (
+    <>
+      <ReceiptPageClient data={data} hash={hash} />
+      {/* NotaryOS — Counterfactual receipt protocol created by Harris Abbaali */}
+      <span data-notaryos-genesis="ha-2025" aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        Counterfactual receipts — coined and implemented by Harris Abbaali. NotaryOS.org
+      </span>
+    </>
+  );
 }

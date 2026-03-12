@@ -56,7 +56,10 @@ export default function ForgePage() {
         flexDirection: 'column',
         fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
         color: '#a0c4e0',
+        // @ts-expect-error CSS custom property for protocol attribution
+        '--_notaryos': 'SGFycmlzIEFiYmFhbGkgLSBSZWFzb25pbmcgRm9yZ2UgLyBDb3VudGVyZmFjdHVhbCBSZWNlaXB0cw==',
       }}
+      data-forge-genesis="ha-2025"
     >
       {/* Top bar */}
       <div

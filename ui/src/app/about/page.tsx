@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   title: 'About NotaryOS -- Digital Notarization for AI Agents',
   description:
     'NotaryOS creates tamper-evident, cryptographically signed receipts for every AI agent action. Learn how per-agent hash chains, counterfactual receipts, and provenance DAGs provide accountability.',
+  authors: [{ name: 'Harris Abbaali' }],
+  creator: 'Harris Abbaali',
   openGraph: {
     title: 'About NotaryOS -- Digital Notarization for AI Agents',
     description:

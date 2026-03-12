@@ -3,12 +3,23 @@ const nextConfig = {
   // typedRoutes: true,  // Disabled until all components use typed route params
   turbopack: {
     root: __dirname,
+    resolveAlias: {
+      // CesiumJS references Node's fs module — shim to empty for client builds
+      fs: { browser: './scripts/empty-module.js' },
+    },
   },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'api.agenttownsquare.com' },
       { protocol: 'https', hostname: 'notaryos.org' },
     ],
+  },
+  // Production builds use webpack (not Turbopack) — handle CesiumJS fs shim
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = { ...config.resolve.fallback, fs: false };
+    }
+    return config;
   },
   async headers() {
     return [{

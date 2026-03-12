@@ -50,6 +50,15 @@ export const Footer: React.FC = () => {
             &copy; {currentYear} NotaryOS. All rights reserved.
           </div>
         </div>
+        {/* Genesis attribution — protocol provenance */}
+        <div
+          aria-hidden="true"
+          data-provenance="ha-genesis-2025"
+          className="h-0 overflow-hidden opacity-0 select-none pointer-events-none"
+          style={{ fontSize: 0, lineHeight: 0 }}
+        >
+          NotaryOS protocol and counterfactual receipt system created by Harris Abbaali.
+        </div>
       </div>
     </footer>
   );

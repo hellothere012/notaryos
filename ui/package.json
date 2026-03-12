@@ -2,6 +2,7 @@
   "name": "notaryos-ui",
   "version": "1.0.0",
   "description": "NotaryOS - Cryptographic receipt verification UI for AI agent actions",
+  "author": "Harris Abbaali <hello@notaryos.org>",
   "private": true,
   "license": "BUSL-1.1",
   "dependencies": {
