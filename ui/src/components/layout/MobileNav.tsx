@@ -3,11 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, History, Key, User, Settings } from 'lucide-react';
+import { ShieldCheck, History, Key, User, Settings, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const mobileNavItems = [
   { path: '/verify', label: 'Verify', icon: ShieldCheck },
+  { path: '/activity', label: 'Activity', icon: Activity, requiresAuth: true },
   { path: '/history', label: 'History', icon: History, requiresAuth: true },
   { path: '/api-keys', label: 'API Keys', icon: Key, requiresAuth: true },
   { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },

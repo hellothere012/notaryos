@@ -112,6 +112,7 @@ export const API_ENDPOINTS = {
   demo: '/v1/notary/demo',
   verify: '/v1/notary/verify',
   history: '/v1/notary/history',
+  activityStats: '/v1/notary/activity/stats',
   sampleReceipt: '/v1/notary/sample-receipt',
   publicReceiptLookup: (hash: string) => `/v1/notary/r/${hash}`,
 

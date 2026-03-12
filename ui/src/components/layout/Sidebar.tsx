@@ -12,6 +12,7 @@ import {
   User,
   Shield,
   LayoutDashboard,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -28,6 +29,12 @@ const navItems: NavItem[] = [
     path: '/verify',
     label: 'Verify',
     icon: <ShieldCheck className="w-5 h-5" />,
+  },
+  {
+    path: '/activity',
+    label: 'Activity',
+    icon: <Activity className="w-5 h-5" />,
+    requiresAuth: true,
   },
   {
     path: '/history',
