@@ -31,12 +31,12 @@ export default function SynthesisPanel({
   const isSynthesizing = phase === 'synthesizing';
   const isComplete = phase === 'complete';
 
-  // Auto-scroll the synthesis panel into view when content arrives
+  // Auto-scroll the synthesis panel into view when synthesis starts or content arrives
   useEffect(() => {
-    if (panelRef.current && (assessment || Object.keys(modelWeights).length > 0)) {
+    if (panelRef.current && (phase === 'synthesizing' || assessment || Object.keys(modelWeights).length > 0)) {
       panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [assessment, modelWeights]);
+  }, [phase, assessment, modelWeights]);
 
   if (phase === 'idle' || phase === 'started') return null;
 

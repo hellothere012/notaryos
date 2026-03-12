@@ -73,9 +73,10 @@ export default function ForgeInput({ models, presets, onSubmit, disabled }: Forg
   return (
     <div
       style={{
-        padding: '16px 20px',
+        padding: '12px 12px',
         borderBottom: '1px solid rgba(0,212,255,0.15)',
         background: 'rgba(8,16,28,0.95)',
+        flexShrink: 0,
       }}
     >
       {/* Prompt input */}

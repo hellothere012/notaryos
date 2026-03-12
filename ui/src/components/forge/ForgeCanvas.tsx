@@ -96,15 +96,15 @@ export default function ForgeCanvas({ state }: ForgeCanvasProps) {
         />
       </div>
 
-      {/* Model columns — horizontal scroll on mobile */}
+      {/* Model columns — wrap on mobile, side-by-side on desktop */}
       <div
+        className="forge-columns"
         style={{
-          flex: 1,
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 8,
           padding: '0 12px',
-          overflowX: 'auto',
-          minHeight: 300,
+          minHeight: 200,
         }}
       >
         {state.models.map((model) => (
@@ -173,11 +173,31 @@ export default function ForgeCanvas({ state }: ForgeCanvasProps) {
         </div>
       )}
 
-      {/* CSS animation */}
+      {/* CSS animation + responsive */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+        /* Mobile: stack columns vertically, allow taller cards */
+        @media (max-width: 640px) {
+          .forge-columns {
+            flex-direction: column !important;
+            overflow-x: visible !important;
+          }
+          .forge-model-col {
+            flex: 1 1 auto !important;
+            max-height: 350px !important;
+          }
+        }
+        /* Desktop: ensure columns fill row height */
+        @media (min-width: 641px) {
+          .forge-columns {
+            flex: 1;
+          }
+          .forge-model-col {
+            max-height: none !important;
+          }
         }
       `}</style>
     </div>

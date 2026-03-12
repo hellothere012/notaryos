@@ -41,16 +41,17 @@ export default function ModelColumn({ result, weight }: ModelColumnProps) {
 
   return (
     <div
+      className="forge-model-col"
       style={{
-        flex: 1,
-        minWidth: 240,
-        maxWidth: 400,
+        flex: '1 1 280px',
+        minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
         borderRadius: 6,
         border: `1px solid ${color}25`,
         background: 'rgba(8,16,28,0.8)',
         overflow: 'hidden',
+        maxHeight: 500,
       }}
     >
       {/* Model header */}
