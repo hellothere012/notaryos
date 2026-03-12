@@ -78,7 +78,7 @@ const features = [
   {
     icon: Layers,
     title: 'Multi-Model Reasoning',
-    description: 'Run your prompt through GPT-5, Gemini, Sonnet, and Kimi in parallel. See how each AI reasons — not just what it concludes.',
+    description: 'Run your prompt through DeepSeek, Gemini, Sonnet, and Kimi in parallel. See how each AI reasons — not just what it concludes.',
     badge: 'N-model parallel analysis',
     color: 'violet',
   },
@@ -151,11 +151,10 @@ const pricingTiers = [
 ];
 
 const agents = [
-  { name: 'GPT-5', role: 'Broad Analysis', gradient: 'from-green-500 to-emerald-600' },
-  { name: 'GEMINI', role: 'Deep Research', gradient: 'from-blue-500 to-cyan-500' },
-  { name: 'SONNET', role: 'Precise Reasoning', gradient: 'from-violet-500 to-purple-600' },
+  { name: 'DEEPSEEK', role: 'Deep Reasoning', gradient: 'from-blue-500 to-cyan-600' },
+  { name: 'GEMINI', role: 'Broad Research', gradient: 'from-sky-400 to-blue-500' },
+  { name: 'SONNET', role: 'Precise Analysis', gradient: 'from-violet-500 to-purple-600' },
   { name: 'KIMI', role: 'Pattern Detection', gradient: 'from-pink-500 to-rose-500' },
-  { name: 'GROK', role: 'Contrarian View', gradient: 'from-amber-500 to-orange-500' },
 ];
 
 /* ====================================================================== */
@@ -336,7 +335,7 @@ const DecisionTreeVisual: React.FC = () => (
     {/* Model Results */}
     <div className="grid grid-cols-2 gap-2 mb-4">
       {[
-        { name: 'GPT-5', verdict: 'Acquire', confidence: 82, color: 'text-green-400' },
+        { name: 'DEEPSEEK', verdict: 'Acquire', confidence: 82, color: 'text-green-400' },
         { name: 'SONNET', verdict: 'Cautious', confidence: 61, color: 'text-amber-400' },
         { name: 'GEMINI', verdict: 'Acquire', confidence: 78, color: 'text-green-400' },
         { name: 'KIMI', verdict: 'Risk Flag', confidence: 45, color: 'text-red-400' },
@@ -482,7 +481,7 @@ export const LandingPage: React.FC = () => {
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="glass-card rounded-2xl p-8 text-center">
             <h2 className="text-2xl font-bold text-white mb-3">One prompt. Four AIs. One decision.</h2>
             <p className="text-gray-400 mb-6 max-w-xl mx-auto">
-              The Reasoning Forge runs GPT-5, Gemini, Sonnet, and Kimi in parallel on your prompt,
+              The Reasoning Forge runs DeepSeek, Gemini, Sonnet, and Kimi in parallel on your prompt,
               then synthesizes their reasoning into a weighted decision&mdash;with full provenance.
             </p>
             <div className="flex justify-center gap-4">
@@ -645,7 +644,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
                 <StepCard step={1} title="You ask a question" description="Enter any prompt — investment analysis, architecture decision, legal review, strategic planning." icon={<Search className="w-6 h-6 text-violet-400" />} />
-                <StepCard step={2} title="Models reason in parallel" description="GPT-5, Gemini, Sonnet, and Kimi analyze your prompt simultaneously with full reasoning chains." icon={<Layers className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={2} title="Models reason in parallel" description="DeepSeek, Gemini, Sonnet, and Kimi analyze your prompt simultaneously with full reasoning chains." icon={<Layers className="w-6 h-6 text-violet-400" />} />
                 <StepCard step={3} title="Synthesis reveals consensus" description="The Master Synthesizer weighs each model's analysis, identifies agreement, divergence, and blind spots." icon={<GitMerge className="w-6 h-6 text-violet-400" />} />
                 <StepCard step={4} title="Decision sealed with proof" description="Every reasoning node and the final synthesis sealed with Ed25519 signatures. Verifiable, tamper-proof." icon={<Shield className="w-6 h-6 text-violet-400" />} />
               </motion.div>
@@ -697,7 +696,7 @@ export const LandingPage: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     {[
-                      { value: '5 AIs', label: 'Reasoning in parallel' },
+                      { value: '4 AIs', label: 'Reasoning in parallel' },
                       { value: '<15ms', label: 'Receipt sealing latency' },
                       { value: '6', label: 'Synthesizer presets' },
                       { value: 'Ed25519', label: 'Cryptographic signatures' },
@@ -784,7 +783,7 @@ print(result["provenance_chain"]) # Cryptographic proof
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="text-center">
             <motion.div variants={fadeInUp} className="mb-8">
               <span className="inline-flex items-center gap-2 px-3 py-1 glass-card rounded-full text-sm text-violet-300 mb-4">
-                <Brain className="w-3.5 h-3.5" /> Five reasoning engines
+                <Brain className="w-3.5 h-3.5" /> Four reasoning engines
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">The best AIs reasoning together</h2>
             </motion.div>
@@ -792,8 +791,8 @@ print(result["provenance_chain"]) # Cryptographic proof
               {agents.map((agent) => <ModelCard key={agent.name} {...agent} />)}
             </motion.div>
             <motion.p variants={fadeInUp} className="text-sm text-gray-400 max-w-2xl mx-auto">
-              Each model brings a different reasoning style. GPT-5 for broad analysis. Sonnet for precise logic.
-              Gemini for deep research. Kimi for pattern detection. Grok for contrarian perspectives.
+              Each model brings a different reasoning style. DeepSeek for deep chain-of-thought reasoning. Sonnet for precise logic.
+              Gemini for broad research. Kimi for pattern detection.
               The Master Synthesizer weighs them all.
             </motion.p>
           </motion.div>

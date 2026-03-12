@@ -16,7 +16,7 @@ import { LandingPage } from '@/components/landing/LandingPage';
 export const metadata: Metadata = {
   title: 'NotaryOS — AI Decision Plane | Multi-Model Reasoning with Cryptographic Proof',
   description:
-    'See how AI thinks. Run your prompt through GPT-5, Gemini, Sonnet, and Kimi in parallel. Visualize reasoning trees, compare decisions, and seal every step with Ed25519 cryptographic proof.',
+    'See how AI thinks. Run your prompt through DeepSeek, Gemini, Sonnet, and Kimi in parallel. Visualize reasoning trees, compare decisions, and seal every step with Ed25519 cryptographic proof.',
   authors: [{ name: 'Harris Abbaali' }],
   creator: 'Harris Abbaali',
   openGraph: {

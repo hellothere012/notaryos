@@ -10,11 +10,12 @@ import { useState } from 'react';
 import type { AvailableModel } from './types';
 
 const MODEL_COLORS: Record<string, string> = {
-  grok: '#ff6600',
+  deepseek: '#00aaff',
   gemini: '#4488ff',
   sonnet: '#cc66ff',
   kimi: '#00ccaa',
   chatgpt: '#10a37f',
+  grok: '#ff6600',
 };
 
 const PRESET_LABELS: Record<string, string> = {
@@ -35,11 +36,19 @@ interface ForgeInputProps {
 
 export default function ForgeInput({ models, presets, onSubmit, disabled }: ForgeInputProps) {
   const [prompt, setPrompt] = useState('');
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['chatgpt', 'gemini', 'sonnet']));
+  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set(['deepseek', 'gemini', 'sonnet']));
   const [preset, setPreset] = useState('general');
   const [customPrompt, setCustomPrompt] = useState('');
+  const [hoveredBlocked, setHoveredBlocked] = useState<string | null>(null);
+
+  const activeModels = models.filter((m) => m.status !== 'blocked');
+  const blockedModels = models.filter((m) => m.status === 'blocked');
 
   const toggleModel = (key: string) => {
+    // Don't allow selecting blocked models
+    const model = models.find((m) => m.key === key);
+    if (model?.status === 'blocked') return;
+
     setSelectedModels((prev) => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -98,9 +107,9 @@ export default function ForgeInput({ models, presets, onSubmit, disabled }: Forg
 
       {/* Model selector + preset + submit */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        {/* Model checkboxes */}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {models.map((m) => {
+        {/* Active model buttons */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+          {activeModels.map((m) => {
             const active = selectedModels.has(m.key);
             const color = MODEL_COLORS[m.key] || '#00d4ff';
             return (
@@ -124,6 +133,86 @@ export default function ForgeInput({ models, presets, onSubmit, disabled }: Forg
               >
                 {m.display_name}
               </button>
+            );
+          })}
+
+          {/* Blocked model buttons — visually disabled with red X */}
+          {blockedModels.map((m) => {
+            const isHovered = hoveredBlocked === m.key;
+            return (
+              <div
+                key={m.key}
+                style={{ position: 'relative', display: 'inline-block' }}
+                onMouseEnter={() => setHoveredBlocked(m.key)}
+                onMouseLeave={() => setHoveredBlocked(null)}
+              >
+                <button
+                  disabled
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    fontFamily: 'monospace',
+                    letterSpacing: 0.5,
+                    padding: '4px 10px',
+                    borderRadius: 4,
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    background: 'rgba(239,68,68,0.06)',
+                    color: '#6b3a3a',
+                    cursor: 'not-allowed',
+                    textDecoration: 'line-through',
+                    textDecorationColor: 'rgba(239,68,68,0.6)',
+                    opacity: 0.6,
+                    position: 'relative',
+                  }}
+                >
+                  {m.display_name}
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -3,
+                      right: -3,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: '#dc2626',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 7,
+                      fontWeight: 900,
+                      color: '#fff',
+                      lineHeight: 1,
+                    }}
+                  >
+                    X
+                  </span>
+                </button>
+
+                {/* Tooltip on hover */}
+                {isHovered && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      marginTop: 6,
+                      padding: '6px 10px',
+                      background: 'rgba(20,10,10,0.95)',
+                      border: '1px solid rgba(239,68,68,0.3)',
+                      borderRadius: 4,
+                      fontSize: 9,
+                      fontFamily: 'monospace',
+                      color: '#ef4444',
+                      whiteSpace: 'nowrap',
+                      zIndex: 50,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {m.blocked_reason || 'Blocked — requires data-sharing policy'}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -179,9 +268,14 @@ export default function ForgeInput({ models, presets, onSubmit, disabled }: Forg
         </button>
       </div>
 
-      {/* Keyboard hint */}
-      <div style={{ fontSize: 8, color: '#4a7a9a', marginTop: 6, fontFamily: 'monospace' }}>
-        {selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''} selected | Ctrl+Enter to submit
+      {/* Status line */}
+      <div style={{ fontSize: 8, color: '#4a7a9a', marginTop: 6, fontFamily: 'monospace', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <span>{selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''} selected | Ctrl+Enter to submit</span>
+        {blockedModels.length > 0 && (
+          <span style={{ color: '#6b3a3a' }}>
+            | {blockedModels.map((m) => m.display_name).join(', ')}: requires provider data-sharing
+          </span>
+        )}
       </div>
 
       {/* Custom prompt (only shown for custom preset) */}

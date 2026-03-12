@@ -114,4 +114,7 @@ export interface ForgeState {
 export interface AvailableModel {
   key: string;
   display_name: string;
+  status?: 'active' | 'blocked';
+  blocked_reason?: string;
+  reasoning_enabled?: boolean;
 }

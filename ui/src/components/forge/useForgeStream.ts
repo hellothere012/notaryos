@@ -283,11 +283,12 @@ export async function fetchForgeModels(): Promise<{
   }
   return {
     models: [
-      { key: 'grok', display_name: 'GROK' },
-      { key: 'gemini', display_name: 'GEMINI' },
-      { key: 'sonnet', display_name: 'SONNET' },
-      { key: 'kimi', display_name: 'KIMI' },
-      { key: 'chatgpt', display_name: 'CHATGPT' },
+      { key: 'deepseek', display_name: 'DEEPSEEK R1', status: 'active' as const },
+      { key: 'gemini', display_name: 'GEMINI 3', status: 'active' as const },
+      { key: 'sonnet', display_name: 'SONNET 4.6', status: 'active' as const },
+      { key: 'kimi', display_name: 'KIMI K2.5', status: 'active' as const },
+      { key: 'chatgpt', display_name: 'GPT-5.4', status: 'blocked' as const, blocked_reason: 'Requires provider data-sharing' },
+      { key: 'grok', display_name: 'GROK 4.1', status: 'blocked' as const, blocked_reason: 'Requires provider data-sharing' },
     ],
     presets: ['general', 'osint', 'trading', 'real_estate', 'legal', 'custom'],
   };

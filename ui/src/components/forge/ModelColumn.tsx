@@ -12,11 +12,12 @@ import ForgeReceipt from './ForgeReceipt';
 import ReasoningNodeComponent from './ReasoningNode';
 
 const MODEL_COLORS: Record<string, string> = {
-  grok: '#ff6600',
+  deepseek: '#00aaff',
   gemini: '#4488ff',
   sonnet: '#cc66ff',
   kimi: '#00ccaa',
   chatgpt: '#10a37f',
+  grok: '#ff6600',
 };
 
 interface ModelColumnProps {
