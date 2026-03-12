@@ -738,7 +738,7 @@ const PublicVerifyPage: React.FC = () => {
 
       {/* Main content area */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-12 sm:py-16">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {/* Loading state */}
           {pageState === 'loading' && (
             <motion.div
