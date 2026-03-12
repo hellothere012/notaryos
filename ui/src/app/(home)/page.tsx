@@ -14,14 +14,14 @@ import type { Metadata } from 'next';
 import { LandingPage } from '@/components/landing/LandingPage';
 
 export const metadata: Metadata = {
-  title: 'NotaryOS -- Agent Accountability Infrastructure',
+  title: 'NotaryOS — AI Decision Plane | Multi-Model Reasoning with Cryptographic Proof',
   description:
-    'Cryptographic proof of AI agent actions. Verify AI agent receipts with Ed25519 signatures, chain integrity, and timestamps.',
+    'See how AI thinks. Run your prompt through GPT-5, Gemini, Sonnet, and Kimi in parallel. Visualize reasoning trees, compare decisions, and seal every step with Ed25519 cryptographic proof.',
   authors: [{ name: 'Harris Abbaali' }],
   creator: 'Harris Abbaali',
   openGraph: {
-    title: 'NotaryOS -- Agent Accountability Infrastructure',
-    description: 'Cryptographic proof of AI agent actions.',
+    title: 'NotaryOS — AI Decision Plane',
+    description: 'Multi-model AI reasoning with cryptographic provenance. See where AIs agree and diverge.',
     url: 'https://notaryos.org',
     siteName: 'NotaryOS',
     type: 'website',
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
         url: 'https://notaryos.org/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'NotaryOS - Cryptographic receipts for AI agents',
+        alt: 'NotaryOS - AI Decision Plane with multi-model reasoning',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NotaryOS -- Agent Accountability Infrastructure',
-    description: 'Cryptographic proof of AI agent actions.',
+    title: 'NotaryOS — AI Decision Plane',
+    description: 'Multi-model AI reasoning with cryptographic provenance. See where AIs agree and diverge.',
   },
 };
 

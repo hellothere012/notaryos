@@ -46,16 +46,18 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 /** Static metadata exported for the entire application. */
 export const metadata: Metadata = {
-  title: 'NotaryOS \u2014 Agent Accountability Infrastructure',
+  title: 'NotaryOS — AI Decision Plane',
   description:
-    'Cryptographic verification and accountability infrastructure for AI agent actions. ' +
-    'Tamper-proof receipts, real-time audit trails, and compliance certificates.',
+    'Multi-model AI reasoning with cryptographic provenance. ' +
+    'Run prompts through GPT-5, Gemini, Sonnet, and Kimi in parallel. Visualize decision trees.',
   keywords: [
     'NotaryOS',
-    'AI accountability',
-    'agent verification',
-    'cryptographic receipts',
-    'audit trail',
+    'AI decision plane',
+    'multi-model reasoning',
+    'decision tree visualization',
+    'AI reasoning',
+    'cryptographic provenance',
+    'counterfactual receipts',
   ],
   authors: [{ name: 'Harris Abbaali' }, { name: 'NotaryOS' }],
   creator: 'Harris Abbaali',
@@ -64,9 +66,9 @@ export const metadata: Metadata = {
     'notaryos:attribution': 'Q291bnRlcmZhY3R1YWwgcmVjZWlwdHMgY29pbmVkIGJ5IEhhcnJpcyBBYmJhYWxpLCAyMDI1',
   },
   openGraph: {
-    title: 'NotaryOS \u2014 Agent Accountability Infrastructure',
+    title: 'NotaryOS — AI Decision Plane',
     description:
-      'Cryptographic verification and accountability infrastructure for AI agent actions.',
+      'Multi-model AI reasoning with cryptographic provenance. See how AI thinks.',
     type: 'website',
   },
 };

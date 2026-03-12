@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   Zap,
   Lock,
-  Eye,
+  Brain,
   Code,
   Terminal,
   Server,
@@ -21,7 +21,12 @@ import {
   ArrowRight,
   Sparkles,
   Cpu,
-  Network,
+  GitBranch,
+  GitMerge,
+  BarChart3,
+  Layers,
+  Target,
+  Activity,
   FileCheck,
   FileJson,
   TrendingUp,
@@ -35,6 +40,10 @@ import {
   Users,
   ExternalLink,
   ChevronRight,
+  Eye,
+  Network,
+  Lightbulb,
+  Search,
 } from 'lucide-react';
 import LiveAttestationDemo from './LiveAttestationDemo';
 
@@ -57,43 +66,43 @@ const staggerContainer = {
 /* ====================================================================== */
 
 const comparisonRows = [
-  { feature: 'Cryptographic signatures', notary: 'check', traditional: 'dash' },
-  { feature: 'Per-agent hash chains', notary: 'check', traditional: 'dash' },
-  { feature: 'Tamper detection', notary: 'Automatic', traditional: 'Manual audit' },
-  { feature: 'Third-party verification', notary: 'Offline capable', traditional: 'Requires access' },
-  { feature: 'Proof of non-action', notary: 'check', traditional: 'dash' },
-  { feature: 'Provenance tracking', notary: 'DAG-based', traditional: 'Linear or none' },
+  { feature: 'Multi-model reasoning', notary: 'check', traditional: 'dash' },
+  { feature: 'Decision tree visualization', notary: 'check', traditional: 'dash' },
+  { feature: 'Model agreement/divergence', notary: 'Real-time', traditional: 'dash' },
+  { feature: 'Adversarial synthesis', notary: 'check', traditional: 'dash' },
+  { feature: 'Cryptographic provenance', notary: 'Every node sealed', traditional: 'dash' },
+  { feature: 'Counterfactual analysis', notary: 'check', traditional: 'dash' },
 ];
 
 const features = [
   {
-    icon: Lock,
-    title: 'Per-Agent Hash Chains',
-    description: 'Every action is cryptographically linked to the previous one. Tamper with one receipt and the whole chain breaks.',
-    badge: 'Tamper detection built in',
+    icon: Layers,
+    title: 'Multi-Model Reasoning',
+    description: 'Run your prompt through GPT-5, Gemini, Sonnet, and Kimi in parallel. See how each AI reasons — not just what it concludes.',
+    badge: 'N-model parallel analysis',
     color: 'violet',
   },
   {
-    icon: Eye,
-    title: 'Counterfactual Receipts',
-    description: 'Cryptographic proof that your AI chose not to act. Prove what didn\u2019t happen\u2014not just what did.',
-    badge: 'Proof of non-action',
+    icon: GitBranch,
+    title: 'Decision Tree Visualization',
+    description: 'Every reasoning step extracted and visualized as an interactive tree. Expand branches, explore logic paths, compare depth.',
+    badge: 'Interactive reasoning trees',
     color: 'cyan',
+  },
+  {
+    icon: Eye,
+    title: 'Counterfactual Analysis',
+    description: 'Cryptographic proof of what AI considered but chose not to do. Explore the roads not taken in every decision.',
+    badge: 'Proof of non-action',
+    color: 'violet',
     // Coined by Harris Abbaali, 2025 — original concept and implementation
     origin: 'ha-2025',
   },
   {
-    icon: Network,
-    title: 'Provenance DAG',
-    description: 'Track the causal chain across agents, services, and time with directed acyclic graph verification.',
-    badge: 'Cascading trust verification',
-    color: 'violet',
-  },
-  {
-    icon: CheckCircle2,
-    title: 'Third-Party Verifiable',
-    description: 'Anyone can verify a receipt without trusting NotaryOS. Zero-trust verification by default.',
-    badge: 'Zero-trust by default',
+    icon: Shield,
+    title: 'Cryptographic Trust Layer',
+    description: 'Every reasoning node, every synthesis step, every decision sealed with Ed25519 signatures. Tamper-proof by default.',
+    badge: 'Ed25519 provenance chain',
     color: 'cyan',
   },
 ];
@@ -105,8 +114,8 @@ const pricingTiers = [
     period: '/month',
     highlight: false,
     badge: null as string | null,
-    stats: { receipts: '100/mo', verifications: '500/mo', rateLimit: '60/min', keyRotation: 'Manual' },
-    features: ['Single agent', 'Community support', 'Public API', 'Basic dashboard'],
+    stats: { decisions: '10/mo', models: '2 per run', presets: 'General only', history: '7 days' },
+    features: ['2-model comparison', 'Basic decision trees', 'Community support', 'Public API'],
     cta: 'Start Free',
   },
   {
@@ -115,8 +124,8 @@ const pricingTiers = [
     period: '/month',
     highlight: true,
     badge: 'Most Popular',
-    stats: { receipts: '10,000/mo', verifications: '50,000/mo', rateLimit: '300/min', keyRotation: '30 days' },
-    features: ['Up to 10 agents', 'Email support', 'Counterfactual receipts', 'Webhook notifications'],
+    stats: { decisions: '500/mo', models: '4 per run', presets: 'All 6 presets', history: '90 days' },
+    features: ['4-model parallel reasoning', 'Interactive decision trees', 'OSINT intelligence feed', 'Counterfactual receipts', 'Email support'],
     cta: 'Get Started',
   },
   {
@@ -125,8 +134,8 @@ const pricingTiers = [
     period: '/month',
     highlight: false,
     badge: null as string | null,
-    stats: { receipts: '100,000/mo', verifications: '500,000/mo', rateLimit: '1,000/min', keyRotation: '7 days' },
-    features: ['Unlimited agents', 'Priority support', 'Provenance DAG', 'Custom webhooks', 'SSO'],
+    stats: { decisions: '5,000/mo', models: 'Unlimited', presets: 'Custom synthesis', history: 'Unlimited' },
+    features: ['Unlimited models', 'Custom synthesizer prompts', 'Decision history & search', 'API access', 'Priority support', 'Shareable decision URLs'],
     cta: 'Get Started',
   },
   {
@@ -135,18 +144,18 @@ const pricingTiers = [
     period: '',
     highlight: false,
     badge: null as string | null,
-    stats: { receipts: 'Unlimited', verifications: 'Unlimited', rateLimit: 'Custom', keyRotation: 'Auto' },
-    features: ['Dedicated infra', 'SLA guarantee', 'Air-gapped deploy', 'Custom integrations', 'Compliance reports'],
+    stats: { decisions: 'Unlimited', models: 'Custom stack', presets: 'White-label', history: 'Compliance archive' },
+    features: ['Dedicated infrastructure', 'Custom model integration', 'Decision governance policies', 'SLA guarantee', 'Air-gapped deployment', 'Compliance exports'],
     cta: 'Contact Sales',
   },
 ];
 
 const agents = [
-  { name: 'OPUS', role: 'Architecture', gradient: 'from-violet-500 to-purple-600' },
-  { name: 'TELE', role: 'Integration', gradient: 'from-blue-500 to-cyan-500' },
-  { name: 'KIMI', role: 'Design', gradient: 'from-pink-500 to-rose-500' },
-  { name: 'GROK', role: 'Security', gradient: 'from-amber-500 to-orange-500' },
-  { name: 'GEMINI', role: 'Optimization', gradient: 'from-green-500 to-emerald-500' },
+  { name: 'GPT-5', role: 'Broad Analysis', gradient: 'from-green-500 to-emerald-600' },
+  { name: 'GEMINI', role: 'Deep Research', gradient: 'from-blue-500 to-cyan-500' },
+  { name: 'SONNET', role: 'Precise Reasoning', gradient: 'from-violet-500 to-purple-600' },
+  { name: 'KIMI', role: 'Pattern Detection', gradient: 'from-pink-500 to-rose-500' },
+  { name: 'GROK', role: 'Contrarian View', gradient: 'from-amber-500 to-orange-500' },
 ];
 
 /* ====================================================================== */
@@ -193,7 +202,7 @@ interface PricingTierProps {
   period: string;
   highlight: boolean;
   badge: string | null;
-  stats: { receipts: string; verifications: string; rateLimit: string; keyRotation: string };
+  stats: { decisions: string; models: string; presets: string; history: string };
   features: string[];
   cta: string;
 }
@@ -224,10 +233,10 @@ const PricingTier: React.FC<PricingTierProps> = ({
       {period && <span className="text-gray-400 text-sm">{period}</span>}
     </div>
     <div className="space-y-2 mb-4 text-xs">
-      <div className="flex justify-between text-gray-400"><span>Receipts</span><span className="text-white">{stats.receipts}</span></div>
-      <div className="flex justify-between text-gray-400"><span>Verifications</span><span className="text-white">{stats.verifications}</span></div>
-      <div className="flex justify-between text-gray-400"><span>Rate limit</span><span className="text-white">{stats.rateLimit}</span></div>
-      <div className="flex justify-between text-gray-400"><span>Key rotation</span><span className="text-white">{stats.keyRotation}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Decisions</span><span className="text-white">{stats.decisions}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Models</span><span className="text-white">{stats.models}</span></div>
+      <div className="flex justify-between text-gray-400"><span>Presets</span><span className="text-white">{stats.presets}</span></div>
+      <div className="flex justify-between text-gray-400"><span>History</span><span className="text-white">{stats.history}</span></div>
     </div>
     <div className="section-divider mb-4" />
     <ul className="space-y-2 flex-1 mb-6">
@@ -251,7 +260,7 @@ const PricingTier: React.FC<PricingTierProps> = ({
   </motion.div>
 );
 
-const AgentCard: React.FC<{ name: string; role: string; gradient: string }> = ({ name, role, gradient }) => (
+const ModelCard: React.FC<{ name: string; role: string; gradient: string }> = ({ name, role, gradient }) => (
   <motion.div variants={fadeInUp} className="glass-card rounded-xl p-4 text-center w-28">
     <div className={`w-10 h-10 mx-auto rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-sm mb-2`}>
       {name[0]}
@@ -304,6 +313,72 @@ const Particles: React.FC = () => {
 };
 
 /* ====================================================================== */
+/*  Decision Tree Visual (Hero section)                                   */
+/* ====================================================================== */
+
+const DecisionTreeVisual: React.FC = () => (
+  <div className="glass-card rounded-xl p-6 relative overflow-hidden">
+    <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-2xl" />
+    <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl" />
+
+    {/* Header */}
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+      <span className="text-xs text-gray-500 font-mono">decision_plane.live</span>
+    </div>
+
+    {/* Prompt */}
+    <div className="bg-gray-800/50 rounded-lg p-3 mb-4 border border-gray-700/50">
+      <p className="text-xs text-gray-500 mb-1">PROMPT</p>
+      <p className="text-sm text-white">&ldquo;Should we acquire CompanyX at $2.1B?&rdquo;</p>
+    </div>
+
+    {/* Model Results */}
+    <div className="grid grid-cols-2 gap-2 mb-4">
+      {[
+        { name: 'GPT-5', verdict: 'Acquire', confidence: 82, color: 'text-green-400' },
+        { name: 'SONNET', verdict: 'Cautious', confidence: 61, color: 'text-amber-400' },
+        { name: 'GEMINI', verdict: 'Acquire', confidence: 78, color: 'text-green-400' },
+        { name: 'KIMI', verdict: 'Risk Flag', confidence: 45, color: 'text-red-400' },
+      ].map((m) => (
+        <div key={m.name} className="bg-gray-800/30 rounded-lg p-2.5 border border-gray-700/30">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-mono text-gray-400">{m.name}</span>
+            <span className={`text-xs font-medium ${m.color}`}>{m.confidence}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full ${m.confidence > 70 ? 'bg-green-500' : m.confidence > 55 ? 'bg-amber-500' : 'bg-red-500'}`}
+              style={{ width: `${m.confidence}%` }}
+            />
+          </div>
+          <p className={`text-xs mt-1 ${m.color}`}>{m.verdict}</p>
+        </div>
+      ))}
+    </div>
+
+    {/* Synthesis */}
+    <div className="bg-gradient-to-r from-violet-500/10 to-cyan-500/10 rounded-lg p-3 border border-violet-500/20">
+      <div className="flex items-center gap-2 mb-2">
+        <GitMerge className="w-3.5 h-3.5 text-violet-400" />
+        <span className="text-xs font-medium text-violet-300">SYNTHESIS</span>
+      </div>
+      <p className="text-xs text-gray-300 leading-relaxed">
+        3/4 models favor acquisition. KIMI flags regulatory risk in EU markets.
+        <span className="text-violet-300"> Consensus: 72% — Acquire with regulatory due diligence.</span>
+      </p>
+    </div>
+
+    {/* Receipt Hash */}
+    <div className="flex items-center gap-2 mt-3 text-xs text-gray-600">
+      <Lock className="w-3 h-3" />
+      <span className="font-mono">sealed: e7a3f9...2b1c</span>
+      <span className="text-green-500">verified</span>
+    </div>
+  </div>
+);
+
+/* ====================================================================== */
 /*  MAIN COMPONENT                                                        */
 /* ====================================================================== */
 
@@ -322,26 +397,16 @@ export const LandingPage: React.FC = () => {
       {/* ================================================================ */}
       {/*  BETA LAUNCH BANNER                                              */}
       {/* ================================================================ */}
-      <div className="w-full bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-center text-sm text-amber-200">
-        <span className="font-semibold text-amber-300">🚀 Beta Launch</span>
+      <div className="w-full bg-violet-500/15 border-b border-violet-500/30 px-4 py-2.5 text-center text-sm text-violet-200">
+        <span className="font-semibold text-violet-300">New: Reasoning Forge</span>
         {' — '}
-        NotaryOS just launched. You may encounter bugs or rough edges.{' '}
-        <a
-          href="https://github.com/hellothere012/notaryos/issues"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 hover:text-amber-100 transition-colors"
+        Run any prompt through 4 AI models simultaneously. See where they agree and diverge.{' '}
+        <Link
+          href="/forge"
+          className="underline underline-offset-2 hover:text-violet-100 transition-colors font-medium"
         >
-          Submit an issue on GitHub
-        </a>
-        {' or '}
-        <a
-          href="mailto:hello@notaryos.org"
-          className="underline underline-offset-2 hover:text-amber-100 transition-colors"
-        >
-          contact us directly
-        </a>
-        .
+          Try it now
+        </Link>
       </div>
 
       {/* ================================================================ */}
@@ -358,24 +423,27 @@ export const LandingPage: React.FC = () => {
             <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
               <motion.div variants={fadeInUp} className="flex flex-wrap gap-2 mb-6">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-violet-300">
-                  <Shield className="w-3 h-3" /> Tamper-proof signatures
+                  <Brain className="w-3 h-3" /> Multi-model reasoning
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-cyan-300">
-                  <Eye className="w-3 h-3" /> Counterfactual receipts
+                  <GitBranch className="w-3 h-3" /> Decision tree visualization
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 glass-card rounded-full text-xs text-green-300">
-                  <Zap className="w-3 h-3" /> 178+ receipts/sec
+                  <Shield className="w-3 h-3" /> Cryptographically sealed
                 </span>
               </motion.div>
 
               <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-                Cryptographic receipts for{' '}
-                <span className="gradient-text">every AI action</span>
+                See how{' '}
+                <span className="gradient-text">AI thinks.</span>
+                <br />
+                <span className="text-3xl sm:text-4xl lg:text-5xl text-gray-300">Compare. Decide. Trust.</span>
               </motion.h1>
 
               <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8 max-w-xl leading-relaxed">
-                NotaryOS seals, chains, and verifies what your agents did&mdash;and what they
-                chose <em>not</em> to do. Tamper-proof. Third-party verifiable. Free tier: 100 receipts/month.
+                NotaryOS is an AI Decision Plane. Run your question through multiple AI models in parallel,
+                visualize their reasoning trees, see where they agree and diverge&mdash;and seal every
+                decision with cryptographic proof.
               </motion.p>
 
               <motion.div variants={fadeInUp} className="flex flex-wrap gap-4">
@@ -383,14 +451,14 @@ export const LandingPage: React.FC = () => {
                   href="/sign-up"
                   className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white rounded-lg font-medium transition-all duration-200 active:scale-95 animate-pulse-glow btn-shine"
                 >
-                  Get Started Free <ArrowRight className="w-5 h-5" />
+                  Try the Decision Plane <ArrowRight className="w-5 h-5" />
                 </Link>
-                <button
-                  onClick={() => router.push('/verify?sample=true')}
+                <Link
+                  href="/forge"
                   className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
                 >
-                  <Shield className="w-5 h-5" /> Verify a Receipt
-                </button>
+                  <Brain className="w-5 h-5" /> Open the Forge
+                </Link>
               </motion.div>
             </motion.div>
 
@@ -400,51 +468,29 @@ export const LandingPage: React.FC = () => {
               transition={{ delay: 0.3, duration: 0.6 }}
               className="hidden lg:block animate-float"
             >
-              <div className="code-window rounded-xl overflow-hidden">
-                <div className="code-header flex items-center gap-2 px-4 py-3">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="ml-2 text-xs text-gray-500 font-mono">notary_demo.py</span>
-                </div>
-                <pre className="p-5 text-sm text-gray-300 font-mono leading-relaxed overflow-x-auto">
-                  <code>{`from notaryos import NotaryClient
-
-notary = NotaryClient(api_key="notary_live_...")
-
-# Seal an action — tamper-proof receipt
-receipt = notary.seal(
-    action="trade.executed",
-    agent_id="trading-bot-v3",
-    payload={"pair": "BTC/USD", "qty": 0.5}
-)
-
-# Verify — anyone can, zero trust
-result = notary.verify(receipt.hash)
-assert result.valid  # True`}</code>
-                </pre>
-              </div>
+              <DecisionTreeVisual />
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* ================================================================ */}
-      {/*  2. VERIFIER CTA                                                 */}
+      {/*  2. FORGE CTA                                                    */}
       {/* ================================================================ */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="glass-card rounded-2xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">Don&apos;t trust us. Verify the math.</h2>
+            <h2 className="text-2xl font-bold text-white mb-3">One prompt. Four AIs. One decision.</h2>
             <p className="text-gray-400 mb-6 max-w-xl mx-auto">
-              Paste any NotaryOS receipt and verify it instantly&mdash;no account required.
+              The Reasoning Forge runs GPT-5, Gemini, Sonnet, and Kimi in parallel on your prompt,
+              then synthesizes their reasoning into a weighted decision&mdash;with full provenance.
             </p>
             <div className="flex justify-center gap-4">
-              <Link href="/verify" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg font-medium text-sm transition-all btn-shine">
-                <Shield className="w-4 h-4" /> Open Verifier
+              <Link href="/forge" className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg font-medium text-sm transition-all btn-shine">
+                <Brain className="w-4 h-4" /> Open the Forge
               </Link>
-              <Link href="/docs#receipt-spec" className="btn-ghost flex items-center gap-2 text-sm">
-                Read the Spec <ArrowRight className="w-4 h-4" />
+              <Link href="/docs" className="btn-ghost flex items-center gap-2 text-sm">
+                How it works <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </motion.div>
@@ -452,7 +498,7 @@ assert result.valid  # True`}</code>
       </section>
 
       {/* ================================================================ */}
-      {/*  3. LIVE ATTESTATION DEMO (FOIA aesthetic)                        */}
+      {/*  3. LIVE ATTESTATION DEMO (Trust layer showcase)                  */}
       {/* ================================================================ */}
       <LiveAttestationDemo />
 
@@ -463,8 +509,8 @@ assert result.valid  # True`}</code>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Trust infrastructure for autonomous agents</h2>
-              <p className="text-lg text-gray-400 max-w-2xl mx-auto">Every action cryptographically sealed. Every decision verifiable.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">The AI Decision Plane</h2>
+              <p className="text-lg text-gray-400 max-w-2xl mx-auto">Multi-model reasoning. Decision tree visualization. Cryptographic trust. All in one platform.</p>
             </motion.div>
 
             <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -490,17 +536,17 @@ assert result.valid  # True`}</code>
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Not another logging tool.</h2>
-              <p className="text-lg text-gray-400">NotaryOS provides cryptographic guarantees that traditional logging simply cannot.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Not another chatbot.</h2>
+              <p className="text-lg text-gray-400">NotaryOS doesn&apos;t give you one AI&apos;s opinion. It shows you how multiple AIs reason&mdash;and proves it.</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="hidden sm:block glass-card rounded-2xl overflow-hidden">
               <table className="w-full comparison-table">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left text-gray-400 font-medium py-4 px-6">Feature</th>
-                    <th className="text-center text-violet-400 font-semibold py-4 px-4">NotaryOS</th>
-                    <th className="text-center text-gray-500 font-medium py-4 px-4">Traditional Logging</th>
+                    <th className="text-left text-gray-400 font-medium py-4 px-6">Capability</th>
+                    <th className="text-center text-violet-400 font-semibold py-4 px-4">NotaryOS Decision Plane</th>
+                    <th className="text-center text-gray-500 font-medium py-4 px-4">Single-Model AI</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -544,25 +590,25 @@ assert result.valid  # True`}</code>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Built for teams that take agent trust seriously.</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Built for people who make high-stakes decisions.</h2>
             </motion.div>
 
             <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-8">
               <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
-                <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4"><Code className="w-6 h-6 text-violet-400" /></div>
-                <h3 className="text-lg font-semibold text-white mb-4">Agent Developers</h3>
+                <div className="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center mb-4"><TrendingUp className="w-6 h-6 text-violet-400" /></div>
+                <h3 className="text-lg font-semibold text-white mb-4">Analysts &amp; Traders</h3>
                 <ul className="space-y-3">
-                  {['Add accountability in 3 lines of code', 'Python, TypeScript, and Go SDKs', 'Works with any agent framework'].map((item, i) => (
+                  {['Multi-model consensus on market calls', 'See which AI flagged risks others missed', 'Cryptographic audit trail for every decision'].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
                   ))}
                 </ul>
               </motion.div>
 
               <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
-                <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4"><Server className="w-6 h-6 text-cyan-400" /></div>
-                <h3 className="text-lg font-semibold text-white mb-4">Platform Teams</h3>
+                <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4"><Code className="w-6 h-6 text-cyan-400" /></div>
+                <h3 className="text-lg font-semibold text-white mb-4">Product &amp; Engineering</h3>
                 <ul className="space-y-3">
-                  {['Audit trail for every agent interaction', 'Provenance tracking across microservices', 'Self-hostable for air-gapped environments'].map((item, i) => (
+                  {['Architecture decisions with 4-model analysis', 'Compare reasoning depth across AI providers', 'Integrate via API — decisions as a service'].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
                   ))}
                 </ul>
@@ -570,9 +616,9 @@ assert result.valid  # True`}</code>
 
               <motion.div variants={fadeInUp} className="glass-card rounded-xl p-6 card-hover">
                 <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center mb-4"><Scale className="w-6 h-6 text-amber-400" /></div>
-                <h3 className="text-lg font-semibold text-white mb-4">Compliance &amp; Legal</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Enterprise &amp; Compliance</h3>
                 <ul className="space-y-3">
-                  {['Counterfactual proofs for regulated industries', 'Exportable verification history', 'Cryptographic evidence for disputes'].map((item, i) => (
+                  {['Decision governance with cryptographic proof', 'Counterfactual receipts for regulatory audits', 'Exportable provenance chains for disputes'].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-400"><CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /><span>{item}</span></li>
                   ))}
                 </ul>
@@ -589,8 +635,8 @@ assert result.valid  # True`}</code>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How verification works</h2>
-              <p className="text-lg text-gray-400">NotaryOS checks math, not promises.</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How the Decision Plane works</h2>
+              <p className="text-lg text-gray-400">From prompt to provenance-sealed decision in seconds.</p>
             </motion.div>
 
             <div className="relative">
@@ -598,10 +644,10 @@ assert result.valid  # True`}</code>
                 <div className="w-full h-full bg-gradient-to-r from-violet-500/30 via-cyan-500/30 to-violet-500/30" />
               </div>
               <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-                <StepCard step={1} title="You provide a receipt" description="Paste JSON or upload a receipt file produced by an agent system." icon={<FileJson className="w-6 h-6 text-violet-400" />} />
-                <StepCard step={2} title="Notary parses + normalizes" description="We validate structure, required fields, and canonicalization to ensure signed bytes match." icon={<FileCheck className="w-6 h-6 text-violet-400" />} />
-                <StepCard step={3} title="Cryptography is verified" description="The signature is verified using the declared algorithm and signer identity (e.g., Ed25519)." icon={<Key className="w-6 h-6 text-violet-400" />} />
-                <StepCard step={4} title="Chain + time checked" description="Chain linkage and timestamp constraints verified, then a readable verdict with full details." icon={<Link2 className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={1} title="You ask a question" description="Enter any prompt — investment analysis, architecture decision, legal review, strategic planning." icon={<Search className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={2} title="Models reason in parallel" description="GPT-5, Gemini, Sonnet, and Kimi analyze your prompt simultaneously with full reasoning chains." icon={<Layers className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={3} title="Synthesis reveals consensus" description="The Master Synthesizer weighs each model's analysis, identifies agreement, divergence, and blind spots." icon={<GitMerge className="w-6 h-6 text-violet-400" />} />
+                <StepCard step={4} title="Decision sealed with proof" description="Every reasoning node and the final synthesis sealed with Ed25519 signatures. Verifiable, tamper-proof." icon={<Shield className="w-6 h-6 text-violet-400" />} />
               </motion.div>
             </div>
           </motion.div>
@@ -615,20 +661,20 @@ assert result.valid  # True`}</code>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Built for builders, compliance teams, and CISOs</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Decisions that matter deserve more than one opinion.</h2>
             </motion.div>
             <motion.div variants={staggerContainer} className="grid md:grid-cols-2 gap-6">
-              <UseCaseCard icon={<Users className="w-5 h-5 text-cyan-400" />} title="Multi-agent orchestration" description="Prove which agent produced what\u2014and in what sequence\u2014when workflows span tools and services." />
-              <UseCaseCard icon={<AlertTriangle className="w-5 h-5 text-cyan-400" />} title="Incident response" description="Validate whether a suspect agent action receipt is authentic before you trust it in investigations." />
-              <UseCaseCard icon={<Terminal className="w-5 h-5 text-cyan-400" />} title="CI / QA verification" description="Fail builds when receipts don&apos;t verify. Treat trust as a testable invariant." />
-              <UseCaseCard icon={<FileJson className="w-5 h-5 text-cyan-400" />} title="Compliance &amp; audit trails" description="Export verification history and preserve evidence with cryptographic integrity checks." />
+              <UseCaseCard icon={<TrendingUp className="w-5 h-5 text-cyan-400" />} title="Investment analysis" description="Should you buy, hold, or sell? See consensus across 4 models with confidence scores and risk flags." />
+              <UseCaseCard icon={<Scale className="w-5 h-5 text-cyan-400" />} title="Legal &amp; compliance review" description="Get multi-perspective analysis on contracts, regulations, and risk — with cryptographic proof of the reasoning." />
+              <UseCaseCard icon={<Code className="w-5 h-5 text-cyan-400" />} title="Architecture decisions" description="Monolith vs microservices? Which database? Let 4 AI models debate the trade-offs before you commit." />
+              <UseCaseCard icon={<Target className="w-5 h-5 text-cyan-400" />} title="Strategic planning" description="Market entry, pricing strategy, competitive positioning — synthesized intelligence from multiple reasoning engines." />
             </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* ================================================================ */}
-      {/*  9. ATS PROTOCOL ENGINE                                          */}
+      {/*  9. DECISION ENGINE                                              */}
       {/* ================================================================ */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-violet-900/5 to-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -639,18 +685,22 @@ assert result.valid  # True`}</code>
 
               <div className="relative grid lg:grid-cols-2 gap-8 items-center">
                 <div>
-                  <span className="text-xs font-medium text-violet-300 bg-violet-500/10 px-3 py-1 rounded-full">The Engine Behind NotaryOS</span>
+                  <span className="text-xs font-medium text-violet-300 bg-violet-500/10 px-3 py-1 rounded-full">Powered by the ATS Protocol</span>
                   <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 mt-4">
-                    The only compliance layer that <span className="gradient-text">keeps up with inference speed.</span>
+                    The only decision engine with{' '}
+                    <span className="gradient-text">cryptographic provenance.</span>
                   </h2>
-                  <p className="text-gray-400 mb-6 leading-relaxed">Powered by the ATS Protocol&mdash;a high-performance agent communication engine with 7-layer zero-trust security.</p>
+                  <p className="text-gray-400 mb-6 leading-relaxed">
+                    Every reasoning step, every model weight, every synthesis node sealed with Ed25519 signatures
+                    and chained into a verifiable provenance DAG. Not just transparency&mdash;mathematical proof.
+                  </p>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     {[
-                      { value: '<5ms', label: 'Verification latency' },
-                      { value: '178+', label: 'Receipts per second' },
-                      { value: '100%', label: 'Success rate in production' },
-                      { value: '7 layers', label: 'Zero-trust security' },
+                      { value: '5 AIs', label: 'Reasoning in parallel' },
+                      { value: '<15ms', label: 'Receipt sealing latency' },
+                      { value: '6', label: 'Synthesizer presets' },
+                      { value: 'Ed25519', label: 'Cryptographic signatures' },
                     ].map((stat, i) => (
                       <div key={i} className="p-3 rounded-lg glass-card">
                         <div className="text-2xl font-bold stat-number">{stat.value}</div>
@@ -660,12 +710,12 @@ assert result.valid  # True`}</code>
                   </div>
 
                   <p className="text-xs text-gray-500 mb-6">
-                    Benchmarked in production &mdash; 5,416 requests, 100% success rate.
+                    General, OSINT, Trading, Real Estate, Legal, and Custom synthesizer presets.
                   </p>
 
                   <div className="flex flex-wrap gap-3">
-                    <Link href="/docs" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg text-sm font-medium transition-all btn-shine">See the Docs <ArrowRight className="w-4 h-4" /></Link>
-                    <Link href="/pricing" className="btn-ghost flex items-center gap-2 text-sm">View Pricing</Link>
+                    <Link href="/forge" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg text-sm font-medium transition-all btn-shine">Try the Forge <ArrowRight className="w-4 h-4" /></Link>
+                    <Link href="/docs" className="btn-ghost flex items-center gap-2 text-sm">See the Docs</Link>
                   </div>
                 </div>
 
@@ -674,30 +724,28 @@ assert result.valid  # True`}</code>
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                    <span className="ml-2 text-xs text-gray-500 font-mono">seal_and_verify.py</span>
+                    <span className="ml-2 text-xs text-gray-500 font-mono">decision_plane.py</span>
                   </div>
                   <pre className="p-4 text-xs text-gray-300 font-mono overflow-x-auto leading-relaxed">
-                    <code>{`from notaryos import NotaryClient
+                    <code>{`import httpx
 
-notary = NotaryClient(api_key="notary_live_...")
-
-# Seal an action — ~5ms, tamper-proof
-receipt = notary.seal(
-    action="trade.executed",
-    agent_id="trading-bot-v3",
-    payload={"pair": "BTC/USD", "amount": 0.5}
+# Run multi-model reasoning
+resp = httpx.post(
+    "https://api.notaryos.org/v1/forge/run",
+    headers={"X-API-Key": "notary_live_..."},
+    json={
+        "prompt": "Evaluate NVDA as a long position",
+        "models": ["chatgpt", "sonnet", "gemini", "kimi"],
+        "synthesizer": "trading",
+        "stream": False,
+    },
 )
 
-# Or prove what DIDN'T happen
-counterfactual = notary.issue("trade.declined", {
-    "counterfactual": True,
-    "reason": "risk_threshold_exceeded",
-    "would_have": {"action": "sell", "symbol": "BTC"}
-})
-
-# Anyone can verify — no trust required
-result = notary.verify(receipt)
-print(result.valid)  # True`}</code>
+result = resp.json()
+print(result["assessment"])       # Synthesized analysis
+print(result["model_weights"])    # Per-model confidence
+print(result["provenance_chain"]) # Cryptographic proof
+# Every reasoning node: Ed25519 sealed`}</code>
                   </pre>
                 </div>
               </div>
@@ -714,7 +762,7 @@ print(result.valid)  # True`}</code>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="text-center mb-16">
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Simple, transparent pricing</h2>
-              <p className="text-lg text-gray-400">Start free. Scale as you grow. No surprises.</p>
+              <p className="text-lg text-gray-400">Start free. Scale your decision intelligence as you grow.</p>
             </motion.div>
             <motion.div variants={staggerContainer} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingTiers.map((tier) => <PricingTier key={tier.name} {...tier} />)}
@@ -729,23 +777,24 @@ print(result.valid)  # True`}</code>
       </section>
 
       {/* ================================================================ */}
-      {/*  11. AI COLLABORATION                                            */}
+      {/*  11. AI MODELS                                                   */}
       {/* ================================================================ */}
       <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-900 via-gray-800/20 to-gray-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="text-center">
             <motion.div variants={fadeInUp} className="mb-8">
               <span className="inline-flex items-center gap-2 px-3 py-1 glass-card rounded-full text-sm text-violet-300 mb-4">
-                <Cpu className="w-3.5 h-3.5" /> Built by agents, for agents
+                <Brain className="w-3.5 h-3.5" /> Five reasoning engines
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Multi-Agent Collaboration</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">The best AIs reasoning together</h2>
             </motion.div>
             <motion.div variants={staggerContainer} className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8">
-              {agents.map((agent) => <AgentCard key={agent.name} {...agent} />)}
+              {agents.map((agent) => <ModelCard key={agent.name} {...agent} />)}
             </motion.div>
             <motion.p variants={fadeInUp} className="text-sm text-gray-400 max-w-2xl mx-auto">
-              The first cryptographic receipt system designed through multi-agent collaboration.
-              Five specialized AI agents contributed architecture, integration, design, security, and optimization.
+              Each model brings a different reasoning style. GPT-5 for broad analysis. Sonnet for precise logic.
+              Gemini for deep research. Kimi for pattern detection. Grok for contrarian perspectives.
+              The Master Synthesizer weighs them all.
             </motion.p>
           </motion.div>
         </div>
@@ -757,15 +806,22 @@ print(result.valid)  # True`}</code>
       <section className="py-16 sm:py-20 cta-gradient">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}>
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-white mb-4">When your AI acts, you have receipts.</motion.h2>
-            <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">Start issuing tamper-proof receipts in 5 minutes. Free tier included&mdash;no credit card required.</motion.p>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Stop asking one AI. Start seeing the whole picture.
+            </motion.h2>
+            <motion.p variants={fadeInUp} className="text-lg text-gray-400 mb-8">
+              The AI Decision Plane. Multi-model reasoning with cryptographic provenance. Free to start.
+            </motion.p>
             <motion.div variants={fadeInUp} className="flex justify-center gap-4 mb-8">
               <Link href="/sign-up" className="relative flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-lg font-medium transition-all btn-shine">
-                Get Started Free <ArrowRight className="w-5 h-5" />
+                Try the Decision Plane <ArrowRight className="w-5 h-5" />
               </Link>
-              <button onClick={() => router.push('/verify?sample=true')} className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all">
-                <Shield className="w-5 h-5" /> Verify a Receipt
-              </button>
+              <Link
+                href="/forge"
+                className="flex items-center gap-2 px-6 py-3 text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600 rounded-lg font-medium transition-all"
+              >
+                <Brain className="w-5 h-5" /> Open the Forge
+              </Link>
             </motion.div>
             <motion.p variants={fadeInUp} className="text-sm text-gray-500">
               Enterprise needs? <Link href="/pricing" className="text-violet-400 hover:text-violet-300">View pricing</Link> or <Link href="/docs" className="text-violet-400 hover:text-violet-300">read the docs</Link>.
@@ -783,19 +839,19 @@ print(result.valid)  # True`}</code>
             <div>
               <h4 className="text-white font-medium mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
+                <li><Link href="/forge" className="text-gray-400 hover:text-white transition-colors">Reasoning Forge</Link></li>
                 <li><Link href="/verify" className="text-gray-400 hover:text-white transition-colors">Verifier</Link></li>
-                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
                 <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/history" className="text-gray-400 hover:text-white transition-colors">History</Link></li>
+                <li><Link href="/history" className="text-gray-400 hover:text-white transition-colors">Decision History</Link></li>
                 <li><Link href="/api-keys" className="text-gray-400 hover:text-white transition-colors">API Keys</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-medium mb-4">Resources</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Docs</Link></li>
-                <li><Link href="/docs#receipt-spec" className="text-gray-400 hover:text-white transition-colors">Receipt Spec</Link></li>
-                <li><Link href="/docs#changelog" className="text-gray-400 hover:text-white transition-colors">Changelog</Link></li>
+                <li><Link href="/docs" className="text-gray-400 hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link href="/api-docs" className="text-gray-400 hover:text-white transition-colors">API Reference</Link></li>
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About</Link></li>
                 <li><a href="https://api.agenttownsquare.com/v1/notary/status" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
               </ul>
             </div>
@@ -821,12 +877,12 @@ print(result.valid)  # True`}</code>
           <div className="flex flex-col sm:flex-row items-center justify-between">
             <div className="flex items-center gap-3 mb-4 sm:mb-0">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-white" />
+                <Brain className="w-4 h-4 text-white" />
               </div>
               <span className="text-gray-400 text-sm font-medium">NotaryOS</span>
             </div>
             <p className="text-gray-500 text-sm text-center sm:text-right">
-              &copy; {new Date().getFullYear()} NotaryOS. Cryptographic receipt verification for AI agents.
+              &copy; {new Date().getFullYear()} NotaryOS. AI Decision Plane with cryptographic provenance.
             </p>
             {/* Protocol genesis marker — do not remove */}
             <span
