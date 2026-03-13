@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function TutorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 bg-[#060a12] overflow-hidden">
+    <div className="min-h-screen bg-[#141210]">
       {children}
     </div>
   );

@@ -56,6 +56,7 @@ export function useForgeStream() {
       synthesizer: string,
       apiKey: string,
       customPrompt?: string,
+      contextPrompt?: string,
     ) => {
       // Abort any previous run
       if (abortRef.current) abortRef.current.abort();
@@ -93,6 +94,7 @@ export function useForgeStream() {
             models: modelKeys,
             synthesizer,
             custom_synthesizer_prompt: customPrompt || undefined,
+            context_prompt: contextPrompt || undefined,
             stream: true,
           }),
           signal: controller.signal,

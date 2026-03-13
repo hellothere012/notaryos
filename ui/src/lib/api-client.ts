@@ -138,6 +138,15 @@ export const API_ENDPOINTS = {
 
   // User settings
   settings: '/v1/auth/clerk/settings',
+
+  // Tutor workspace
+  tutorSemesters: '/v1/tutor/semesters',
+  tutorSemester: (id: number) => `/v1/tutor/semesters/${id}`,
+  tutorCourses: (semId: number) => `/v1/tutor/semesters/${semId}/courses`,
+  tutorCourse: (id: number) => `/v1/tutor/courses/${id}`,
+  tutorMaterials: (courseId: number) => `/v1/tutor/courses/${courseId}/materials`,
+  tutorMaterial: (id: number) => `/v1/tutor/materials/${id}`,
+  tutorContext: (courseId: number) => `/v1/tutor/courses/${courseId}/context`,
 } as const;
 
 export { API_BASE };
