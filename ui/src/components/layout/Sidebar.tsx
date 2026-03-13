@@ -13,6 +13,7 @@ import {
   Shield,
   LayoutDashboard,
   Activity,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -46,6 +47,12 @@ const navItems: NavItem[] = [
     path: '/api-keys',
     label: 'API Keys',
     icon: <Key className="w-5 h-5" />,
+    requiresAuth: true,
+  },
+  {
+    path: '/agents',
+    label: 'Agents',
+    icon: <Bot className="w-5 h-5" />,
     requiresAuth: true,
   },
   {

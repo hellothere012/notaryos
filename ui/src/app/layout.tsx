@@ -35,6 +35,7 @@ const courierPrime = Courier_Prime({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-courier',
+  preload: false,
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -42,6 +43,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-ibm',
+  preload: false,
 });
 
 /** Static metadata exported for the entire application. */

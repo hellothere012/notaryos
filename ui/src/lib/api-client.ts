@@ -136,6 +136,15 @@ export const API_ENDPOINTS = {
   // Agent registration
   registerAgent: '/v1/notary/agents/register',
 
+  // Agent Dashboard
+  agentDashboardAgents: '/v1/notary/agents/dashboard/agents',
+  agentDashboardActivity: '/v1/notary/agents/dashboard/activity',
+  agentDashboardPermissions: '/v1/notary/agents/dashboard/permissions',
+  agentDashboardApprovals: '/v1/notary/agents/dashboard/approvals',
+  agentDashboardDecide: (id: number) => `/v1/notary/agents/dashboard/approvals/${id}/decide`,
+  agentDashboardDecisions: '/v1/notary/agents/dashboard/decisions',
+  agentDashboardStats: '/v1/notary/agents/dashboard/stats',
+
   // User settings
   settings: '/v1/auth/clerk/settings',
 
