@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Courier_Prime, IBM_Plex_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { dark } from '@clerk/themes';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ConsentGatedAnalytics } from '@/components/ui/ConsentGatedAnalytics';
+import { CookieConsent } from '@/components/ui/CookieConsent';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -72,7 +75,31 @@ export const metadata: Metadata = {
     description:
       'Multi-model AI reasoning with cryptographic provenance. See how AI thinks.',
     type: 'website',
+    images: [
+      {
+        url: 'https://notaryos.org/api/og/home',
+        width: 1200,
+        height: 630,
+        alt: 'NotaryOS — AI Decision Plane',
+      },
+    ],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NotaryOS — AI Decision Plane',
+    description:
+      'Multi-model AI reasoning with cryptographic provenance. See how AI thinks.',
+    images: ['https://notaryos.org/api/og/home'],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/site.webmanifest',
 };
 
 /** Viewport configuration separated from metadata per Next.js 14+ convention. */
@@ -115,6 +142,9 @@ export default function RootLayout({
           }}
         >
           <Providers>{children}</Providers>
+          <ConsentGatedAnalytics />
+          <SpeedInsights />
+          <CookieConsent />
         </ClerkProvider>
       </body>
     </html>

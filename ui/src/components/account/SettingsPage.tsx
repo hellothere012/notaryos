@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Settings,
   Bell,
@@ -131,9 +132,12 @@ export const SettingsPage: React.FC = () => {
       });
       setSaveSuccess(true);
       setHasChanges(false);
+      toast.success('Settings saved');
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error: any) {
-      setSaveError(error.response?.data?.detail || 'Failed to save settings');
+      const msg = error.response?.data?.detail || 'Failed to save settings';
+      setSaveError(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }

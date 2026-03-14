@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 
 /**
  * Dashboard Layout
@@ -45,6 +46,7 @@ export default function DashboardLayout({
       </div>
       <MobileNav />
       <Footer />
+      <WelcomeModal />
     </div>
   );
 }

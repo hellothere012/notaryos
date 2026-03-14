@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Key,
   Plus,
@@ -103,7 +104,10 @@ export const ApiKeysPage: React.FC = () => {
     // Show the new key to the user
     if (response.data.key) {
       // Open modal with new key displayed
-      alert(`New key generated: ${response.data.key}\n\nSave this key - it won't be shown again!`);
+      toast.success('New key generated! Save it — it won\'t be shown again.', {
+        description: response.data.key,
+        duration: 15000,
+      });
     }
   };
 

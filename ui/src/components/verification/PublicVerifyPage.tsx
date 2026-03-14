@@ -674,11 +674,17 @@ const PublicVerifyPage: React.FC<PublicVerifyPageProps> = ({ initialData, hashOv
     setPageState('loading');
     setErrorMessage('');
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     try {
       // The /r/demo path is handled server-side, returning a proper PublicReceiptResponse
       const endpoint = `/v1/notary/r/${encodeURIComponent(hash)}`;
 
-      const response = await publicClient.get<PublicReceiptResponse>(endpoint);
+      const response = await publicClient.get<PublicReceiptResponse>(endpoint, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       const payload = response.data;
 
       if (!payload.found) {
@@ -689,7 +695,13 @@ const PublicVerifyPage: React.FC<PublicVerifyPageProps> = ({ initialData, hashOv
       setData(payload);
       setPageState(payload.verification?.valid ? 'verified' : 'invalid');
     } catch (err: any) {
-      if (err.response?.status === 404) {
+      clearTimeout(timeout);
+      if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+        setErrorMessage(
+          'Verification timed out. The server may be busy — please try again.'
+        );
+        setPageState('error');
+      } else if (err.response?.status === 404) {
         setPageState('not_found');
       } else if (!navigator.onLine || err.message?.includes('Network')) {
         setErrorMessage(

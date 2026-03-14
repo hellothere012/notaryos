@@ -37,9 +37,64 @@ const INITIAL_STATE: ForgeState = {
   error: null,
 };
 
+/** Saved session entry stored in localStorage */
+export interface ForgeSessionEntry {
+  forge_id: string;
+  prompt: string;
+  models: ModelResult[];
+  synthesis: ForgeState['synthesis'];
+  timestamp: number;
+}
+
+const SESSIONS_INDEX_KEY = 'forge-sessions-index';
+const SESSION_KEY_PREFIX = 'forge-session-';
+const MAX_SESSIONS = 50;
+
+function saveSessionToStorage(forgeId: string, prompt: string, models: ModelResult[], synthesis: ForgeState['synthesis']) {
+  try {
+    const entry: ForgeSessionEntry = {
+      forge_id: forgeId,
+      prompt,
+      models,
+      synthesis,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(`${SESSION_KEY_PREFIX}${forgeId}`, JSON.stringify(entry));
+
+    const index: { forge_id: string; prompt: string; timestamp: number }[] =
+      JSON.parse(localStorage.getItem(SESSIONS_INDEX_KEY) || '[]');
+    index.unshift({ forge_id: forgeId, prompt: prompt.slice(0, 100), timestamp: Date.now() });
+    if (index.length > MAX_SESSIONS) {
+      const removed = index.pop();
+      if (removed) localStorage.removeItem(`${SESSION_KEY_PREFIX}${removed.forge_id}`);
+    }
+    localStorage.setItem(SESSIONS_INDEX_KEY, JSON.stringify(index));
+  } catch {
+    // localStorage full or unavailable — silently skip
+  }
+}
+
+export function getForgeSessionIndex(): { forge_id: string; prompt: string; timestamp: number }[] {
+  try {
+    return JSON.parse(localStorage.getItem(SESSIONS_INDEX_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function loadForgeSession(forgeId: string): ForgeSessionEntry | null {
+  try {
+    const raw = localStorage.getItem(`${SESSION_KEY_PREFIX}${forgeId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useForgeStream() {
   const [state, setState] = useState<ForgeState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
+  const promptRef = useRef<string>('');
 
   const reset = useCallback(() => {
     if (abortRef.current) {
@@ -47,6 +102,18 @@ export function useForgeStream() {
       abortRef.current = null;
     }
     setState(INITIAL_STATE);
+  }, []);
+
+  const restoreSession = useCallback((session: ForgeSessionEntry) => {
+    setState({
+      phase: 'complete',
+      forgeId: session.forge_id,
+      promptReceipt: null,
+      models: session.models,
+      synthesis: session.synthesis,
+      complete: null,
+      error: null,
+    });
   }, []);
 
   const startForge = useCallback(
@@ -58,6 +125,9 @@ export function useForgeStream() {
       customPrompt?: string,
       contextPrompt?: string,
     ) => {
+      // Capture prompt for session storage
+      promptRef.current = prompt;
+
       // Abort any previous run
       if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
@@ -138,6 +208,13 @@ export function useForgeStream() {
             }
           }
         }
+        // Stream complete — persist session to localStorage
+        setState((s) => {
+          if (s.phase === 'complete' && s.forgeId) {
+            saveSessionToStorage(s.forgeId, promptRef.current, s.models, s.synthesis);
+          }
+          return s;
+        });
       } catch (err: any) {
         if (err.name !== 'AbortError') {
           setState((s) => ({ ...s, phase: 'error', error: err.message }));
@@ -147,7 +224,7 @@ export function useForgeStream() {
     [],
   );
 
-  return { state, startForge, reset };
+  return { state, startForge, reset, restoreSession };
 }
 
 // ─── Event Dispatcher ─────────────────────────────────────

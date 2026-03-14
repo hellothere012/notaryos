@@ -1,0 +1,13 @@
+{
+  "name": "NotaryOS",
+  "short_name": "NotaryOS",
+  "description": "AI Decision Plane — Multi-model reasoning with cryptographic provenance",
+  "icons": [
+    { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "theme_color": "#0a0e1a",
+  "background_color": "#0a0e1a",
+  "display": "standalone",
+  "start_url": "/"
+}
