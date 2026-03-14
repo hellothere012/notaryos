@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, LogIn, UserPlus, Menu, X, ChevronDown, BookOpen, Zap, FileCode, Github } from 'lucide-react';
+import { Shield, LogIn, UserPlus, Menu, X, ChevronDown, BookOpen, Zap, FileCode, Github, Lock, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserMenu } from '../account/UserMenu';
 
@@ -85,6 +85,28 @@ export const AppHeader: React.FC = () => {
               }`}
             >
               About
+            </Link>
+            <Link
+              href="/trust"
+              className={`px-3 py-2 rounded-lg transition-colors font-medium flex items-center gap-1.5 ${
+                isActive('/trust')
+                  ? 'text-emerald-400 bg-emerald-500/20'
+                  : 'text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              Trust
+            </Link>
+            <Link
+              href="/explore"
+              className={`px-3 py-2 rounded-lg transition-colors font-medium flex items-center gap-1.5 ${
+                isActive('/explore')
+                  ? 'text-purple-400 bg-purple-500/20'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5" />
+              Explorer
             </Link>
             <Link
               href="/panopticon"
@@ -233,6 +255,27 @@ export const AppHeader: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About
+                </Link>
+                <Link
+                  href="/trust"
+                  className={`px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 ${
+                    isActive('/trust')
+                      ? 'text-emerald-400 bg-emerald-500/20'
+                      : 'text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-500/10'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Lock className="w-4 h-4" />
+                  Trust & Security
+                </Link>
+                <Link
+                  href="/explore"
+                  className={`px-4 py-2.5 rounded-lg font-medium ${
+                    isActive('/explore') ? 'text-white bg-purple-500/20' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Receipt Explorer
                 </Link>
                 <Link
                   href="/panopticon"

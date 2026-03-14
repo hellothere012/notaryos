@@ -32,6 +32,12 @@ export const Footer: React.FC = () => {
               API
             </Link>
             <Link
+              href="/trust"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Security
+            </Link>
+            <Link
               href="/privacy"
               className="text-gray-400 hover:text-white transition-colors"
             >

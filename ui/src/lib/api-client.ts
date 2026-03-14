@@ -112,6 +112,7 @@ export const API_ENDPOINTS = {
   demo: '/v1/notary/demo',
   verify: '/v1/notary/verify',
   history: '/v1/notary/history',
+  explore: '/v1/notary/explore',
   activityStats: '/v1/notary/activity/stats',
   sampleReceipt: '/v1/notary/sample-receipt',
   publicReceiptLookup: (hash: string) => `/v1/notary/r/${hash}`,
@@ -147,6 +148,11 @@ export const API_ENDPOINTS = {
 
   // User settings
   settings: '/v1/auth/clerk/settings',
+
+  // Usage analytics
+  usageCurrent: '/v1/usage/current',
+  usageHistory: '/v1/usage/history',
+  usageSummary: '/v1/usage/summary',
 
   // Tutor workspace
   tutorSemesters: '/v1/tutor/semesters',

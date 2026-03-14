@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Activity,
   Bot,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -53,6 +54,12 @@ const navItems: NavItem[] = [
     path: '/agents',
     label: 'Agents',
     icon: <Bot className="w-5 h-5" />,
+    requiresAuth: true,
+  },
+  {
+    path: '/usage',
+    label: 'Usage',
+    icon: <BarChart3 className="w-5 h-5" />,
     requiresAuth: true,
   },
   {
