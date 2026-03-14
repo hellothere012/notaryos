@@ -7,9 +7,10 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Check,
   X,
@@ -186,8 +187,7 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
       }
     } catch (err: any) {
       console.error('Checkout error:', err?.response?.data || err);
-      // Fallback: direct to sign-up if checkout fails
-      router.push(`/sign-up?plan=${tier.name.toLowerCase()}`);
+      toast.error('Unable to start checkout. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -288,6 +288,17 @@ const TierCard: React.FC<{ tier: PricingTier; index: number }> = ({ tier, index 
 };
 
 export const PricingPage: React.FC = () => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      toast.success('Subscription activated! Welcome aboard.', { duration: 8000 });
+    } else if (status === 'canceled') {
+      toast.info('Checkout canceled. You can subscribe anytime.');
+    }
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
