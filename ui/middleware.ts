@@ -23,6 +23,8 @@ const isPublicRoute = createRouteMatcher([
   '/tutor(.*)',
   '/osint(.*)',
   '/agents(.*)',
+  '/trust(.*)',
+  '/explore(.*)',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/webhook(.*)',
