@@ -672,18 +672,17 @@ export const AboutPage: React.FC = () => {
             <pre className="p-6 text-sm text-gray-300 font-mono overflow-x-auto leading-relaxed">
               <code>{`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_test_...")
+notary = NotaryClient()  # works instantly, no signup needed
 
-# Issue a receipt — one line
-receipt = notary.issue(
-    action_type="task.completed",
-    payload={"message": "Task completed", "result": data}
-)
+# Seal a receipt — one line
+receipt = notary.seal("task.completed", {
+    "message": "Task completed", "result": data
+})
 
 # Verify anywhere — no API key needed
-result = notary.verify(receipt.receipt_hash)
-print(result.valid)    # True
-print(receipt.badge)   # "seal:a1b2...c3d4"`}</code>
+result = notary.verify(receipt)
+print(result.valid)          # True
+print(receipt.receipt_hash)  # "a1b2c3d4..."`}</code>
             </pre>
           </motion.div>
         </div>

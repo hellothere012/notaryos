@@ -373,15 +373,15 @@ export const PricingPage: React.FC = () => {
           {[
             {
               lang: 'Python',
-              code: `from notaryos import NotaryClient\nnotary = NotaryClient(api_key="notary_live_xxx")\nreceipt = notary.issue("action", {"key": "val"})`,
+              code: `from notaryos import NotaryClient\nnotary = NotaryClient()  # no signup needed\nreceipt = notary.seal("action", {"key": "val"})`,
             },
             {
               lang: 'TypeScript',
-              code: `import { NotaryClient } from 'notaryos';\nconst notary = new NotaryClient({ apiKey: 'notary_live_xxx' });\nconst receipt = await notary.issue('action', { key: 'val' });`,
+              code: `import { NotaryClient } from 'notaryos';\nconst notary = new NotaryClient();  // no signup needed\nconst receipt = await notary.seal('action', { key: 'val' });`,
             },
             {
-              lang: 'Go',
-              code: `client, _ := notary.NewClient("notary_live_xxx", nil)\nreceipt, _ := client.Issue("action",\n  map[string]any{"key": "val"})`,
+              lang: 'Go (coming soon)',
+              code: `client, _ := notary.NewClient(nil)  // demo key\nreceipt, _ := client.Seal("action",\n  map[string]any{"key": "val"})`,
             },
           ].map((snippet) => (
             <motion.div

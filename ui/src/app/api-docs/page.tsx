@@ -156,12 +156,11 @@ export default function ApiDocsPage() {
               <p className="text-sm text-gray-500 mb-2">2. Seal a receipt (API key)</p>
               <pre className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-sm text-gray-300 overflow-x-auto">
 {`curl -X POST ${BASE_URL}/v1/notary/seal \\
-  -H "Authorization: Bearer notary_live_xxx" \\
+  -H "X-API-Key: notary_test_public_demo_b0821da365e0e8ce" \\
   -H "Content-Type: application/json" \\
   -d '{
     "action_type": "data_processing",
-    "agent_id": "my-agent-v1",
-    "payload": {"input_tokens": 1024}
+    "payload": {"input_tokens": 1024, "agent": "my-agent-v1"}
   }'`}
               </pre>
             </div>
@@ -230,17 +229,22 @@ export default function ApiDocsPage() {
             package wraps the full API with zero external dependencies.
           </p>
           <pre className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-sm text-gray-300 overflow-x-auto mb-4">
-{`pip install notaryos
+{`pip install notaryos  # or: npm install notaryos
 
 from notaryos import NotaryClient, verify_receipt
 
-# Issue a receipt (API key required)
-notary = NotaryClient(api_key="notary_live_xxx")
-receipt = notary.seal("data_processing", "my-agent-v1", {"tokens": 1024})
-print(receipt.verify_url)
+# Seal a receipt — no signup needed (10 req/min demo key)
+notary = NotaryClient()  # works instantly
+receipt = notary.seal("data_processing", {"tokens": 1024, "agent": "my-agent-v1"})
+print(receipt.receipt_hash)  # SHA-256 hash for lookup
+print(receipt.signature)     # Ed25519 signature
 
 # Verify a receipt (no API key needed)
-is_valid = verify_receipt(receipt_dict)  # → True`}
+is_valid = verify_receipt(receipt.raw)  # True
+
+# Look up by hash (public)
+info = notary.lookup(receipt.receipt_hash)
+print(info["found"])  # True`}
           </pre>
           <a
             href="https://github.com/hellothere012/notaryos/tree/main/sdk/python"

@@ -394,7 +394,7 @@ export const DocsPage: React.FC = () => {
       language: 'python' as Language,
       code: `from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_...")`,
+notary = NotaryClient()  # works instantly, no API key needed`,
       filename: 'main.py',
     },
     {
@@ -402,7 +402,7 @@ notary = NotaryClient(api_key="notary_live_...")`,
       language: 'typescript' as Language,
       code: `import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_live_...' });`,
+const notary = new NotaryClient();  // works instantly, no API key needed`,
       filename: 'index.ts',
     },
   ], []);
@@ -411,37 +411,29 @@ const notary = new NotaryClient({ apiKey: 'notary_live_...' });`,
     {
       label: 'Python',
       language: 'python' as Language,
-      code: `receipt = notary.seal(
-    action="payment.processed",
-    agent_id="billing-agent-01",
-    payload={
-        "amount": 49.99,
-        "currency": "USD",
-        "customer_id": "cust_abc123"
-    }
-)
+      code: `receipt = notary.seal("payment.processed", {
+    "amount": 49.99,
+    "currency": "USD",
+    "customer_id": "cust_abc123"
+})
 
-print(receipt.hash)       # "sha256:a1b2c3d4..."
-print(receipt.signature)  # "ed25519:SGVsbG8g..."
-print(receipt.valid)      # True`,
+print(receipt.receipt_hash)   # "a1b2c3d4..."
+print(receipt.signature)      # "SGVsbG8g..."
+print(receipt.chain_sequence) # 1`,
       filename: 'seal_example.py',
     },
     {
       label: 'TypeScript',
       language: 'typescript' as Language,
-      code: `const receipt = await notary.seal({
-  action: 'payment.processed',
-  agentId: 'billing-agent-01',
-  payload: {
-    amount: 49.99,
-    currency: 'USD',
-    customerId: 'cust_abc123',
-  },
+      code: `const receipt = await notary.seal('payment.processed', {
+  amount: 49.99,
+  currency: 'USD',
+  customerId: 'cust_abc123',
 });
 
-console.log(receipt.hash);       // "sha256:a1b2c3d4..."
-console.log(receipt.signature);  // "ed25519:SGVsbG8g..."
-console.log(receipt.valid);      // true`,
+console.log(receipt.receipt_hash);   // "a1b2c3d4..."
+console.log(receipt.signature);      // "SGVsbG8g..."
+console.log(receipt.chain_sequence); // 1`,
       filename: 'seal-example.ts',
     },
   ], []);
@@ -450,21 +442,21 @@ console.log(receipt.valid);      // true`,
     {
       label: 'Python',
       language: 'python' as Language,
-      code: `result = notary.verify(receipt.hash)
+      code: `result = notary.verify(receipt)
 
 assert result.valid           # True
-print(result.signer_id)       # "notary-v1-ed25519"
-print(result.chain_position)  # 42`,
+print(result.signature_ok)    # True
+print(result.structure_ok)    # True`,
       filename: 'verify_example.py',
     },
     {
       label: 'TypeScript',
       language: 'typescript' as Language,
-      code: `const result = await notary.verify(receipt.hash);
+      code: `const result = await notary.verify(receipt);
 
-console.log(result.valid);          // true
-console.log(result.signerId);       // "notary-v1-ed25519"
-console.log(result.chainPosition);  // 42`,
+console.log(result.valid);         // true
+console.log(result.signature_ok);  // true
+console.log(result.structure_ok);  // true`,
       filename: 'verify-example.ts',
     },
   ], []);
@@ -1264,16 +1256,12 @@ print(receipt.proofs)          # All three proofs attached`}
                     filename="skills/notary_seal.py"
                     code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_...")
+notary = NotaryClient()  # works instantly, no API key needed
 
 async def notary_seal(action: str, payload: dict) -> dict:
     """OpenClaw AgentSkill: Seal every agent action with a cryptographic receipt."""
-    receipt = notary.seal(
-        action=action,
-        agent_id="openclaw-agent",
-        payload=payload
-    )
-    return {"receipt_hash": receipt.hash, "valid": receipt.valid}
+    receipt = notary.seal(action, payload)
+    return {"receipt_hash": receipt.receipt_hash, "signature": receipt.signature}
 
 # Register as an OpenClaw skill
 SKILL_NAME = "notary_seal"
@@ -1285,23 +1273,23 @@ SKILL_HANDLER = notary_seal`}
                   <CodeBlock
                     language="python"
                     filename="verify_openclaw_actions.py"
-                    code={`from notaryos import NotaryClient
+                    code={`from notaryos import verify_receipt
 
-notary = NotaryClient()  # No API key needed for verification
+# Verify any receipt — no API key needed
+is_valid = verify_receipt(receipt_dict)  # True
 
-# Get the receipt hash from OpenClaw's action log
-receipt_hash = "sha256:a1b2c3d4e5f6..."
+# Or use the client for full details
+from notaryos import NotaryClient
+notary = NotaryClient()
+result = notary.verify(receipt_dict)
 
-# Verify — works offline, no trust in OpenClaw required
-result = notary.verify(receipt_hash)
+print(result.valid)         # True — cryptographically verified
+print(result.signature_ok)  # True — Ed25519 signature intact
+print(result.structure_ok)  # True — receipt structure valid
 
-print(result.valid)           # True — cryptographically verified
-print(result.chain_position)  # 47 — position in the agent's action chain
-print(result.checks)          # {"signature": "pass", "chain": "pass", "timestamp": "pass"}
-
-# If someone tampered with the logs:
-# result.valid = False
-# result.checks["chain_linkage"] = "fail — hash mismatch"`}
+# Look up by hash (public)
+info = notary.lookup(receipt_hash)
+print(info["found"])  # True`}
                   />
 
                   <div className="mt-6 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-start gap-3">
@@ -1367,80 +1355,96 @@ print(result.checks)          # {"signature": "pass", "chain": "pass", "timestam
                   a cryptographic receipt&mdash;zero changes to the agent class.
                 </motion.p>
 
-                {/* 2-line integration */}
+                {/* Receipt chaining */}
                 <motion.div variants={fadeInUp} className="mb-10">
                   <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
                     <Zap className="w-4 h-4 text-yellow-400" />
-                    2-Line Integration
+                    Receipt Chaining
                   </h3>
                   <p className="text-sm text-gray-400 mb-3">
-                    Call <code className="text-emerald-400">notary.wrap(agent)</code> and
-                    every public method on your agent automatically issues a receipt.
+                    Link receipts into a provenance DAG &mdash; proving action B was caused by action A.
                   </p>
                   <CodeBlock
                     language="python"
                     filename="agent.py"
                     code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_...")
-notary.wrap(my_agent)  # Every public method now auto-receipts
+notary = NotaryClient()  # works instantly, no API key needed
 
-my_agent.place_order("BTC", 10)    # Receipt issued automatically
-my_agent.analyze(api_key="secret") # api_key redacted in receipt`}
+# Step 1: Read the data
+r1 = notary.seal("file.read", {"file": "report.pdf"})
+
+# Step 2: Chain the next action to step 1
+r2 = notary.seal("summary.generated", {
+    "source": "report.pdf",
+    "summary_length": 500
+}, previous_receipt_hash=r1.receipt_hash)
+
+print(r2.chain_sequence)  # 2 — linked to r1`}
                   />
                 </motion.div>
 
-                {/* Class decorator */}
+                {/* Counterfactual receipts */}
                 <motion.div variants={fadeInUp} className="mb-10">
                   <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
                     <Code className="w-4 h-4 text-purple-400" />
-                    Class Decorator
+                    Counterfactual Receipts
                   </h3>
                   <p className="text-sm text-gray-400 mb-3">
-                    Use <code className="text-purple-400">@receipted</code> to auto-wrap
-                    every instance at construction time.
+                    Prove your agent <em>chose not to act</em> &mdash; cryptographic proof of restraint
+                    via commit-reveal protocol.
                   </p>
                   <CodeBlock
                     language="python"
-                    filename="trading_bot.py"
-                    code={`from notaryos import NotaryClient, receipted
+                    filename="counterfactual.py"
+                    code={`from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_...")
+notary = NotaryClient(api_key="notary_live_xxx")
 
-@receipted(notary)
-class TradingBot:
-    def trade(self, symbol, amount):
-        return execute_trade(symbol, amount)
+# Phase 1: Commit (reasoning is hashed, not stored)
+result = notary.commit_counterfactual(
+    action_not_taken="financial.execute_trade",
+    capability_proof={"permissions": ["trade.execute"]},
+    opportunity_context={"ticker": "ACME", "price": 142.50},
+    decision_reason="Risk score exceeds threshold",
+)
 
-bot = TradingBot()  # Auto-wrapped at __init__
-bot.trade("ETH", 5) # Receipt issued automatically`}
+# Phase 2: Reveal (after min delay — proves you committed before revealing)
+reveal = notary.reveal_counterfactual(
+    result["receipt_hash"],
+    "Risk score exceeds threshold"
+)
+assert reveal["success"]`}
                   />
                 </motion.div>
 
-                {/* Configuration */}
+                {/* Error handling */}
                 <motion.div variants={fadeInUp} className="mb-10">
                   <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
                     <Lock className="w-4 h-4 text-cyan-400" />
-                    Configuration
+                    Error Handling
                   </h3>
                   <p className="text-sm text-gray-400 mb-3">
-                    Control receipt mode, sampling rate, and secret redaction.
+                    Typed exceptions for every failure mode &mdash; rate limits, auth, and validation.
                   </p>
                   <CodeBlock
                     language="python"
-                    filename="config.py"
-                    code={`from notaryos import NotaryClient, AutoReceiptConfig
+                    filename="error_handling.py"
+                    code={`from notaryos import NotaryClient, AuthenticationError, RateLimitError, ValidationError
 
-config = AutoReceiptConfig(
-    mode="all",           # "all", "errors_only", or "sample"
-    sample_rate=0.5,      # Sample 50% of calls (for "sample" mode)
-    fire_and_forget=True, # Non-blocking (background thread)
-    dry_run=False,        # Set True to log without issuing
-    redact_secrets=True,  # Redact args matching secret patterns
-)
+notary = NotaryClient()
 
-notary = NotaryClient(api_key="notary_live_...")
-notary.wrap(agent, config=config)`}
+try:
+    receipt = notary.seal("action", {"key": "value"})
+except RateLimitError as e:
+    # Demo key: 10 req/min. Wait e.retry_after seconds
+    pass
+except AuthenticationError:
+    # Invalid or expired API key
+    pass
+except ValidationError:
+    # Bad request (missing action_type, etc.)
+    pass`}
                   />
                 </motion.div>
 
@@ -1509,7 +1513,7 @@ notary.wrap(agent, config=config)`}
                     Python
                   </h3>
                   <p className="text-sm text-gray-400 mb-3">
-                    Requires Python 3.8+. Async-first with synchronous wrappers.
+                    Requires Python 3.8+. Zero dependencies — uses only stdlib.
                   </p>
                   <CodeBlock
                     language="bash"
@@ -1519,25 +1523,30 @@ notary.wrap(agent, config=config)`}
                   <CodeBlock
                     language="python"
                     filename="example.py"
-                    code={`from notaryos import NotaryClient
+                    code={`from notaryos import NotaryClient, verify_receipt
 
-notary = NotaryClient(api_key="notary_live_...")
+notary = NotaryClient()  # works instantly, no API key needed
 
-# Seal an action
-receipt = notary.seal(
-    action="data.exported",
-    agent_id="export-agent",
-    payload={"rows": 15000, "format": "csv"}
-)
+# Seal an action (3 lines)
+receipt = notary.seal("data.exported", {
+    "rows": 15000,
+    "format": "csv",
+    "agent": "export-agent"
+})
+print(receipt.receipt_hash)   # SHA-256 hash
+print(receipt.signature)      # Ed25519 signature
+print(receipt.chain_sequence) # position in chain
 
-# Verify by hash (no auth needed)
-result = notary.verify(receipt.hash)
-assert result.valid
+# Verify (with API key — full details)
+result = notary.verify(receipt)
+assert result.valid and result.signature_ok
 
-# List recent receipts
-history = notary.history(agent_id="export-agent", limit=10)
-for r in history:
-    print(f"{r.action} @ {r.signed_at} -> {r.hash[:16]}...")`}
+# Verify (no API key — public, returns bool)
+is_valid = verify_receipt(receipt.raw)  # True
+
+# Look up by hash (public)
+info = notary.lookup(receipt.receipt_hash)
+print(info["found"])  # True`}
                   />
                 </motion.div>
 
@@ -1558,23 +1567,33 @@ for r in history:
                   <CodeBlock
                     language="typescript"
                     filename="example.ts"
-                    code={`import { NotaryClient } from 'notaryos';
+                    code={`import { NotaryClient, verifyReceipt } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_live_...' });
+const notary = new NotaryClient();  // works instantly, no API key needed
 
-// Seal an action
-const receipt = await notary.seal({
-  action: 'email.sent',
-  agentId: 'comms-agent',
-  payload: {
-    to: 'user@example.com',
-    subject: 'Your order has shipped',
-  },
+// Seal an action (positional args)
+const receipt = await notary.seal('email.sent', {
+  to: 'user@example.com',
+  subject: 'Your order has shipped',
+  agent: 'comms-agent',
+});
+console.log(receipt.receipt_hash);   // SHA-256 hash
+console.log(receipt.signature);      // Ed25519 signature
+console.log(receipt.chain_sequence); // position in chain
+
+// Object form also works
+const receipt2 = await notary.seal({
+  actionType: 'email.sent',
+  payload: { to: 'user@example.com' },
 });
 
-// Verify anywhere (no API key required)
-const result = await notary.verify(receipt.hash);
-console.log(result.checks); // { signature: 'pass', ... }`}
+// Verify (with API key — full details)
+const result = await notary.verify(receipt);
+console.log(result.valid);        // true
+console.log(result.signature_ok); // true
+
+// Verify (no API key — public, returns boolean)
+const isValid = await verifyReceipt(receipt); // true`}
                   />
                 </motion.div>
 
