@@ -83,13 +83,13 @@ pip install notaryos
 ```python
 from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_xxx")
+notary = NotaryClient()  # works instantly — no signup needed
 
-# Standard action receipt
-receipt = notary.seal("fund_transfer", "agent-47", {"amount": 500, "to": "vendor-12"})
+# Standard action receipt — 2 args: action_type and payload
+receipt = notary.seal("fund_transfer", {"amount": 500, "to": "vendor-12"})
 
 # Counterfactual receipt — proof your agent chose NOT to act
-cf_receipt = notary.seal("trade.declined", "trading-bot-alpha", {
+cf_receipt = notary.seal("trade.declined", {
     "counterfactual": True,
     "capability_confirmed": True,
     "reason": "risk_threshold_exceeded",
@@ -180,7 +180,7 @@ Returns the Ed25519 public key in PEM format. The key is also available via JWKS
 
 ## Issuing Counterfactual Receipts (Free API Key)
 
-Sign up at [notaryos.org](https://notaryos.org) → API Keys. Free tier includes 100 receipts/month.
+No signup needed to start — the SDK uses a free demo key (10 req/min). For production, sign up at [notaryos.org](https://notaryos.org) → API Keys (100 receipts/month free).
 
 ```bash
 export NOTARY_KEY="notary_live_your_key_here"
@@ -435,10 +435,10 @@ pip install notaryos
 ```python
 from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="notary_live_xxx")
+notary = NotaryClient()  # works instantly — no signup needed
 
-# Seal an agent action
-receipt = notary.seal("data_export", "analytics-agent", {"rows": 15000})
+# Seal an agent action — 2 args: action_type and payload
+receipt = notary.seal("data_export", {"rows": 15000})
 
 # Verify any receipt
 result = notary.verify(receipt)
@@ -456,10 +456,10 @@ npm install notaryos
 ```typescript
 import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'notary_live_xxx' });
+const notary = new NotaryClient();  // works instantly — no signup needed
 
-// Issue a receipt
-const receipt = await notary.issue({ actionType: 'api_call', payload: { endpoint: '/users' } });
+// Seal a receipt — 2 args: actionType and payload
+const receipt = await notary.seal('api_call', { endpoint: '/users' });
 
 // Verify
 const result = await notary.verify(receipt);
@@ -474,15 +474,11 @@ console.log(result.valid); // true
 
 ## Framework Integrations
 
-NotaryOS plugs into popular agent frameworks with optional extras:
+NotaryOS has zero-dependency SDKs for both Python and TypeScript:
 
 ```bash
-pip install notaryos[langchain]     # LangChain
-pip install notaryos[crewai]        # CrewAI
-pip install notaryos[openai-agents] # OpenAI Agents SDK
-pip install notaryos[pydantic-ai]   # Pydantic AI
-pip install notaryos[autogen]       # AutoGen
-pip install notaryos[all-frameworks] # All of the above
+pip install notaryos    # Python (zero dependencies)
+npm install notaryos    # TypeScript/Node (zero dependencies)
 ```
 
 ---
@@ -498,7 +494,7 @@ pip install notaryos[all-frameworks] # All of the above
 | `/v1/notary/sample-receipt` | GET | None | Synthetic signed demo receipt |
 | `/v1/notary/verify` | POST | None | Verify any receipt — signature, structure, chain |
 | `/v1/notary/r/{hash}` | GET | None | Look up a receipt by SHA-256 hash |
-| `/v1/notary/seal` | POST | API Key | Issue a signed receipt |
+| `/v1/notary/seal` | POST | API Key | Issue a signed receipt (alias: `/v1/notary/issue`) |
 | `/v1/notary/history` | GET | Clerk JWT | Paginated receipt history |
 | `/v1/api-keys` | GET/POST | Clerk JWT | List and create API keys |
 

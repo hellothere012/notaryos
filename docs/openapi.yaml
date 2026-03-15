@@ -459,8 +459,8 @@ paths:
         ```python
         # Python SDK
         from notaryos import NotaryClient
-        notary = NotaryClient(api_key="notary_live_xxx")
-        receipt = notary.seal("data_processing", "my-agent-v1", {"key": "value"})
+        notary = NotaryClient()  # works instantly — no signup needed
+        receipt = notary.seal("data_processing", {"key": "value"})
         ```
 
         ```bash

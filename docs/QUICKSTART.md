@@ -82,8 +82,8 @@ Zero dependencies -- uses `net/http`.
 ```python
 from notaryos import NotaryClient
 
-notary = NotaryClient(api_key="your_api_key_here")  # Get one at https://notaryos.org/api-keys
-receipt = notary.issue("my_action", {"message": "Transfer approved", "amount": 500})
+notary = NotaryClient()  # Works instantly — no signup needed (10 req/min demo key)
+receipt = notary.seal("my_action", {"message": "Transfer approved", "amount": 500})
 ```
 
 That's it. **Three lines of code.** Your AI agent's action now has a cryptographic proof of existence.
@@ -93,8 +93,8 @@ That's it. **Three lines of code.** Your AI agent's action now has a cryptograph
 ```typescript
 import { NotaryClient } from 'notaryos';
 
-const notary = new NotaryClient({ apiKey: 'your_api_key_here' });  // Get one at https://notaryos.org/api-keys
-const receipt = await notary.issue('my_action', { message: 'Transfer approved', amount: 500 });
+const notary = new NotaryClient();  // Works instantly — no signup needed (10 req/min demo key)
+const receipt = await notary.seal('my_action', { message: 'Transfer approved', amount: 500 });
 ```
 
 ### Go

@@ -1,115 +1,119 @@
-# NotaryOS SDKs
+# NotaryOS SDK v2.2.0
 
-Official SDKs for [NotaryOS](https://notaryos.org) — cryptographic receipts for AI agent actions.
+Cryptographic receipts for AI agent actions. Every decision sealed, verified, and auditable.
+
+[notaryos.org](https://notaryos.org)
 
 ## Available SDKs
 
 | Language | Package | Install | Deps |
 |----------|---------|---------|------|
-| **TypeScript** | [`notaryos`](typescript/) | `npm install notaryos` | Zero (native fetch + Web Crypto) |
 | **Python** | [`notaryos`](python/) | `pip install notaryos` | Zero (stdlib urllib + hashlib) |
-| **Go** | `notaryos-go` | Coming soon | Zero (stdlib net/http) |
+| **TypeScript** | [`notaryos`](typescript/) | `npm install notaryos` | Zero (native fetch + Web Crypto) |
 
 ## 3-Line Quick Start
-
-### TypeScript
-
-```typescript
-import { NotaryClient } from 'notaryos';
-const notary = new NotaryClient({ apiKey: 'notary_live_xxx' });
-const receipt = await notary.issue('my_action', { key: 'value' });
-```
 
 ### Python
 
 ```python
 from notaryos import NotaryClient
+notary = NotaryClient()
+receipt = notary.seal("agent.decision", {"model": "gpt-4", "action": "approve"})
+```
+
+### TypeScript
+
+```typescript
+import { NotaryClient } from 'notaryos';
+const notary = new NotaryClient();
+const receipt = await notary.seal('agent.decision', { model: 'gpt-4', action: 'approve' });
+```
+
+The zero-argument constructor uses a built-in demo key (10 requests/minute). Pass your own key for production usage:
+
+```python
 notary = NotaryClient(api_key="notary_live_xxx")
-receipt = notary.issue("my_action", {"key": "value"})
 ```
 
-### Go
-
-```go
-client, _ := notary.NewClient("notary_live_xxx", nil)
-receipt, _ := client.Issue("my_action", map[string]any{"key": "value"})
+```typescript
+const notary = new NotaryClient({ apiKey: 'notary_live_xxx' });
 ```
 
-## SDK v2.0 Features
+## Core API
 
-### Core API (all SDKs)
-- **Issue** — Create signed receipts for agent actions
-- **Verify** — Verify receipt signatures and integrity
-- **Lookup** — Public receipt lookup by hash
-- **History** — Paginated receipt history (Clerk JWT auth)
-- **Provenance** — DAG provenance reports for receipt chains
-- **Compute Hash** — Client-side SHA-256 matching server hashing
-- **Error Codes** — 16 standardized error constants
+| Method | Python | TypeScript | Description |
+|--------|--------|------------|-------------|
+| **seal** | `notary.seal(action_type, payload)` | `notary.seal(actionType, payload)` | Create a signed receipt (alias for issue) |
+| **issue** | `notary.issue(action_type, payload, previous_receipt_hash=None, metadata=None)` | `notary.issue(actionType, payload, options?)` | Create a signed receipt with full options |
+| **verify** | `notary.verify(receipt_dict)` | `notary.verify(receipt)` | Verify receipt signature and integrity |
+| **lookup** | `notary.lookup(receipt_hash)` | `notary.lookup(receiptHash)` | Retrieve a receipt by its hash |
+| **status** | `notary.status()` | `notary.status()` | Service health check |
+| **public_key** | `notary.public_key()` | N/A | Get the Ed25519 signing public key |
+| **me** | `notary.me()` | `notary.me()` | Get current API key info and usage |
 
-### Counterfactual Receipts (Enterprise)
-- **v1 Issue** — Proof of non-action (agent chose not to act)
-- **v2 Commit-Reveal** — Temporal binding with delayed reveal
-- **Corroboration** — Multi-agent counter-signing
-- **Compliance Certificates** — Human-readable audit documents
-- **Chain Verification** — Per-agent chain continuity checks
+### Standalone Functions
 
-### Auto-Receipting
-- **Python** — `notary.wrap(agent)` + `@receipted(notary)` decorator
-- **TypeScript** — `notary.wrap(agent)` via ES6 Proxy
-- **Go** — `ReceiptQueue` + `RecordAction()` helper
+| Function | Python | TypeScript | Description |
+|----------|--------|------------|-------------|
+| **verify_receipt** | `verify_receipt(receipt_dict)` | `verifyReceipt(receipt)` | Verify a receipt without a client instance |
+| **computeHash** | N/A | `computeHash(payload)` | Client-side SHA-256 matching server hashing |
 
-### Offline Verification (Optional Modules)
-- **Python** — `notary_offline.py` (requires `cryptography`)
-- **TypeScript** — `offline.ts` (Web Crypto API, zero-dep)
-- **Go** — `offline.go` (stdlib `crypto/ed25519`)
+## Counterfactual Receipts
 
-### Framework Integrations
+Counterfactual receipts prove what an agent considered but did not do -- decisions not taken, alternatives rejected, paths not chosen.
 
-#### Python (9 frameworks)
+### Simple Counterfactual (via seal)
 
-| Framework | Import | Pattern |
-|-----------|--------|---------|
-| **LangChain** | `from notaryos.integrations.langchain import NotaryCallbackHandler` | Callback handler |
-| **CrewAI** | `from notaryos.integrations.crewai import notary_task_callback` | Task decorator |
-| **OpenAI Agents** | `from notaryos.integrations.openai_agents import NotaryGuardrail` | Guardrail |
-| **PydanticAI** | `from notaryos.integrations.pydantic_ai import notary_tool` | Tool decorator |
-| **Anthropic Claude** | `from notaryos.integrations.anthropic_claude import NotaryToolUseHook` | Tool use hook |
-| **Google ADK** | `from notaryos.integrations.google_adk import NotaryADKCallback` | Callback |
-| **LlamaIndex** | `from notaryos.integrations.llamaindex import NotaryCallbackHandler` | Callback handler |
-| **AWS Bedrock** | `from notaryos.integrations.aws_bedrock import NotaryBedrockHook` | Response hook |
-| **SmolAgents** | `from notaryos.integrations.smolagents import NotarySmolCallback` | Callback |
+```python
+notary = NotaryClient(api_key="notary_live_xxx")
 
-#### TypeScript (3 frameworks)
+receipt = notary.seal("counterfactual.decision", {
+    "agent_id": "risk-analyzer",
+    "considered_action": "approve_trade",
+    "decision": "rejected",
+    "reason": "Volatility exceeded threshold"
+})
+```
 
-| Framework | Import | Pattern |
-|-----------|--------|---------|
-| **Vercel AI SDK** | `from 'notaryos/integrations/vercel-ai'` | Middleware |
-| **LangChain.js** | `from 'notaryos/integrations/langchain'` | Callback handler |
-| **OpenAI Agents** | `from 'notaryos/integrations/openai-agents'` | Tool wrapper |
+### Commit-Reveal Pattern
+
+Temporal binding: commit a decision hash now, reveal the content later.
+
+```python
+# Phase 1: Commit (locks the hash)
+commit = notary.commit_counterfactual(
+    action_type="prediction.market_close",
+    payload={"prediction": "AAPL closes above 250"},
+    agent_id="forecast-agent"
+)
+
+# Phase 2: Reveal (proves the content matches)
+reveal = notary.reveal_counterfactual(
+    receipt_hash=commit["receipt_hash"],
+    reason="Market closed, revealing prediction"
+)
+```
 
 ## API Endpoints
 
 | Endpoint | Auth | Description |
 |----------|------|-------------|
-| `POST /v1/notary/issue` | API Key | Issue signed receipt |
-| `POST /v1/notary/verify` | Public | Verify receipt |
-| `GET /v1/notary/r/{hash}` | Public | Look up receipt |
-| `GET /v1/notary/r/{hash}/provenance` | Public | Provenance DAG report |
-| `GET /v1/notary/history` | Clerk JWT | Receipt history |
+| `POST /v1/notary/seal` | API Key | Create a signed receipt |
+| `POST /v1/notary/issue` | API Key | Create a signed receipt (full options) |
+| `POST /v1/notary/verify` | Public | Verify receipt signature and integrity |
+| `GET /v1/notary/r/{hash}` | Public | Look up receipt by hash |
 | `GET /v1/notary/status` | Public | Service health |
-| `GET /v1/notary/public-key` | Public | Ed25519 public key |
+| `GET /v1/notary/public-key` | Public | Ed25519 signing public key |
 | `GET /.well-known/jwks.json` | Public | JWKS key set |
-| `POST /v1/notary/counterfactual/issue` | API Key | Counterfactual receipt |
-| `POST /v1/notary/counterfactual/commit` | API Key | Commit-reveal Phase 1 |
-| `POST /v1/notary/counterfactual/reveal` | API Key | Commit-reveal Phase 2 |
-| `POST /v1/notary/counterfactual/corroborate` | API Key | Counter-sign |
+| `POST /v1/notary/counterfactual/commit` | API Key | Commit-reveal phase 1 |
+| `POST /v1/notary/counterfactual/reveal` | API Key | Commit-reveal phase 2 |
 
 ## Get an API Key
 
 1. Sign up at [notaryos.org](https://notaryos.org)
-2. Generate an API key from the dashboard
-3. Keys: `notary_live_xxx` (production) or `notary_test_xxx` (sandbox)
+2. Go to your dashboard and generate an API key
+3. Production keys use the `notary_live_` prefix
 
 ## License
 
-BUSL-1.1 - See [LICENSE](LICENSE)
+BUSL-1.1 -- See [LICENSE](LICENSE)
