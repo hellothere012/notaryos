@@ -11,6 +11,7 @@ import ForgeCanvas from '@/components/forge/ForgeCanvas';
 import { useForgeStream, fetchForgeModels } from '@/components/forge/useForgeStream';
 import type { AvailableModel } from '@/components/forge/types';
 import { useAuth } from '@/lib/auth-context';
+import { UnauthenticatedPopup } from '@/components/shared/UnauthenticatedPopup';
 import { useTutorWorkspace } from '@/hooks/useTutorWorkspace';
 import TutorInput from '@/components/tutor/TutorInput';
 import TutorLanding from '@/components/tutor/TutorLanding';
@@ -87,6 +88,7 @@ export default function TutorPage() {
         background: '#141210',
       }}
     >
+      <UnauthenticatedPopup pageName="tutor" />
       {/* ── Top bar ─────────────────────────────────────── */}
       <div
         style={{

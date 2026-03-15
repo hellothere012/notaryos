@@ -11,6 +11,7 @@ import ForgeInput from '@/components/forge/ForgeInput';
 import ForgeCanvas from '@/components/forge/ForgeCanvas';
 import { useForgeStream, fetchForgeModels } from '@/components/forge/useForgeStream';
 import type { AvailableModel } from '@/components/forge/types';
+import { UnauthenticatedPopup } from '@/components/shared/UnauthenticatedPopup';
 
 const FALLBACK_MODELS: AvailableModel[] = [
   { key: 'chatgpt', display_name: 'GPT-5.4' },
@@ -61,6 +62,7 @@ export default function ForgePage() {
       }}
       data-forge-genesis="ha-2025"
     >
+      <UnauthenticatedPopup pageName="forge" />
       {/* Top bar */}
       <div
         style={{
