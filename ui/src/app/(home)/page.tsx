@@ -21,23 +21,24 @@ export const metadata: Metadata = {
   creator: 'Harris Abbaali',
   openGraph: {
     title: 'NotaryOS — AI Decision Plane',
-    description: 'Multi-model AI reasoning with cryptographic provenance. See where AIs agree and diverge.',
+    description: 'Proof of what your AI agents DIDN\'T do. Cryptographic counterfactual receipts for every decision.',
     url: 'https://notaryos.org',
     siteName: 'NotaryOS',
     type: 'website',
     images: [
       {
-        url: 'https://notaryos.org/api/og/home',
-        width: 1200,
-        height: 630,
-        alt: 'NotaryOS - AI Decision Plane with multi-model reasoning',
+        url: 'https://notaryos.org/og-image.jpg',
+        width: 1290,
+        height: 715,
+        alt: 'NotaryOS — AI Decision Plane. Proof of what your AI agents didn\'t do.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'NotaryOS — AI Decision Plane',
-    description: 'Multi-model AI reasoning with cryptographic provenance. See where AIs agree and diverge.',
+    description: 'Proof of what your AI agents DIDN\'T do. Cryptographic counterfactual receipts for every decision.',
+    images: ['https://notaryos.org/og-image.jpg'],
   },
 };
 
