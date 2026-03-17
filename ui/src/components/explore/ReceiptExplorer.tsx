@@ -421,14 +421,20 @@ export const ReceiptExplorer: React.FC = () => {
               <AnimatePresence initial={false} mode="popLayout">
                 {receipts.map((receipt, idx) => {
                   const hash =
+                    receipt.receiptHash ||
                     receipt.receipt_hash ||
                     receipt.receipt_id ||
                     receipt.hash ||
                     '';
+                  const actionType =
+                    receipt.actionType || receipt.action_type || '';
+                  const agentId =
+                    receipt.agentId || receipt.agent_id || '';
+                  const timestamp =
+                    receipt.createdAt || receipt.timestamp || '';
                   const isValid =
-                    receipt.valid ??
-                    receipt.signature_ok ??
-                    true;
+                    receipt.status === 'valid' ||
+                    (receipt.valid ?? receipt.signature_ok ?? true);
 
                   return (
                     <motion.div
@@ -462,17 +468,17 @@ export const ReceiptExplorer: React.FC = () => {
                       <div className="flex items-center">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${actionTypeBadgeClasses(
-                            receipt.action_type || '',
+                            actionType,
                           )}`}
                         >
-                          {receipt.action_type || 'unknown'}
+                          {actionType || 'unknown'}
                         </span>
                       </div>
 
                       {/* Agent */}
                       <div className="flex items-center min-w-0">
                         <span className="font-mono text-sm text-gray-400 truncate">
-                          {truncateHash(receipt.agent_id || '', 16)}
+                          {truncateHash(agentId, 16)}
                         </span>
                       </div>
 
@@ -480,10 +486,10 @@ export const ReceiptExplorer: React.FC = () => {
                       <div className="flex items-center">
                         <span
                           className="text-sm text-gray-500"
-                          title={receipt.timestamp || ''}
+                          title={timestamp}
                         >
-                          {receipt.timestamp
-                            ? relativeTime(receipt.timestamp)
+                          {timestamp
+                            ? relativeTime(timestamp)
                             : '--'}
                         </span>
                       </div>
@@ -518,14 +524,20 @@ export const ReceiptExplorer: React.FC = () => {
               <AnimatePresence initial={false} mode="popLayout">
                 {receipts.map((receipt, idx) => {
                   const hash =
+                    receipt.receiptHash ||
                     receipt.receipt_hash ||
                     receipt.receipt_id ||
                     receipt.hash ||
                     '';
+                  const actionType =
+                    receipt.actionType || receipt.action_type || '';
+                  const agentId =
+                    receipt.agentId || receipt.agent_id || '';
+                  const timestamp =
+                    receipt.createdAt || receipt.timestamp || '';
                   const isValid =
-                    receipt.valid ??
-                    receipt.signature_ok ??
-                    true;
+                    receipt.status === 'valid' ||
+                    (receipt.valid ?? receipt.signature_ok ?? true);
 
                   return (
                     <motion.div
@@ -559,17 +571,17 @@ export const ReceiptExplorer: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${actionTypeBadgeClasses(
-                            receipt.action_type || '',
+                            actionType,
                           )}`}
                         >
-                          {receipt.action_type || 'unknown'}
+                          {actionType || 'unknown'}
                         </span>
                         <span
                           className="text-xs text-gray-500"
-                          title={receipt.timestamp || ''}
+                          title={timestamp}
                         >
-                          {receipt.timestamp
-                            ? relativeTime(receipt.timestamp)
+                          {timestamp
+                            ? relativeTime(timestamp)
                             : '--'}
                         </span>
                       </div>
