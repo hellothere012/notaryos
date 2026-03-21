@@ -1,53 +1,35 @@
 """
-NotaryOS Python SDK - Cryptographic Receipt Verification in 3 Lines
+NotaryOS Python SDK - Cryptographic Receipts for AI Agent Actions
 
 Usage:
-    from notary_sdk import NotaryClient
-    notary = NotaryClient(api_key="notary_live_xxx")
-    receipt = notary.issue("my_action", {"key": "value"})
+    from notaryos import NotaryClient
+    notary = NotaryClient()  # works instantly, no signup needed
+    receipt = notary.seal("my_action", {"key": "value"})
 
-Zero external dependencies beyond `requests` (or uses urllib as fallback).
+For production, sign up at https://notaryos.org and pass your own key:
+    notary = NotaryClient(api_key="notary_live_xxx")
+
+Zero external dependencies — uses only Python standard library.
 """
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __all__ = [
-    # Core client
     "NotaryClient",
-    # Exceptions
     "NotaryError",
     "AuthenticationError",
     "RateLimitError",
     "ValidationError",
-    # Constants
-    "NotaryErrorCode",
-    # Data classes
     "Receipt",
     "VerificationResult",
     "ServiceStatus",
-    # Auto-receipting
-    "AutoReceiptConfig",
-    "CounterfactualClient",
-    "receipted",
-    # Standalone public functions (no API key required)
     "verify_receipt",
-    "verify_receipt_detailed",
 ]
 
-import asyncio
-import atexit
-import functools
 import hashlib
-import inspect
 import json
-import queue
-import random
-import sys
-import threading
 import time
-import warnings
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, FrozenSet, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -83,35 +65,6 @@ class RateLimitError(NotaryError):
 class ValidationError(NotaryError):
     """Request validation failed."""
     pass
-
-
-# =============================================================================
-# Error Codes
-# =============================================================================
-
-
-class NotaryErrorCode:
-    """Standardized error codes mirroring the backend API."""
-
-    # 4xx Client Errors
-    ERR_RECEIPT_NOT_FOUND = "ERR_RECEIPT_NOT_FOUND"
-    ERR_INVALID_SIGNATURE = "ERR_INVALID_SIGNATURE"
-    ERR_INVALID_STRUCTURE = "ERR_INVALID_STRUCTURE"
-    ERR_INVALID_TIMESTAMP = "ERR_INVALID_TIMESTAMP"
-    ERR_UNKNOWN_SIGNER = "ERR_UNKNOWN_SIGNER"
-    ERR_UNSUPPORTED_ALGORITHM = "ERR_UNSUPPORTED_ALGORITHM"
-    ERR_CHAIN_BROKEN = "ERR_CHAIN_BROKEN"
-    ERR_CHAIN_MISSING = "ERR_CHAIN_MISSING"
-    ERR_PAYLOAD_TOO_LARGE = "ERR_PAYLOAD_TOO_LARGE"
-    ERR_RATE_LIMIT_EXCEEDED = "ERR_RATE_LIMIT_EXCEEDED"
-    ERR_INVALID_API_KEY = "ERR_INVALID_API_KEY"
-    ERR_INSUFFICIENT_SCOPE = "ERR_INSUFFICIENT_SCOPE"
-    ERR_VALIDATION_FAILED = "ERR_VALIDATION_FAILED"
-
-    # 5xx Server Errors
-    ERR_INTERNAL_ERROR = "ERR_INTERNAL_ERROR"
-    ERR_DATABASE_ERROR = "ERR_DATABASE_ERROR"
-    ERR_SIGNING_ERROR = "ERR_SIGNING_ERROR"
 
 
 # =============================================================================
@@ -231,14 +184,17 @@ class NotaryClient:
     NotaryOS API client.
 
     Usage:
-        notary = NotaryClient(api_key="notary_live_xxx")
-        receipt = notary.issue("my_action", {"key": "value"})
+        notary = NotaryClient()  # uses free demo key (10 req/min)
+        receipt = notary.seal("my_action", {"key": "value"})
         result = notary.verify(receipt)
-        status = notary.status()
+
+    For production, sign up at https://notaryos.org and use your own key:
+        notary = NotaryClient(api_key="notary_live_xxx")
     """
 
     DEFAULT_BASE_URL = "https://api.agenttownsquare.com"
     DEFAULT_TIMEOUT = 30
+    DEMO_API_KEY = "notary_test_public_demo_b0821da365e0e8ce"
 
     def __init__(
         self,
@@ -251,19 +207,24 @@ class NotaryClient:
         Initialize the Notary client.
 
         Args:
-            api_key: Your Notary API key (notary_live_xxx or notary_test_xxx).
-                     Optional -- omit for public-only operations (verify, lookup,
-                     public_key, status). Auth-required methods (issue, seal, me,
-                     history, wrap) will raise AuthenticationError at call time.
+            api_key: Your Notary API key. If omitted, uses the free demo key
+                     (10 req/min limit). Get a production key at https://notaryos.org
             base_url: API base URL (default: https://api.agenttownsquare.com)
             timeout: Request timeout in seconds
             max_retries: Max retry attempts on transient failures
         """
-        if api_key is not None and not (
-            api_key.startswith("notary_live_") or api_key.startswith("notary_test_")
-        ):
+        if not api_key:
+            api_key = self.DEMO_API_KEY
+
+        if not (api_key.startswith("notary_live_") or api_key.startswith("notary_test_")):
             raise AuthenticationError(
-                "Invalid API key format. Keys must start with notary_live_ or notary_test_",
+                "Invalid API key format. Keys must start with notary_live_ or notary_test_.\n"
+                "\n"
+                "  Quick start (no signup):\n"
+                "    notary = NotaryClient()  # uses free demo key\n"
+                "\n"
+                "  Production (unlimited):\n"
+                "    Sign up at https://notaryos.org to get your own key.\n",
                 code="ERR_INVALID_API_KEY",
             )
 
@@ -271,41 +232,13 @@ class NotaryClient:
         self._base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
         self._timeout = timeout
         self._max_retries = max_retries
-        self._receipt_queue = None  # type: Optional[_ReceiptQueue]
-        self._counterfactual = None  # type: Optional[CounterfactualClient]
-        self._admin = None  # type: Optional[_AdminClient]
-
-    @property
-    def counterfactual(self) -> "CounterfactualClient":
-        """Access counterfactual receipt operations (enterprise premium)."""
-        if self._counterfactual is None:
-            self._counterfactual = CounterfactualClient(self)
-        return self._counterfactual
-
-    @property
-    def admin(self) -> "_AdminClient":
-        """Access admin-only operations (invalidation, etc.)."""
-        if self._admin is None:
-            self._admin = _AdminClient(self)
-        return self._admin
-
-    def _require_api_key(self) -> str:
-        """Raise AuthenticationError if no API key was provided."""
-        if self._api_key is None:
-            raise AuthenticationError(
-                "This operation requires an API key. Create the client with "
-                "NotaryClient(api_key='notary_live_xxx') or use public methods "
-                "(verify, lookup, status, public_key) which work without auth.",
-                code="ERR_INVALID_API_KEY",
-            )
-        return self._api_key
+        self._using_demo_key = (api_key == self.DEMO_API_KEY)
 
     def _request(self, method: str, path: str, body: Optional[Dict] = None) -> Dict[str, Any]:
-        """Make an authenticated HTTP request to the Notary API."""
-        api_key = self._require_api_key()
+        """Make an HTTP request to the Notary API."""
         url = f"{self._base_url}/v1/notary{path}"
         headers = {
-            "X-API-Key": api_key,
+            "X-API-Key": self._api_key,
             "Content-Type": "application/json",
             "User-Agent": f"notary-python-sdk/{__version__}",
         }
@@ -359,38 +292,6 @@ class NotaryClient:
             raise NotaryError(f"Max retries exceeded: {last_error}", code="ERR_MAX_RETRIES")
         raise NotaryError("Request failed", code="ERR_UNKNOWN")
 
-    def _public_request(
-        self, method: str, url: str, body: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
-        """Make an unauthenticated HTTP request (no API key header)."""
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-        data = json.dumps(body).encode("utf-8") if body else None
-
-        try:
-            req = Request(url, data=data, headers=headers, method=method)
-            with urlopen(req, timeout=self._timeout) as resp:
-                response_body = resp.read().decode("utf-8")
-                return json.loads(response_body) if response_body else {}
-        except HTTPError as e:
-            response_body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(response_body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            if e.code == 404:
-                return {"found": False, "receipt": None, "verification": None, "meta": None}
-            error_info = error_data.get("error", error_data)
-            raise NotaryError(
-                error_info.get("message", str(e)),
-                code=error_info.get("code", "ERR_REQUEST"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
     # =========================================================================
     # Public API
     # =========================================================================
@@ -436,47 +337,12 @@ class NotaryClient:
 
         return receipt
 
-    def seal(
-        self,
-        action: str,
-        agent_id: str,
-        payload: Dict[str, Any],
-        previous_receipt_hash: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Receipt:
-        """
-        Seal an agent action as a signed receipt.
-
-        This is the primary high-level API for agent accountability.
-        Alias for issue() with a cleaner, agent-centric signature.
-
-        Args:
-            action: Action type (e.g., "data_processing", "api_call")
-            agent_id: ID of the agent performing the action
-            payload: Action payload to be receipted
-            previous_receipt_hash: Hash of previous receipt for chaining
-            metadata: Additional metadata
-
-        Returns:
-            A signed Receipt object
-
-        Example:
-            receipt = notary.seal("trade.execute", "TradeBot-v1", {"symbol": "AAPL"})
-        """
-        merged_payload = {"agent_id": agent_id, **payload}
-        return self.issue(
-            action_type=action,
-            payload=merged_payload,
-            previous_receipt_hash=previous_receipt_hash,
-            metadata=metadata,
-        )
+    # Alias: seal() → issue() for the 3-line integration pattern
+    seal = issue
 
     def verify(self, receipt: "Receipt | Dict[str, Any]") -> VerificationResult:
         """
         Verify a receipt's signature and integrity.
-
-        Works with or without an API key. When no API key is configured,
-        uses the public /v1/notary/verify endpoint automatically.
 
         Args:
             receipt: A Receipt object or raw receipt dict
@@ -493,11 +359,7 @@ class NotaryClient:
         else:
             receipt_dict = receipt
 
-        if self._api_key is not None:
-            response = self._request("POST", "/verify", {"receipt": receipt_dict})
-        else:
-            url = f"{self._base_url}/v1/notary/verify"
-            response = self._public_request("POST", url, {"receipt": receipt_dict})
+        response = self._request("POST", "/verify", {"receipt": receipt_dict})
         return VerificationResult.from_dict(response)
 
     def verify_by_id(self, receipt_id: str) -> VerificationResult:
@@ -515,7 +377,7 @@ class NotaryClient:
 
     def status(self) -> ServiceStatus:
         """
-        Get Notary service status. Works with or without an API key.
+        Get Notary service status.
 
         Returns:
             ServiceStatus with health info
@@ -524,16 +386,12 @@ class NotaryClient:
             status = notary.status()
             print(status.status)  # "active"
         """
-        if self._api_key is not None:
-            response = self._request("GET", "/status")
-        else:
-            url = f"{self._base_url}/v1/notary/status"
-            response = self._public_request("GET", url)
+        response = self._request("GET", "/status")
         return ServiceStatus.from_dict(response)
 
     def public_key(self) -> Dict[str, str]:
         """
-        Get the public key for offline verification. Works with or without an API key.
+        Get the public key for offline verification.
 
         Returns:
             Dict with key_id, signature_type, public_key_pem
@@ -542,10 +400,7 @@ class NotaryClient:
             key_info = notary.public_key()
             pem = key_info["public_key_pem"]
         """
-        if self._api_key is not None:
-            return self._request("GET", "/public-key")
-        url = f"{self._base_url}/v1/notary/public-key"
-        return self._public_request("GET", url)
+        return self._request("GET", "/public-key")
 
     def lookup(self, receipt_hash: str) -> Dict[str, Any]:
         """
@@ -599,828 +454,11 @@ class NotaryClient:
         """
         return self._request("GET", "/agents/me")
 
-    @staticmethod
-    def compute_hash(payload: "Dict[str, Any] | str") -> str:
-        """
-        Compute SHA-256 hash of a payload, matching server-side hashing.
-
-        Uses sorted-key JSON serialization for deterministic hashing.
-
-        Args:
-            payload: String or JSON-serializable dict
-
-        Returns:
-            Hex-encoded SHA-256 digest
-
-        Example:
-            hash_val = NotaryClient.compute_hash({"key": "value"})
-        """
-        if isinstance(payload, str):
-            data = payload
-        else:
-            data = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(data.encode("utf-8")).hexdigest()
-
-    def history(
-        self,
-        page: int = 1,
-        page_size: int = 10,
-        status: Optional[str] = None,
-        search: Optional[str] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        clerk_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Get paginated receipt history for the authenticated user.
-
-        Requires Clerk JWT authentication (not API key auth).
-
-        Args:
-            page: Page number (1-indexed)
-            page_size: Items per page (1-100)
-            status: Filter: 'valid', 'invalid', or 'all'
-            search: Free-text search on receipt_hash, action_type, agent_id
-            start_date: ISO date lower bound (inclusive)
-            end_date: ISO date upper bound (inclusive)
-            clerk_token: Clerk JWT token for authentication
-
-        Returns:
-            Dict with items, total, totalPages, page, pageSize
-
-        Example:
-            history = notary.history(page=1, page_size=20, clerk_token="ey...")
-        """
-        params = [f"page={page}", f"page_size={page_size}"]
-        if status:
-            params.append(f"status={status}")
-        if search:
-            from urllib.parse import quote
-            params.append(f"search={quote(search)}")
-        if start_date:
-            params.append(f"start_date={start_date}")
-        if end_date:
-            params.append(f"end_date={end_date}")
-
-        query = "&".join(params)
-        url = f"{self._base_url}/v1/notary/history?{query}"
-
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-        if clerk_token:
-            headers["Authorization"] = f"Bearer {clerk_token}"
-        else:
-            headers["X-API-Key"] = self._api_key
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_HISTORY"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-    def provenance(self, receipt_hash: str) -> Dict[str, Any]:
-        """
-        Get the provenance DAG report for a receipt.
-
-        Returns grounding status, ancestors, tainted paths, and integrity info.
-
-        Args:
-            receipt_hash: The receipt hash to check provenance for
-
-        Returns:
-            Dict with grounding_status, is_root, ancestors_checked, etc.
-
-        Example:
-            report = notary.provenance("abc123def456...")
-        """
-        url = f"{self._base_url}/v1/notary/r/{receipt_hash}/provenance"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_PROVENANCE"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
     # =========================================================================
-    # Auto-receipting
+    # Counterfactual Commit-Reveal (Phase 1 Hardening)
     # =========================================================================
 
-    def wrap(
-        self,
-        obj: Any,
-        config: Optional["AutoReceiptConfig"] = None,
-    ) -> Any:
-        """
-        Wrap an object so every public method automatically issues a receipt.
-
-        Args:
-            obj: The agent or object to wrap
-            config: Optional AutoReceiptConfig (defaults to AutoReceiptConfig())
-
-        Returns:
-            The same object (for chaining): ``agent = notary.wrap(MyAgent())``
-
-        Raises:
-            ValueError: If obj is a NotaryClient (prevents infinite recursion)
-
-        Example:
-            notary = NotaryClient(api_key="notary_live_xxx")
-            notary.wrap(my_agent)
-            my_agent.place_order("BTC", 10)  # auto-receipted!
-        """
-        if isinstance(obj, NotaryClient):
-            raise ValueError(
-                "Cannot wrap a NotaryClient instance (would cause infinite recursion)"
-            )
-
-        if getattr(obj, "_notary_wrapped", False):
-            return obj
-
-        cfg = config or AutoReceiptConfig()
-        if not cfg.enabled:
-            return obj
-
-        # Lazy-init the shared receipt queue
-        if self._receipt_queue is None:
-            self._receipt_queue = _ReceiptQueue()
-
-        chain_state = _ChainState(agent_id=obj.__class__.__name__)
-        methods = _discover_methods(obj)
-        originals = {}  # type: Dict[str, Any]
-
-        for name, method in methods:
-            originals[name] = method
-            wrapper = _make_wrapper(
-                method, name, self, obj, cfg, self._receipt_queue, chain_state,
-            )
-            # Instance-level setattr — doesn't pollute the class
-            setattr(obj, name, wrapper)
-
-        obj._notary_wrapped = True
-        obj._notary_originals = originals
-        obj._notary_chain = chain_state
-
-        class_name = obj.__class__.__name__
-        print(
-            f"[NotaryOS] Auto-receipts enabled for {class_name} ({len(methods)} methods)",
-            file=sys.stderr,
-        )
-        return obj
-
-    def unwrap(self, obj: Any) -> Any:
-        """
-        Remove auto-receipt wrappers, restoring original methods.
-
-        Args:
-            obj: A previously wrapped object
-
-        Returns:
-            The same object with original methods restored
-        """
-        originals = getattr(obj, "_notary_originals", None)
-        if originals is None:
-            return obj
-
-        for name, method in originals.items():
-            setattr(obj, name, method)
-
-        for attr in ("_notary_wrapped", "_notary_originals", "_notary_chain"):
-            try:
-                delattr(obj, attr)
-            except AttributeError:
-                pass
-
-        return obj
-
-    @property
-    def receipt_stats(self) -> Dict[str, int]:
-        """
-        Get auto-receipt queue statistics.
-
-        Returns:
-            Dict with issued, failed, dropped, pending counts
-        """
-        if self._receipt_queue is None:
-            return {"issued": 0, "failed": 0, "dropped": 0, "pending": 0}
-        return self._receipt_queue.stats
-
-
-# =============================================================================
-# Auto-receipt configuration
-# =============================================================================
-
-
-@dataclass
-class AutoReceiptConfig:
-    """
-    Configuration for auto-receipting behavior.
-
-    Example:
-        config = AutoReceiptConfig(mode="errors_only", dry_run=True)
-        notary.wrap(agent, config=config)
-    """
-
-    enabled: bool = True
-    mode: str = "all"  # "all", "errors_only", "sample"
-    sample_rate: float = 1.0
-    max_payload_bytes: int = 4096
-    fire_and_forget: bool = True
-    dry_run: bool = False
-    redact_secrets: bool = True
-    secret_patterns: FrozenSet[str] = field(default_factory=lambda: frozenset(
-        {"key", "secret", "token", "password", "credential", "auth"}
-    ))
-
-    def should_receipt(self, status: str) -> bool:
-        """Decide whether to issue a receipt based on mode and sampling."""
-        if not self.enabled:
-            return False
-        if self.mode == "errors_only":
-            return status == "error"
-        if self.mode == "sample":
-            return random.random() < self.sample_rate
-        return True  # mode == "all"
-
-
-# =============================================================================
-# Chain state (per-agent client-side chain linking)
-# =============================================================================
-
-
-class _ChainState:
-    """Thread-safe tracker for receipt chain linking within a single agent."""
-
-    __slots__ = ("agent_id", "last_hash", "sequence", "_lock")
-
-    def __init__(self, agent_id: str) -> None:
-        self.agent_id = agent_id
-        self.last_hash = None  # type: Optional[str]
-        self.sequence = 0
-        self._lock = threading.Lock()
-
-    def get_and_advance(self, receipt_hash: str) -> Tuple[Optional[str], int]:
-        """
-        Atomically return the current (prev_hash, sequence) and advance.
-
-        Returns:
-            (previous_receipt_hash, current_sequence) before advancing
-        """
-        with self._lock:
-            prev = self.last_hash
-            seq = self.sequence
-            self.last_hash = receipt_hash
-            self.sequence += 1
-            return prev, seq
-
-    def peek(self) -> Tuple[Optional[str], int]:
-        """Return current (last_hash, sequence) without advancing."""
-        with self._lock:
-            return self.last_hash, self.sequence
-
-
-# =============================================================================
-# Background receipt queue (fire-and-forget)
-# =============================================================================
-
-
-class _ReceiptQueue:
-    """
-    Daemon thread + bounded queue for non-blocking receipt issuance.
-    Thread starts lazily on first enqueue.
-    """
-
-    _SENTINEL = object()
-
-    def __init__(self, maxsize: int = 1000) -> None:
-        self._queue = queue.Queue(maxsize=maxsize)  # type: queue.Queue
-        self._thread = None  # type: Optional[threading.Thread]
-        self._started = False
-        self._start_lock = threading.Lock()
-        self._issued = 0
-        self._failed = 0
-        self._dropped = 0
-
-    def _ensure_started(self) -> None:
-        if self._started:
-            return
-        with self._start_lock:
-            if self._started:
-                return
-            self._thread = threading.Thread(
-                target=self._consumer_loop, daemon=True, name="notary-receipt-queue",
-            )
-            self._thread.start()
-            atexit.register(self._shutdown)
-            self._started = True
-
-    def enqueue(
-        self,
-        client: "NotaryClient",
-        action_type: str,
-        payload: Dict[str, Any],
-        chain_state: _ChainState,
-    ) -> None:
-        """Add a receipt job. Never raises — drops with warning if full."""
-        self._ensure_started()
-        try:
-            self._queue.put_nowait((client, action_type, payload, chain_state))
-        except queue.Full:
-            self._dropped += 1
-            warnings.warn(
-                "[NotaryOS] Receipt queue full — dropping receipt for "
-                f"'{action_type}'. Consider increasing queue size or reducing "
-                "call frequency.",
-                stacklevel=2,
-            )
-
-    def _consumer_loop(self) -> None:
-        while True:
-            item = self._queue.get()
-            if item is self._SENTINEL:
-                self._queue.task_done()
-                break
-            client, action_type, payload, chain_state = item
-            try:
-                prev_hash, _ = chain_state.peek()
-                receipt = client.issue(
-                    action_type=action_type,
-                    payload=payload,
-                    previous_receipt_hash=prev_hash,
-                )
-                if receipt.receipt_hash:
-                    chain_state.get_and_advance(receipt.receipt_hash)
-                self._issued += 1
-            except Exception:
-                self._failed += 1
-            finally:
-                self._queue.task_done()
-
-    def _shutdown(self) -> None:
-        if not self._started:
-            return
-        try:
-            self._queue.put_nowait(self._SENTINEL)
-        except queue.Full:
-            return
-        if self._thread is not None:
-            self._thread.join(timeout=30)
-
-    @property
-    def stats(self) -> Dict[str, int]:
-        return {
-            "issued": self._issued,
-            "failed": self._failed,
-            "dropped": self._dropped,
-            "pending": self._queue.qsize(),
-        }
-
-
-# =============================================================================
-# Auto-receipt helper functions
-# =============================================================================
-
-
-def _discover_methods(obj: Any) -> List[Tuple[str, Callable]]:
-    """
-    Discover public methods on an object suitable for auto-receipting.
-    Uses inspect.getattr_static to avoid triggering property getters.
-    """
-    methods = []
-    for name in dir(obj):
-        if name.startswith("_"):
-            continue
-        static_attr = inspect.getattr_static(obj, name, None)
-        if isinstance(static_attr, (property, classmethod, staticmethod)):
-            continue
-        attr = getattr(obj, name, None)
-        if attr is None or not callable(attr):
-            continue
-        if getattr(attr, "_auto_receipted", False):
-            continue
-        methods.append((name, attr))
-    return methods
-
-
-def _build_args_dict(
-    method: Callable, args: tuple, kwargs: Dict[str, Any],
-) -> Dict[str, Any]:
-    """Map positional + keyword args to named dict using inspect.signature."""
-    try:
-        sig = inspect.signature(method)
-        bound = sig.bind(*args, **kwargs)
-        bound.apply_defaults()
-        return dict(bound.arguments)
-    except (TypeError, ValueError):
-        result = {}
-        for i, a in enumerate(args):
-            result[f"arg{i}"] = a
-        result.update(kwargs)
-        return result
-
-
-def _redact_secrets(
-    args_dict: Dict[str, Any], patterns: FrozenSet[str],
-) -> Dict[str, Any]:
-    """Replace values whose key names contain secret-like substrings."""
-    redacted = {}
-    for k, v in args_dict.items():
-        k_lower = k.lower()
-        if any(p in k_lower for p in patterns):
-            redacted[k] = "[REDACTED]"
-        else:
-            redacted[k] = v
-    return redacted
-
-
-def _safe_repr(value: Any, max_depth: int = 3) -> Any:
-    """
-    Convert a value to a JSON-safe representation.
-    Primitives pass through; complex objects become class name strings.
-    """
-    if max_depth <= 0:
-        return "..." if value is not None else None
-
-    if value is None or isinstance(value, (bool, int, float)):
-        return value
-    if isinstance(value, str):
-        return value[:500] if len(value) > 500 else value
-    if isinstance(value, dict):
-        return "<dict keys={}>".format(list(value.keys())[:10])
-    if isinstance(value, (list, tuple)):
-        return "<{} len={}>".format(type(value).__name__, len(value))
-    if isinstance(value, bytes):
-        return "<bytes len={}>".format(len(value))
-    return "<{}>".format(type(value).__name__)
-
-
-def _truncate_payload(payload: Dict[str, Any], max_bytes: int) -> Dict[str, Any]:
-    """Truncate payload to fit within max_bytes when JSON-encoded."""
-    encoded = json.dumps(payload, default=str)
-    if len(encoded.encode("utf-8")) <= max_bytes:
-        return payload
-
-    # Truncate result_summary first
-    if "result_summary" in payload:
-        payload["result_summary"] = "<truncated>"
-        encoded = json.dumps(payload, default=str)
-        if len(encoded.encode("utf-8")) <= max_bytes:
-            return payload
-
-    # Then truncate arguments
-    if "arguments" in payload:
-        payload["arguments"] = "<truncated>"
-        encoded = json.dumps(payload, default=str)
-        if len(encoded.encode("utf-8")) <= max_bytes:
-            return payload
-
-    # Last resort: strip to essentials
-    return {
-        "agent": payload.get("agent", ""),
-        "auto_receipt": True,
-        "function": payload.get("function", ""),
-        "status": payload.get("status", "unknown"),
-        "truncated": True,
-    }
-
-
-def _make_wrapper(
-    method: Callable,
-    method_name: str,
-    client: "NotaryClient",
-    obj: Any,
-    config: "AutoReceiptConfig",
-    receipt_queue: _ReceiptQueue,
-    chain_state: _ChainState,
-) -> Callable:
-    """Create a sync or async wrapper that auto-receipts method calls."""
-    class_name = obj.__class__.__name__
-
-    if asyncio.iscoroutinefunction(method):
-        @functools.wraps(method)
-        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            status = "success"
-            error_type = None
-            result = None
-            t0 = time.monotonic()
-            try:
-                result = await method(*args, **kwargs)
-                return result
-            except Exception as exc:
-                status = "error"
-                error_type = type(exc).__name__
-                raise
-            finally:
-                try:
-                    duration_ms = (time.monotonic() - t0) * 1000
-                    if config.should_receipt(status):
-                        args_dict = _build_args_dict(method, args, kwargs)
-                        if config.redact_secrets:
-                            args_dict = _redact_secrets(args_dict, config.secret_patterns)
-                        # Safe-repr all arg values
-                        safe_args = {k: _safe_repr(v) for k, v in args_dict.items()}
-
-                        payload = {
-                            "agent": class_name,
-                            "auto_receipt": True,
-                            "class_name": class_name,
-                            "function": method_name,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                            "duration_ms": round(duration_ms, 2),
-                            "status": status,
-                            "error_type": error_type,
-                            "arguments": safe_args,
-                            "result_summary": _safe_repr(result),
-                        }
-                        payload = _truncate_payload(payload, config.max_payload_bytes)
-
-                        if config.dry_run:
-                            print(
-                                f"[NotaryOS DRY RUN] {method_name}: "
-                                f"{json.dumps(payload, default=str)}",
-                                file=sys.stderr,
-                            )
-                        elif config.fire_and_forget:
-                            receipt_queue.enqueue(
-                                client, method_name, payload, chain_state,
-                            )
-                        else:
-                            prev_hash, _ = chain_state.peek()
-                            rcpt = client.issue(
-                                action_type=method_name,
-                                payload=payload,
-                                previous_receipt_hash=prev_hash,
-                            )
-                            if rcpt.receipt_hash:
-                                chain_state.get_and_advance(rcpt.receipt_hash)
-                except Exception:
-                    pass  # Never break the agent
-
-        async_wrapper._auto_receipted = True  # type: ignore[attr-defined]
-        return async_wrapper
-
-    else:
-        @functools.wraps(method)
-        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            status = "success"
-            error_type = None
-            result = None
-            t0 = time.monotonic()
-            try:
-                result = method(*args, **kwargs)
-                return result
-            except Exception as exc:
-                status = "error"
-                error_type = type(exc).__name__
-                raise
-            finally:
-                try:
-                    duration_ms = (time.monotonic() - t0) * 1000
-                    if config.should_receipt(status):
-                        args_dict = _build_args_dict(method, args, kwargs)
-                        if config.redact_secrets:
-                            args_dict = _redact_secrets(args_dict, config.secret_patterns)
-                        safe_args = {k: _safe_repr(v) for k, v in args_dict.items()}
-
-                        payload = {
-                            "agent": class_name,
-                            "auto_receipt": True,
-                            "class_name": class_name,
-                            "function": method_name,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                            "duration_ms": round(duration_ms, 2),
-                            "status": status,
-                            "error_type": error_type,
-                            "arguments": safe_args,
-                            "result_summary": _safe_repr(result),
-                        }
-                        payload = _truncate_payload(payload, config.max_payload_bytes)
-
-                        if config.dry_run:
-                            print(
-                                f"[NotaryOS DRY RUN] {method_name}: "
-                                f"{json.dumps(payload, default=str)}",
-                                file=sys.stderr,
-                            )
-                        elif config.fire_and_forget:
-                            receipt_queue.enqueue(
-                                client, method_name, payload, chain_state,
-                            )
-                        else:
-                            prev_hash, _ = chain_state.peek()
-                            rcpt = client.issue(
-                                action_type=method_name,
-                                payload=payload,
-                                previous_receipt_hash=prev_hash,
-                            )
-                            if rcpt.receipt_hash:
-                                chain_state.get_and_advance(rcpt.receipt_hash)
-                except Exception:
-                    pass  # Never break the agent
-
-        sync_wrapper._auto_receipted = True  # type: ignore[attr-defined]
-        return sync_wrapper
-
-
-def receipted(
-    notary_client: "NotaryClient",
-    config: Optional[AutoReceiptConfig] = None,
-) -> Callable:
-    """
-    Class decorator that auto-receipts all instances.
-
-    Example:
-        notary = NotaryClient(api_key="notary_live_xxx")
-
-        @receipted(notary)
-        class MyAgent:
-            def act(self):
-                return "done"
-
-        agent = MyAgent()  # auto-wrapped at __init__ time
-        agent.act()         # receipt issued
-    """
-    def decorator(cls: type) -> type:
-        original_init = cls.__init__
-
-        @functools.wraps(original_init)
-        def new_init(self: Any, *args: Any, **kwargs: Any) -> None:
-            original_init(self, *args, **kwargs)
-            notary_client.wrap(self, config)
-
-        cls.__init__ = new_init  # type: ignore[misc]
-        return cls
-
-    return decorator
-
-
-# =============================================================================
-# Counterfactual Client (Enterprise Premium)
-# =============================================================================
-
-
-class CounterfactualClient:
-    """
-    Sub-client for counterfactual receipt operations (proof of non-action).
-
-    Accessed via ``notary.counterfactual.*``:
-
-        stamp = notary.counterfactual.issue(
-            action_not_taken="delete_user_data",
-            capability_proof={"scope": "data:delete"},
-            opportunity_context={"user_id": "u_123"},
-            decision_reason="GDPR retention period not expired",
-        )
-    """
-
-    def __init__(self, client: "NotaryClient") -> None:
-        self._client = client
-
-    def issue(
-        self,
-        action_not_taken: str,
-        capability_proof: Dict[str, Any],
-        opportunity_context: Dict[str, Any],
-        decision_reason: str,
-        declination_reason: str = "unknown",
-        provenance_refs: Optional[List[str]] = None,
-        validity_window_minutes: int = 60,
-    ) -> Dict[str, Any]:
-        """
-        Issue a v1 counterfactual receipt (proof of non-action).
-
-        Args:
-            action_not_taken: The action the agent chose not to take
-            capability_proof: Evidence the agent had permission
-            opportunity_context: Conditions that triggered evaluation
-            decision_reason: Why the agent declined (10-2000 chars)
-            declination_reason: Category: policy, capacity, conflict, risk, etc.
-            provenance_refs: Related upstream receipt IDs
-            validity_window_minutes: How long this proof is meaningful (1-525600)
-
-        Returns:
-            Dict with success, receipt, receipt_hash, verify_url, proofs_complete
-        """
-        body: Dict[str, Any] = {
-            "action_not_taken": action_not_taken,
-            "capability_proof": capability_proof,
-            "opportunity_context": opportunity_context,
-            "decision_reason": decision_reason,
-            "declination_reason": declination_reason,
-            "validity_window_minutes": validity_window_minutes,
-        }
-        if provenance_refs:
-            body["provenance_refs"] = provenance_refs
-
-        return self._client._request("POST", "/counterfactual/issue", body)
-
-    def get(self, receipt_hash: str) -> Dict[str, Any]:
-        """
-        Verify/retrieve a counterfactual receipt by hash (public).
-
-        Args:
-            receipt_hash: The counterfactual receipt hash
-
-        Returns:
-            Dict with found, receipt_type, receipt, proofs, verification, meta
-        """
-        url = f"{self._client._base_url}/v1/notary/counterfactual/r/{receipt_hash}"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._client._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            if e.code == 404:
-                return {"found": False}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-    def list_by_agent(
-        self, agent_id: str, limit: int = 50, offset: int = 0
-    ) -> Dict[str, Any]:
-        """
-        List counterfactual receipts for a specific agent (public).
-
-        Args:
-            agent_id: The agent ID to query
-            limit: Max items (default 50, max 100)
-            offset: Pagination offset
-
-        Returns:
-            Dict with agent_id, total, counterfactuals list
-        """
-        url = (
-            f"{self._client._base_url}/v1/notary/counterfactual/agent/{agent_id}"
-            f"?limit={limit}&offset={offset}"
-        )
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._client._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-    def commit(
+    def commit_counterfactual(
         self,
         action_not_taken: str,
         capability_proof: Dict[str, Any],
@@ -1433,13 +471,37 @@ class CounterfactualClient:
         max_reveal_window_seconds: int = 86400,
     ) -> Dict[str, Any]:
         """
-        Commit a v2 counterfactual receipt (Phase 1 of commit-reveal).
+        Commit a counterfactual receipt (Phase 1 of commit-reveal).
 
         The decision_reason is hashed but NOT stored. You must call
-        reveal() with the original plaintext within the reveal window.
+        reveal_counterfactual() with the original plaintext within the
+        reveal window.
+
+        Args:
+            action_not_taken: The action the agent chose not to take.
+            capability_proof: Evidence the agent had permission.
+            opportunity_context: Conditions that triggered evaluation.
+            decision_reason: Plaintext reasoning (hashed, not stored).
+            declination_reason: Category (policy, risk, etc.).
+            provenance_refs: Related upstream receipt IDs.
+            validity_window_minutes: How long the proof is meaningful.
+            min_reveal_delay_seconds: Min wait before reveal (default 5m).
+            max_reveal_window_seconds: Max time to reveal (default 24h).
 
         Returns:
-            Dict with success, format_version, receipt, receipt_hash, commit_reveal, next_step
+            Dict with receipt, receipt_hash, commit_reveal state, verify_url.
+
+        Example:
+            result = notary.commit_counterfactual(
+                action_not_taken="financial.execute_trade",
+                capability_proof={"permissions": ["trade.execute"]},
+                opportunity_context={"ticker": "ACME", "price": 142.50},
+                decision_reason="Risk score exceeds threshold",
+            )
+            # Later (after min_reveal_delay_seconds):
+            reveal = notary.reveal_counterfactual(
+                result["receipt_hash"], "Risk score exceeds threshold"
+            )
         """
         body: Dict[str, Any] = {
             "action_not_taken": action_not_taken,
@@ -1454,197 +516,188 @@ class CounterfactualClient:
         if provenance_refs:
             body["provenance_refs"] = provenance_refs
 
-        return self._client._request("POST", "/counterfactual/commit", body)
+        return self._request("POST", "/counterfactual/commit", body)
 
-    def reveal(
-        self, receipt_hash: str, decision_reason_plaintext: str
+    def reveal_counterfactual(
+        self,
+        receipt_hash: str,
+        decision_reason_plaintext: str,
     ) -> Dict[str, Any]:
         """
         Reveal a committed counterfactual receipt (Phase 2 of commit-reveal).
 
-        Verifies SHA-256(plaintext) == commit_hash within the time window.
+        Submits the original plaintext. Server verifies SHA-256(plaintext)
+        matches the committed hash and the time window is valid.
 
         Args:
-            receipt_hash: The committed receipt hash
-            decision_reason_plaintext: The original decision reason (must match commit)
+            receipt_hash: The hash of the committed receipt.
+            decision_reason_plaintext: The original reasoning text.
 
         Returns:
-            Dict with success, reveal_timestamp, reveal_delay_seconds
+            Dict with success, new_phase, reveal_timestamp, etc.
+
+        Example:
+            reveal = notary.reveal_counterfactual(
+                "abc123...", "Risk score exceeds threshold"
+            )
+            assert reveal["success"]
         """
-        return self._client._request(
-            "POST",
-            "/counterfactual/reveal",
-            {
-                "receipt_hash": receipt_hash,
-                "decision_reason_plaintext": decision_reason_plaintext,
-            },
-        )
+        return self._request("POST", "/counterfactual/reveal", {
+            "receipt_hash": receipt_hash,
+            "decision_reason_plaintext": decision_reason_plaintext,
+        })
+
+    # =========================================================================
+    # Reasoning Interception
+    # =========================================================================
+
+    def seal_reasoning(
+        self,
+        response: "Dict[str, Any] | Any",
+        model: str = "auto",
+    ) -> Dict[str, Any]:
+        """
+        Seal AI reasoning tokens as NotaryOS receipts.
+
+        Extracts reasoning blocks from an OpenRouter-compatible API response,
+        sends them to the server for parsing, tree construction, and sealing.
+        All heavy lifting (parsing, multi-receipt sealing, provenance DAG)
+        happens server-side.
+
+        Args:
+            response: OpenRouter API response (dict or response object).
+                      Must contain choices[0].message with reasoning data.
+            model: Model identifier. "auto" detects from response.model.
+
+        Returns:
+            Dict with tree, receipts, root_receipt, provenance_hash, node_count.
+
+        Raises:
+            ValidationError: If no reasoning blocks found in response.
+            NotaryError: If sealing fails.
+
+        Example:
+            response = openai_client.chat.completions.create(
+                model="deepseek/deepseek-r1",
+                messages=[{"role": "user", "content": "Analyze BTC"}],
+                extra_body={"reasoning": {"enabled": True}},
+            )
+            sealed = notary.seal_reasoning(response)
+            print(f"Sealed {sealed['node_count']} reasoning nodes")
+            print(f"Provenance root: {sealed['provenance_hash']}")
+        """
+        # Normalize response to dict
+        if hasattr(response, "model_dump"):
+            response_dict = response.model_dump()
+        elif hasattr(response, "to_dict"):
+            response_dict = response.to_dict()
+        elif isinstance(response, dict):
+            response_dict = response
+        else:
+            # Try converting dataclass-like objects
+            response_dict = dict(response) if hasattr(response, "__iter__") else {"raw": str(response)}
+
+        # Extract reasoning blocks client-side (lightweight)
+        blocks = self._extract_reasoning_blocks(response_dict)
+        if not blocks:
+            raise ValidationError(
+                "No reasoning blocks found in response. "
+                "Ensure the model was called with reasoning enabled.",
+                code="ERR_NO_REASONING",
+            )
+
+        # Auto-detect model
+        if model == "auto":
+            model = response_dict.get("model", "unknown")
+
+        # Send to server for parsing + sealing
+        return self._request("POST", "/reasoning/seal", {
+            "reasoning_blocks": blocks,
+            "model": model,
+        })
+
+    @staticmethod
+    def _extract_reasoning_blocks(response: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Extract reasoning blocks from an OpenRouter response dict.
+
+        Handles three formats:
+        - message.reasoning_details (array of {type, data})
+        - message.reasoning (KIMI K2.5 format)
+        - message.reasoning_content (legacy)
+
+        Returns list of dicts with content, block_type, token_count.
+        """
+        blocks: List[Dict[str, Any]] = []
+
+        choices = response.get("choices", [])
+        if not choices:
+            return blocks
+
+        message = choices[0].get("message", {})
+
+        # Token count
+        usage = response.get("usage", {})
+        token_count = usage.get("reasoningTokens", 0)
+        if not token_count:
+            details = usage.get("completion_tokens_details", {})
+            token_count = details.get("reasoning_tokens", 0)
+
+        # Priority 1: reasoning_details array
+        reasoning_details = message.get("reasoning_details")
+        if reasoning_details and isinstance(reasoning_details, list):
+            for detail in reasoning_details:
+                if isinstance(detail, dict):
+                    content = detail.get("data", detail.get("content", ""))
+                    block_type = detail.get("type", "text")
+                elif isinstance(detail, str):
+                    content = detail
+                    block_type = "text"
+                else:
+                    continue
+                if content:
+                    blocks.append({
+                        "content": str(content),
+                        "block_type": block_type,
+                        "token_count": token_count,
+                    })
+
+        # Priority 2: message.reasoning (KIMI K2.5)
+        if not blocks:
+            reasoning = message.get("reasoning", "")
+            if reasoning and isinstance(reasoning, str) and reasoning.strip():
+                blocks.append({
+                    "content": reasoning,
+                    "block_type": "text",
+                    "token_count": token_count,
+                })
+
+        # Priority 3: reasoning_content (legacy)
+        if not blocks:
+            reasoning_content = message.get("reasoning_content", "")
+            if reasoning_content and isinstance(reasoning_content, str):
+                blocks.append({
+                    "content": reasoning_content,
+                    "block_type": "text",
+                    "token_count": token_count,
+                })
+
+        return blocks
 
     def commit_status(self, receipt_hash: str) -> Dict[str, Any]:
         """
-        Check the commit-reveal lifecycle status of a counterfactual receipt (public).
+        Check the commit-reveal lifecycle status of a receipt.
 
-        Returns:
-            Dict with receipt_hash, format_version, agent_id, commit_reveal state
-        """
-        url = f"{self._client._base_url}/v1/notary/counterfactual/commit-status/{receipt_hash}"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._client._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-    def corroborate(
-        self, receipt_hash: str, signals: List[str]
-    ) -> Dict[str, Any]:
-        """
-        Counter-sign a counterfactual receipt (corroboration).
-
-        A second agent provides corroboration signals to upgrade
-        attestation from self_attested to corroborated.
+        Public endpoint (no API key required for the underlying call,
+        but this method uses the authenticated client for consistency).
 
         Args:
-            receipt_hash: The receipt to corroborate
-            signals: Corroboration evidence (e.g., ["log_entry", "witness_agent"])
+            receipt_hash: The receipt hash to check.
 
         Returns:
-            Dict with success, attestation_type, counter_signature
+            Dict with phase, timestamps, and timing info.
         """
-        return self._client._request(
-            "POST",
-            "/counterfactual/corroborate",
-            {
-                "receipt_hash": receipt_hash,
-                "corroboration_signals": signals,
-            },
-        )
-
-    def certificate(
-        self, receipt_hash: str, format: str = "markdown"
-    ) -> Dict[str, Any]:
-        """
-        Generate a compliance certificate for a counterfactual receipt (public).
-
-        Returns a three-column document: Proves / Supports / Does NOT Prove.
-
-        Args:
-            receipt_hash: The counterfactual receipt hash
-            format: Output format ('markdown' or 'json')
-
-        Returns:
-            Dict with receipt_hash, format, certificate
-        """
-        url = (
-            f"{self._client._base_url}/v1/notary/counterfactual/r/{receipt_hash}/certificate"
-            f"?format={format}"
-        )
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._client._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-    def verify_chain(self, agent_id: str) -> Dict[str, Any]:
-        """
-        Verify counterfactual chain continuity for an agent (public).
-
-        Walks the chain back to GENESIS_HASH, checking for gaps and omissions.
-
-        Args:
-            agent_id: The agent ID whose chain to verify
-
-        Returns:
-            Dict with chain verification results
-        """
-        url = f"{self._client._base_url}/v1/notary/counterfactual/chain/{agent_id}/verify"
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": f"notary-python-sdk/{__version__}",
-        }
-
-        try:
-            req = Request(url, headers=headers, method="GET")
-            with urlopen(req, timeout=self._client._timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except HTTPError as e:
-            body = e.read().decode("utf-8") if e.fp else ""
-            try:
-                error_data = json.loads(body)
-            except (json.JSONDecodeError, ValueError):
-                error_data = {}
-            raise NotaryError(
-                error_data.get("detail", str(e)),
-                code=error_data.get("code", "ERR_COUNTERFACTUAL"),
-                status=e.code,
-            )
-        except URLError as e:
-            raise NotaryError(f"Connection failed: {e.reason}", code="ERR_CONNECTION")
-
-
-# =============================================================================
-# Admin Client (server-side tooling)
-# =============================================================================
-
-
-class _AdminClient:
-    """Admin operations accessible via ``notary.admin.*``."""
-
-    def __init__(self, client: "NotaryClient") -> None:
-        self._client = client
-
-    def invalidate(self, receipt_hash: str, reason: str) -> Dict[str, Any]:
-        """
-        Invalidate a receipt and cascade ungrounding (admin only).
-
-        This is a destructive operation that marks a receipt as invalid
-        and cascades UNGROUNDED status to all dependent receipts.
-
-        Args:
-            receipt_hash: The receipt hash to invalidate
-            reason: Mandatory reason for invalidation (10-500 chars)
-
-        Returns:
-            Dict with cascade report
-        """
-        return self._client._request(
-            "POST",
-            f"/admin/invalidate/{receipt_hash}",
-            {"reason": reason},
-        )
+        return self._request("GET", f"/counterfactual/commit-status/{receipt_hash}")
 
 
 # =============================================================================
@@ -1679,85 +732,31 @@ def verify_receipt(
         return False
 
 
-def verify_receipt_detailed(
-    receipt: Dict[str, Any],
-    base_url: str = NotaryClient.DEFAULT_BASE_URL,
-) -> VerificationResult:
-    """
-    Detailed verification without API key (public endpoint).
-
-    Like verify_receipt() but returns a full VerificationResult instead of
-    just a boolean. Useful when you need signature_ok, structure_ok, chain_ok,
-    and the reason string.
-
-    Args:
-        receipt: Receipt dict to verify
-        base_url: API base URL
-
-    Returns:
-        VerificationResult with full verification details
-
-    Example:
-        result = verify_receipt_detailed(receipt_dict)
-        if result.valid:
-            print("Signature OK:", result.signature_ok)
-        else:
-            print("Failed:", result.reason)
-    """
-    url = f"{base_url.rstrip('/')}/v1/notary/verify"
-    data = json.dumps({"receipt": receipt}).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        req = Request(url, data=data, headers=headers, method="POST")
-        with urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-            return VerificationResult.from_dict(result)
-    except HTTPError as e:
-        body = e.read().decode("utf-8") if e.fp else ""
-        try:
-            error_data = json.loads(body)
-        except (json.JSONDecodeError, ValueError):
-            error_data = {}
-        return VerificationResult(
-            valid=False,
-            signature_ok=False,
-            structure_ok=False,
-            chain_ok=None,
-            reason=error_data.get("detail", str(e)),
-            details=error_data,
-        )
-    except Exception as e:
-        return VerificationResult(
-            valid=False,
-            signature_ok=False,
-            structure_ok=False,
-            chain_ok=None,
-            reason=f"Connection error: {e}",
-            details={},
-        )
-
-
 # =============================================================================
 # CLI for quick testing
 # =============================================================================
 
 def main():
-    """CLI entry point for notaryos command."""
+    """CLI entry point for ats-notary command."""
     import sys
 
     if len(sys.argv) < 2:
         print(f"NotaryOS Python SDK v{__version__}")
         print()
         print("Usage:")
-        print("  python notary_sdk.py status [--url URL]")
-        print("  python notary_sdk.py issue <api_key> <action_type> [--url URL]")
-        print("  python notary_sdk.py verify <receipt_json> [--url URL]")
+        print("  notaryos status [--url URL]")
+        print("  notaryos issue <api_key> <action_type> [--url URL]")
+        print("  notaryos verify <receipt_json> [--url URL]")
+        print("  notaryos lookup <receipt_hash> [--url URL]")
         print()
-        print("Quick start:")
-        print('  from notary_sdk import NotaryClient')
+        print("Quick start (no signup):")
+        print("  from notaryos import NotaryClient")
+        print("  notary = NotaryClient()  # uses free demo key (10 req/min)")
+        print('  receipt = notary.seal("my_action", {"key": "value"})')
+        print()
+        print("Production (unlimited):")
         print('  notary = NotaryClient(api_key="notary_live_xxx")')
-        print('  receipt = notary.issue("my_action", {"key": "value"})')
+        print("  # Get your key at https://notaryos.org")
         sys.exit(0)
 
     cmd = sys.argv[1]

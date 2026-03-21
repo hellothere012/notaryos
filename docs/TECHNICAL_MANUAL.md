@@ -719,7 +719,7 @@ The SDKs are configured via constructor parameters:
 | Throughput (single-thread) | >100 RPS | **178+ receipts/sec** |
 | Success Rate | 100% | **100%** (5,416 requests) |
 
-> **Benchmark environment:** DigitalOcean droplet — 4 vCPU, 8 GB RAM, 8 Uvicorn workers. Full report: `reports/NOTARYOS_ENTERPRISE_BENCHMARK_20260214.md`.
+> **Benchmark environment:** Production cloud server. For enterprise deployment options, contact support@notaryos.org.
 
 Backend configuration, key management, and infrastructure details are managed internally. For enterprise self-hosting configuration, contact support@notaryos.org.
 
